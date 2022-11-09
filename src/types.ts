@@ -1,5 +1,14 @@
 export type Dictionary<T> = Record<string, T>;
 
+export enum Keyword {
+  FUNCTION = "function",
+  NEW = "new",
+  TYPEOF = "typeof",
+  RETURN = "return",
+  LET = "let",
+  CONST = "const",
+}
+
 export enum TokenType {
   UNKNOWN,
   ID,
@@ -8,8 +17,8 @@ export enum TokenType {
   BOOL,
   NULL,
   PUNCT,
-  DEFINITION,
-  FUNCTIION,
+  THROW,
+  OPERATOR,
   EOT,
 }
 
@@ -29,6 +38,7 @@ export enum SyntaxType {
   OBJECT_EXPR,
   ARRAY_EXPR,
   FUNCTION_EXPR,
+  FUNCTION_CALL_ARG_EXPR,
   FUNCTION_CALL_EXPR,
   STATEMENTS_EXPR,
 }
@@ -80,7 +90,7 @@ export interface ConcatExpression extends Expression {
 export interface AssignmentExpression extends Expression {
   id: string;
   value: Expression;
-  isDefinition?: boolean;
+  operator?: string;
 }
 
 export interface PosFilterExpression extends Expression {
@@ -106,7 +116,13 @@ export interface SelectorExpression extends Expression {
   selector: string;
   prop?: string;
 }
-
+export interface FunctionCallArgExpression extends Expression {
+  value: Expression;
+  spread?: boolean;
+}
 export interface FunctionCallExpression extends Expression {
-  args: Expression[];
+  args: FunctionCallArgExpression[];
+  id?: string;
+  dot?: boolean;
+  isNew?: boolean;
 }

@@ -41,21 +41,10 @@ console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
 console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
-    let b = "b";
-    // this is comment
-    let a = {
-      [b]: [1, 2, 3], 
-      c: function(v1) {
-        function() {
-          [v1, 2*v1, function(){
-            3 * v1
-          }]
-        }
-      }
-    };
-    let i = 109;
-    a.c(i)()[2]()
-`).evaluate({ a: { b: 1, c: 2 } }),
+    const a = [{ a: {c: 2} }, {b: 1}];
+    const b = 2 + 2 ** 10;
+    a...c
+    `).evaluate([{ a:1 }, {b: 1}], {a : {fn: (...args) => args.map((e) => e*e)}}),
   ),
 );
 
@@ -64,16 +53,10 @@ console.log(
   new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      let b = "b";
-      let a = {
-        [b]: [1, 2, 3], 
-        c: function(v1) {
-          v1
-        }
-      };
-      let i = 109;
-      a.c(i)
-     `),
+      const a = [{ a:1 }, {b: 1}];
+      const b = 2 + 2 ** 10;
+      [1, 2 ,3][0]
+      `),
     ).parse(),
   ).translate(),
 );

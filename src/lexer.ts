@@ -1,6 +1,6 @@
-import { VARS_PREFIX } from './contants';
+import { VARS_PREFIX } from './constants';
 import { JsonTemplateLexerError } from './errors';
-import { Token, TokenType } from './types';
+import { Dictionary, Keyword, Token, TokenType } from './types';
 
 const MESSAGES = {
   RESERVED_ID: 'Reserved ID pattern "%0"',
@@ -10,6 +10,7 @@ const MESSAGES = {
 
 const BLOCK_COMMENT_REGEX = /\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\//g;
 const SINGLE_LINE_COMMENT_REGEX = /\/\/[^\n\r]+?(?:\*\)|[\n\r])/g;
+
 export class JsonTemplateLexer {
   private readonly codeChars: string[];
   private buf: Token[];
@@ -22,20 +23,28 @@ export class JsonTemplateLexer {
       .split('');
   }
 
-  match(value): boolean {
-    let token = this.lookahead();
+  match(value: string, steps = 0): boolean {
+    let token = this.lookahead(steps);
     return token.type === TokenType.PUNCT && token.value === value;
   }
 
+  matchLiteral(): boolean {
+    return JsonTemplateLexer.isLiteralToken(this.lookahead());
+  }
+
   matchPath(): boolean {
-    return this.matchSelector() || this.matchID() || this.match('^');
+    const token = this.lookahead();
+    return this.matchSelector() ||
+      this.matchID() ||
+      this.match('[') ||
+      this.match('^');
   }
 
   matchSelector(): boolean {
     let token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
       let value = token.value;
-      return value === '.' || value === '..';
+      return value === '.' || value === '..' || value === '...';
     }
 
     return false;
@@ -54,17 +63,53 @@ export class JsonTemplateLexer {
     return this.matchTokenType(TokenType.EOT);
   }
 
+  private static isOperator(id: string): boolean {
+    return Object.values(Keyword).some(op => op.toString() === id);
+  }
+
+  matchOperator(op: string): boolean {
+    let token = this.lookahead();
+    return token.type === TokenType.OPERATOR && token.value === op;
+  }
+
+  matchFunction(): boolean {
+    return this.matchOperator(Keyword.FUNCTION);
+  }
+
+  matchNew(): boolean {
+    return this.matchOperator(Keyword.NEW);
+  }
+
+  matchReturn(): boolean {
+    return this.matchOperator(Keyword.RETURN);
+  }
+
+  matchTypeOf(): boolean {
+    return this.matchOperator(Keyword.TYPEOF);
+  }
+
+  matchDefinition(): boolean {
+    return this.matchOperator(Keyword.LET) || this.matchOperator(Keyword.CONST);
+  }
+
+  expectOperator(op: string) {
+    let token = this.lex();
+    if (token.type !== TokenType.OPERATOR || token.value !== op) {
+      this.throwUnexpected(token);
+    }
+  }
+
   expectTokenType(tokenType: TokenType) {
     let token = this.lex();
     if (token.type !== tokenType) {
-      JsonTemplateLexer.throwUnexpected(token);
+      this.throwUnexpected(token);
     }
   }
 
   expect(value) {
     let token = this.lex();
     if (token.type !== TokenType.PUNCT || token.value !== value) {
-      JsonTemplateLexer.throwUnexpected(token);
+      this.throwUnexpected(token);
     }
   }
 
@@ -128,12 +173,13 @@ export class JsonTemplateLexer {
     );
   }
 
-  static throwUnexpected(token): never {
+  throwUnexpected(token?: Token): never {
+    token = token || this.lookahead();
     if (token.type === TokenType.EOT) {
-      this.throwError(token, MESSAGES.UNEXP_EOT);
+      JsonTemplateLexer.throwError(token, MESSAGES.UNEXP_EOT);
     }
 
-    this.throwError(token, MESSAGES.UNEXP_TOKEN, token.value);
+    JsonTemplateLexer.throwError(token, MESSAGES.UNEXP_TOKEN, token.value);
   }
 
   static throwError(token: Token, messageFormat: string, ...args): never {
@@ -185,6 +231,14 @@ export class JsonTemplateLexer {
       id += ch;
     }
 
+    if (JsonTemplateLexer.isOperator(id)) {
+      return {
+        type: TokenType.OPERATOR,
+        value: id,
+        range: [start, this.idx],
+      };
+    }
+
     switch (id) {
       case 'true':
       case 'false':
@@ -198,20 +252,6 @@ export class JsonTemplateLexer {
         return {
           type: TokenType.NULL,
           value: null,
-          range: [start, this.idx],
-        };
-
-      case 'let':
-        return {
-          type: TokenType.DEFINITION,
-          value: 'let',
-          range: [start, this.idx],
-        };
-
-      case 'function':
-        return {
-          type: TokenType.FUNCTIION,
-          value: 'function',
           range: [start, this.idx],
         };
 
@@ -303,13 +343,6 @@ export class JsonTemplateLexer {
         value: '...',
         range: [start, this.idx],
       };
-    } else if (ch2 === '.') {
-      this.idx = this.idx + 2;
-      return {
-        type: TokenType.PUNCT,
-        value: '..',
-        range: [start, this.idx],
-      };
     } else {
       if (JsonTemplateLexer.isDigit(ch2)) {
         return;
@@ -371,12 +404,12 @@ export class JsonTemplateLexer {
     }
   }
 
-  private scanPunctuatorForLogicalTokens(): Token | undefined {
+  private scanPunctuatorForRepeatedTokens(): Token | undefined {
     let start = this.idx,
       ch1 = this.codeChars[this.idx],
       ch2 = this.codeChars[this.idx + 1];
 
-    if (ch1 === ch2 && (ch1 === '|' || ch1 === '&')) {
+    if (ch1 === ch2 && '|&*.=><'.includes(ch1)) {
       this.idx += 2;
       return {
         type: TokenType.PUNCT,
@@ -390,7 +423,7 @@ export class JsonTemplateLexer {
     let start = this.idx,
       ch1 = this.codeChars[this.idx];
 
-    if (',;:{}()[]^+-*/%!><|'.indexOf(ch1) >= 0) {
+    if (',;:{}()[]^+-*/%!><|='.includes(ch1)) {
       return {
         type: TokenType.PUNCT,
         value: ch1,
@@ -402,8 +435,8 @@ export class JsonTemplateLexer {
   private scanPunctuator(): Token | undefined {
     return (
       this.scanPunctuatorForDots() ||
-      this.scanPunctuatorForLogicalTokens() ||
       this.scanPunctuatorForEquality() ||
+      this.scanPunctuatorForRepeatedTokens() ||
       this.scanSingleCharPunctuators()
     );
   }
@@ -412,7 +445,7 @@ export class JsonTemplateLexer {
     const token = this.lex();
 
     if (token.type !== TokenType.EOT) {
-      JsonTemplateLexer.throwUnexpected(token);
+      this.throwUnexpected(token);
     }
   }
 }

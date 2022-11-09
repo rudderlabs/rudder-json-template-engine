@@ -1,4 +1,4 @@
-export * from './contants';
+export * from './constants';
 export * from './engine';
 export * from './errors';
 export * from './lexer';

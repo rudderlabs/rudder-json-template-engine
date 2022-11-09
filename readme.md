@@ -20,7 +20,7 @@
 
 # rudder-json-template-engine
 
-A library for evaluating JSON template expressions.
+A library for evaluating JSON template expressions is an extension to [jspath](https://github.com/dfilatov/jspath).
 
 ## Overview
 

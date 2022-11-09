@@ -49,7 +49,7 @@
     "clean": "rm -rf build",
     "lint:fix": "eslint . --fix",
     "lint:check": "eslint . || exit 1",
-    "format": "prettier --write '**/*.ts' '**/*.json'",
+    "format": "prettier --write '**/*.ts' '**/*.js' '**/*.json'",
     "prepare": "husky install"
   },
   "engines": {

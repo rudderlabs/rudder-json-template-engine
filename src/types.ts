@@ -8,9 +8,8 @@ export enum TokenType {
   BOOL,
   NULL,
   PUNCT,
-  ASSIGNMENT,
+  DEFINITION,
   FUNCTIION,
-  FUNCTION_CALL,
   EOT,
 }
 
@@ -18,13 +17,13 @@ export enum SyntaxType {
   EMPTY,
   PATH,
   SELECTOR,
-  OBJ_PRED,
   LOGICAL_EXPR,
   COMPARISON_EXPR,
   MATH_EXPR,
   CONCAT_EXPR,
   UNARY_EXPR,
-  POS_EXPR,
+  POS_FILTER_EXPR,
+  OBJECT_FILTER_EXPR,
   ASSIGNMENT_EXPR,
   LITERAL,
   OBJECT_EXPR,
@@ -36,7 +35,7 @@ export enum SyntaxType {
 
 export type Token = {
   type: TokenType;
-  value?: any;
+  value: any;
   range: [number, number];
 };
 
@@ -50,7 +49,7 @@ export interface FunctionExpression extends Expression {
   body: StatementsExpression;
 }
 export interface ObjectExpression extends Expression {
-  props: Dictionary<Expression>;
+  props: { key: Expression | string; value: Expression }[];
 }
 
 export interface ArrayExpression extends Expression {
@@ -81,17 +80,23 @@ export interface ConcatExpression extends Expression {
 export interface AssignmentExpression extends Expression {
   id: string;
   value: Expression;
+  isDefinition?: boolean;
 }
 
-export interface PosExpression extends Expression {
+export interface PosFilterExpression extends Expression {
   fromIdx?: Expression;
   toIdx?: Expression;
   idx?: Expression;
+  empty?: boolean;
+}
+
+export interface ObjectFilterExpression extends Expression {
+  filters: Expression[];
 }
 export interface LiteralExpression extends Expression {
   value: string | number | boolean | null;
+  tokenType: TokenType;
 }
-
 export interface PathExpression extends Expression {
   parts: Expression[];
   root?: string;
@@ -104,5 +109,4 @@ export interface SelectorExpression extends Expression {
 
 export interface FunctionCallExpression extends Expression {
   args: Expression[];
-  id: string;
 }

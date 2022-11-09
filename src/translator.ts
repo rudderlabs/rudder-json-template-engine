@@ -1,3 +1,4 @@
+import { DATA_PARAM_KEY, VARS_PREFIX } from './contants';
 import { binaryOperators } from './operators';
 import {
   ArrayExpression,
@@ -8,13 +9,14 @@ import {
   FunctionCallExpression,
   FunctionExpression,
   LiteralExpression,
+  ObjectFilterExpression,
   ObjectExpression,
-  ObjectPredicateExpression,
   PathExpression,
-  PosExpression,
+  PosFilterExpression,
   SelectorExpression,
   StatementsExpression,
   SyntaxType,
+  TokenType,
   UnaryExpression,
 } from './types';
 
@@ -36,17 +38,16 @@ export class JsonTemplateTranslator {
 
   translate(): string {
     if (!this.code) {
-      this.translateExpr(this.expr, 'res', 'data');
+      this.translateExpr(this.expr, 'result', DATA_PARAM_KEY);
 
       this.body.unshift(
         'const isArr = Array.isArray;',
         'const concat = Array.prototype.concat;',
-        'let res = undefined;',
-        this.vars.map((elm) => `let ${elm}`).join(';'),
-        ';',
+        'let result = undefined;',
+        this.vars.map((elm) => `let ${elm};`).join(''),
       );
 
-      this.body.push('return res;');
+      this.body.push('return result;');
 
       this.code = this.body.join('');
     }
@@ -58,7 +59,7 @@ export class JsonTemplateTranslator {
       return this.unusedVars.shift() as string;
     }
 
-    const varName = `__${++this.lastVarId}`;
+    const varName = `${VARS_PREFIX}${++this.lastVarId}`;
     this.vars.push(varName);
     return varName;
   }
@@ -77,7 +78,7 @@ export class JsonTemplateTranslator {
 
     let value = expr.root || ctx;
 
-    this.body.push(dest, '=', value, ';', JsonTemplateTranslator.covertToArrayValue(dest));
+    this.body.push(dest, '=', value, ';');
 
     while (i < len) {
       const item = parts[i++];
@@ -88,14 +89,17 @@ export class JsonTemplateTranslator {
             : this.translateSelector(item as SelectorExpression, dest, dest);
           break;
 
-        case SyntaxType.OBJ_PRED:
-          this.translateObjectPredicate(item as ObjectPredicateExpression, dest, dest);
+        case SyntaxType.FUNCTION_CALL_EXPR:
+          this.translateFunctionCallExpr(item as FunctionCallExpression, dest, ctx);
           break;
 
-        case SyntaxType.POS_EXPR:
-          this.translatePosExpression(item as PosExpression, dest, dest);
+        case SyntaxType.OBJECT_FILTER_EXPR:
+          this.translateObjectFilterExpression(item as ObjectFilterExpression, dest, dest);
           break;
 
+        case SyntaxType.POS_FILTER_EXPR:
+          this.translatePosFilterExpression(item as ObjectFilterExpression, dest, dest);
+          break;
         case SyntaxType.CONCAT_EXPR:
           this.translateConcatExpr(item as ConcatExpression, dest, dest);
           break;
@@ -116,14 +120,14 @@ export class JsonTemplateTranslator {
     const j = this.acquireVar();
     const val = this.acquireVar();
     const len = this.acquireVar();
-    const res = this.acquireVar();
-
+    const result = this.acquireVar();
+    this.body.push(JsonTemplateTranslator.covertToArrayValue(dest));
     this.body.push(
       ctx,
       '=',
       baseCtx,
       '.slice(),',
-      res,
+      result,
       '=[];',
       'while(',
       ctx,
@@ -167,10 +171,10 @@ export class JsonTemplateTranslator {
     if (prop) {
       if (prop !== '*') {
         this.body.push(val, '=', curCtx, `["${prop}"];`);
-        this.inlineAppendToArray(res, val);
+        this.inlineAppendToArray(result, val);
       }
     } else {
-      this.inlineAppendToArray(res, curCtx);
+      this.inlineAppendToArray(result, curCtx);
       this.body.push('if(typeof ', curCtx, '=== "object") {');
     }
 
@@ -193,7 +197,7 @@ export class JsonTemplateTranslator {
       '];',
     );
     this.inlineAppendToArray(childCtxs, val);
-    prop === '*' && this.inlineAppendToArray(res, val);
+    prop === '*' && this.inlineAppendToArray(result, val);
     this.body.push('}', '}');
     prop || this.body.push('}');
     this.body.push(
@@ -210,11 +214,11 @@ export class JsonTemplateTranslator {
       '}',
       dest,
       '=',
-      res,
+      result,
       ';',
     );
 
-    this.releaseVars(ctx, curCtx, childCtxs, i, j, val, len, res);
+    this.releaseVars(ctx, curCtx, childCtxs, i, j, val, len, result);
   }
 
   private translateConcatExpr(expr: ConcatExpression, dest: string, ctx: string) {
@@ -228,6 +232,7 @@ export class JsonTemplateTranslator {
       this.translateExpr(args[i], argVars[i++], ctx);
     }
 
+    this.body.push(JsonTemplateTranslator.covertToArrayValue(dest));
     this.body.push(dest, '= concat.call(', argVars.join(','), ');');
 
     this.releaseVars(argVars);
@@ -278,10 +283,6 @@ export class JsonTemplateTranslator {
         this.translateFunctionExpr(expr as FunctionExpression, dest, ctx);
         break;
 
-      case SyntaxType.FUNCTION_CALL_EXPR:
-        this.translateFunctionCallExpr(expr as FunctionCallExpression, dest, ctx);
-        break;
-
       case SyntaxType.ASSIGNMENT_EXPR:
         this.translateAssignmentExpr(expr as AssignmentExpression, dest, ctx);
         break;
@@ -289,7 +290,7 @@ export class JsonTemplateTranslator {
   }
 
   private translateFunctionExpr(expr: FunctionExpression, dest: string, ctx: string) {
-    this.body.push(dest, '= (', expr.params.join(','), ') => {');
+    this.body.push(dest, '=(', expr.params.join(','), ') => {');
     const returnVal = this.acquireVar();
     this.body.push(`let ${returnVal} = undefined;`);
     this.translateStatementsExpr(expr.body, returnVal, ctx);
@@ -310,18 +311,25 @@ export class JsonTemplateTranslator {
         functionArgs.push(varName);
       }
     }
-    this.body.push(dest, '=', expr.id, '(', functionArgs.join(','), ');');
+    this.body.push(dest, '=', dest, '(', functionArgs.join(','), ');');
     this.releaseVars(...vars);
   }
 
   private translateObjectExpr(expr: ObjectExpression, dest: string, ctx: string) {
     const propExprs: string[] = [];
     const vars: string[] = [];
-    for (let key in expr.props) {
-      const varName = this.acquireVar();
-      this.translateExpr(expr.props[key], varName, ctx);
-      propExprs.push(`"${key}":${varName}`);
-      vars.push(varName);
+    for (let prop of expr.props) {
+      const valueVar = this.acquireVar();
+      let key = prop.key;
+      if (typeof prop.key !== 'string') {
+        const keyVar = this.acquireVar();
+        this.translateExpr(prop.key, keyVar, ctx);
+        key = `[${keyVar}]`;
+        vars.push(keyVar);
+      }
+      this.translateExpr(prop.value, valueVar, ctx);
+      propExprs.push(`${key}:${valueVar}`);
+      vars.push(valueVar);
     }
     this.body.push(dest, '={', propExprs.join(','), '};');
     this.releaseVars(...vars);
@@ -344,7 +352,7 @@ export class JsonTemplateTranslator {
   }
 
   private translateAssignmentExpr(expr: AssignmentExpression, _dest: string, ctx: string) {
-    if (!expr.id.includes('.')) {
+    if (expr.isDefinition) {
       this.body.push('let ', expr.id, ';');
     }
     this.translateExpr(expr.value, expr.id, ctx);
@@ -477,7 +485,7 @@ export class JsonTemplateTranslator {
     this.releaseVars(val1, val2, isVal1Array, isVal2Array, i, j, len1, len2);
   }
 
-  private inlineAppendToArray(res, val, tmpArr?, len?) {
+  private inlineAppendToArray(result, val, tmpArr?, len?) {
     this.body.push('if(typeof ', val, '!== "undefined") {', 'if(isArr(', val, ')) {');
     if (tmpArr) {
       this.body.push(len, '> 1?');
@@ -485,11 +493,11 @@ export class JsonTemplateTranslator {
       this.body.push(':');
     }
     this.body.push(
-      res,
+      result,
       '=',
-      res,
+      result,
       '.length?',
-      res,
+      result,
       '.concat(',
       val,
       ') :',
@@ -504,9 +512,9 @@ export class JsonTemplateTranslator {
         'if(',
         tmpArr,
         '.length) {',
-        res,
+        result,
         '= concat.apply(',
-        res,
+        result,
         ',',
         tmpArr,
         ');',
@@ -514,12 +522,12 @@ export class JsonTemplateTranslator {
         '= [];',
         '}',
       );
-    this.inlinePushToArray(res, val);
+    this.inlinePushToArray(result, val);
     this.body.push(';', '}', '}');
   }
 
-  private inlinePushToArray(res, val) {
-    this.body.push(res, '.length?', res, '.push(', val, ') :', res, '[0] =', val);
+  private inlinePushToArray(result, val) {
+    this.body.push(result, '.length?', result, '.push(', val, ') :', result, '[0] =', val);
   }
 
   private translateLiteral(val) {
@@ -531,7 +539,7 @@ export class JsonTemplateTranslator {
   private translateSelector(sel: SelectorExpression, dest: string, ctx: string) {
     if (sel.prop) {
       const propStr = JsonTemplateTranslator.escapeStr(sel.prop);
-      const res = this.acquireVar();
+      const result = this.acquireVar();
       const i = this.acquireVar();
       const len = this.acquireVar();
       const curCtx = this.acquireVar();
@@ -539,8 +547,10 @@ export class JsonTemplateTranslator {
       const val = this.acquireVar();
       const tmpArr = this.acquireVar();
 
+      this.body.push(JsonTemplateTranslator.covertToArrayValue(dest));
+
       this.body.push(
-        res,
+        result,
         '= [];',
         i,
         '= 0;',
@@ -573,9 +583,9 @@ export class JsonTemplateTranslator {
           'if(isArr(',
           curCtx,
           ')) {',
-          res,
+          result,
           '=',
-          res,
+          result,
           '.concat(',
           curCtx,
           ');',
@@ -598,11 +608,11 @@ export class JsonTemplateTranslator {
           j,
           '];',
         );
-        this.inlineAppendToArray(res, val);
+        this.inlineAppendToArray(result, val);
         this.body.push('}', '}', '}', '}');
       } else {
         this.body.push(val, '=', curCtx, '[', propStr, '];');
-        this.inlineAppendToArray(res, val, tmpArr, len);
+        this.inlineAppendToArray(result, val, tmpArr, len);
       }
       this.body.push(
         '}',
@@ -616,19 +626,19 @@ export class JsonTemplateTranslator {
         tmpArr,
         '.length > 1?',
         'concat.apply(',
-        res,
+        result,
         ',',
         tmpArr,
         ') :',
-        res,
+        result,
         '.concat(',
         tmpArr,
         '[0]) :',
-        res,
+        result,
         ';',
       );
 
-      this.releaseVars(res, i, len, curCtx, j, val, tmpArr);
+      this.releaseVars(result, i, len, curCtx, j, val, tmpArr);
     }
   }
 
@@ -699,50 +709,89 @@ export class JsonTemplateTranslator {
     return `(isArr(${varName}) || (${varName} = [${varName}]));`;
   }
 
-  private translateObjectPredicate(expr: ObjectPredicateExpression, dest: string, ctx: string) {
-    const resVar = this.acquireVar();
-    const i = this.acquireVar();
-    const len = this.acquireVar();
-    const cond = this.acquireVar();
-    const curItem = this.acquireVar();
+  private translateObjectFilterExpression(expr: ObjectFilterExpression, dest: string, ctx: string) {
+    for (let filter of expr.filters) {
+      const resVar = this.acquireVar();
+      const i = this.acquireVar();
+      const len = this.acquireVar();
+      const cond = this.acquireVar();
+      const curItem = this.acquireVar();
 
-    this.body.push(
-      resVar,
-      '= [];',
-      i,
-      '= 0;',
-      len,
-      '=',
-      ctx,
-      '.length;',
-      'while(',
-      i,
-      '<',
-      len,
-      ') {',
-      curItem,
-      '=',
-      ctx,
-      '[',
-      i,
-      '++];',
-    );
-    this.translateExpr(expr.arg, cond, curItem);
-    this.body.push(
-      JsonTemplateTranslator.convertToBool(expr.arg, cond),
-      '&&',
-      resVar,
-      '.push(',
-      curItem,
-      ');',
-      '}',
-      dest,
-      '=',
-      resVar,
-      ';',
-    );
+      this.body.push(JsonTemplateTranslator.covertToArrayValue(dest));
 
-    this.releaseVars(resVar, i, len, curItem, cond);
+      this.body.push(
+        resVar,
+        '= [];',
+        i,
+        '= 0;',
+        len,
+        '=',
+        ctx,
+        '.length;',
+        'while(',
+        i,
+        '<',
+        len,
+        ') {',
+        curItem,
+        '=',
+        ctx,
+        '[',
+        i,
+        '++];',
+      );
+      this.translateExpr(filter, cond, curItem);
+      this.body.push(
+        JsonTemplateTranslator.convertToBool(filter, cond),
+        '&&',
+        resVar,
+        '.push(',
+        curItem,
+        ');',
+        '}',
+        dest,
+        '=',
+        resVar,
+        ';',
+      );
+
+      this.releaseVars(resVar, i, len, curItem, cond);
+    }
+  }
+
+  private translatePosFilterExpression(expr: PosFilterExpression, dest: string, ctx: string) {
+    if (expr.empty) {
+      return;
+    }
+    this.body.push(JsonTemplateTranslator.covertToArrayValue(dest));
+    if (expr.idx) {
+      const idx = this.acquireVar();
+      this.translateExpr(expr.idx, idx, ctx);
+      this.body.push(
+        `(typeof ${idx} === "number" && ${idx} < 0 && (${idx} = ${ctx}.length + ${idx}));`,
+      );
+      this.body.push(`${dest} = ${ctx}[${idx}];`);
+      this.releaseVars(idx);
+      return;
+    }
+
+    let fromIdx, toIdx;
+    if (expr.fromIdx) {
+      if (expr.toIdx) {
+        this.translateExpr(expr.fromIdx, (fromIdx = this.acquireVar()), ctx);
+        this.translateExpr(expr.toIdx, (toIdx = this.acquireVar()), ctx);
+        this.body.push(dest, '=', ctx, '.slice(', fromIdx, ',', toIdx, ');');
+        this.releaseVars(fromIdx, toIdx);
+      } else {
+        this.translateExpr(expr.fromIdx, (fromIdx = this.acquireVar()), ctx);
+        this.body.push(dest, '=', ctx, '.slice(', fromIdx, ');');
+        this.releaseVars(fromIdx);
+      }
+    } else if (expr.toIdx) {
+      this.translateExpr(expr.toIdx, (toIdx = this.acquireVar()), ctx);
+      this.body.push(dest, '=', ctx, '.slice(0,', toIdx, ');');
+      this.releaseVars(toIdx);
+    }
   }
 
   private writeCondition(op: string, val1: any, val2: any) {
@@ -768,50 +817,6 @@ export class JsonTemplateTranslator {
     );
 
     this.releaseVars(val1, val2);
-  }
-
-  private translatePosExpression(expr: PosExpression, dest: string, ctx: string) {
-    let fromIdx;
-    let toIdx;
-    if (expr.idx) {
-      const idx = this.acquireVar();
-      this.translateExpr(expr.idx, idx, ctx);
-
-      this.body.push(
-        idx,
-        '< 0 && (',
-        idx,
-        '=',
-        ctx,
-        '.length +',
-        idx,
-        ');',
-        dest,
-        '=',
-        ctx,
-        '[',
-        idx,
-        '];',
-      );
-      this.releaseVars(idx);
-      return false;
-    }
-    if (expr.fromIdx) {
-      if (expr.toIdx) {
-        this.translateExpr(expr.fromIdx, (fromIdx = this.acquireVar()), ctx);
-        this.translateExpr(expr.toIdx, (toIdx = this.acquireVar()), ctx);
-        this.body.push(dest, '=', ctx, '.slice(', fromIdx, ',', toIdx, ');');
-        this.releaseVars(fromIdx, toIdx);
-      } else {
-        this.translateExpr(expr.fromIdx, (fromIdx = this.acquireVar()), ctx);
-        this.body.push(dest, '=', ctx, '.slice(', fromIdx, ');');
-        this.releaseVars(fromIdx);
-      }
-    } else if (expr.toIdx) {
-      this.translateExpr(expr.toIdx, (toIdx = this.acquireVar()), ctx);
-      this.body.push(dest, '=', ctx, '.slice(0,', toIdx, ');');
-      this.releaseVars(toIdx);
-    }
   }
 
   private translateLogicalExpr(expr: BinaryExpression, dest: string, ctx: string) {

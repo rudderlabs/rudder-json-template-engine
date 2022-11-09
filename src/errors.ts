@@ -1,4 +1,4 @@
-export class JsonTemplateParserError extends Error {
+export class JsonTemplateLexerError extends Error {
   readonly column: number;
   constructor(message: string, column: number) {
     super(message);
@@ -6,7 +6,7 @@ export class JsonTemplateParserError extends Error {
   }
 }
 
-export class JsosTemplateEngineError extends Error {
+export class JsosTemplateParserError extends Error {
   constructor(message: string) {
     super(message);
   }

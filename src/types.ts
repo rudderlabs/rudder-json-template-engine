@@ -1,5 +1,14 @@
 export type Dictionary<T> = Record<string, T>;
 
+export enum Keyword {
+  FUNCTION = "function",
+  NEW = "new",
+  TYPEOF = "typeof",
+  RETURN = "return",
+  LET = "let",
+  CONST = "const",
+}
+
 export enum TokenType {
   UNKNOWN,
   ID,
@@ -8,9 +17,8 @@ export enum TokenType {
   BOOL,
   NULL,
   PUNCT,
-  ASSIGNMENT,
-  FUNCTIION,
-  FUNCTION_CALL,
+  THROW,
+  OPERATOR,
   EOT,
 }
 
@@ -18,25 +26,26 @@ export enum SyntaxType {
   EMPTY,
   PATH,
   SELECTOR,
-  OBJ_PRED,
   LOGICAL_EXPR,
   COMPARISON_EXPR,
   MATH_EXPR,
   CONCAT_EXPR,
   UNARY_EXPR,
-  POS_EXPR,
+  POS_FILTER_EXPR,
+  OBJECT_FILTER_EXPR,
   ASSIGNMENT_EXPR,
   LITERAL,
   OBJECT_EXPR,
   ARRAY_EXPR,
   FUNCTION_EXPR,
+  FUNCTION_CALL_ARG_EXPR,
   FUNCTION_CALL_EXPR,
   STATEMENTS_EXPR,
 }
 
 export type Token = {
   type: TokenType;
-  value?: any;
+  value: any;
   range: [number, number];
 };
 
@@ -50,7 +59,7 @@ export interface FunctionExpression extends Expression {
   body: StatementsExpression;
 }
 export interface ObjectExpression extends Expression {
-  props: Dictionary<Expression>;
+  props: { key: Expression | string; value: Expression }[];
 }
 
 export interface ArrayExpression extends Expression {
@@ -81,17 +90,23 @@ export interface ConcatExpression extends Expression {
 export interface AssignmentExpression extends Expression {
   id: string;
   value: Expression;
+  operator?: string;
 }
 
-export interface PosExpression extends Expression {
+export interface PosFilterExpression extends Expression {
   fromIdx?: Expression;
   toIdx?: Expression;
   idx?: Expression;
+  empty?: boolean;
+}
+
+export interface ObjectFilterExpression extends Expression {
+  filters: Expression[];
 }
 export interface LiteralExpression extends Expression {
   value: string | number | boolean | null;
+  tokenType: TokenType;
 }
-
 export interface PathExpression extends Expression {
   parts: Expression[];
   root?: string;
@@ -101,8 +116,13 @@ export interface SelectorExpression extends Expression {
   selector: string;
   prop?: string;
 }
-
+export interface FunctionCallArgExpression extends Expression {
+  value: Expression;
+  spread?: boolean;
+}
 export interface FunctionCallExpression extends Expression {
-  args: Expression[];
-  id: string;
+  args: FunctionCallArgExpression[];
+  id?: string;
+  dot?: boolean;
+  isNew?: boolean;
 }

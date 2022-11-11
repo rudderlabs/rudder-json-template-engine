@@ -1,8 +1,6 @@
 export class JsonTemplateLexerError extends Error {
-  readonly column: number;
-  constructor(message: string, column: number) {
+  constructor(message: string) {
     super(message);
-    this.column = column;
   }
 }
 

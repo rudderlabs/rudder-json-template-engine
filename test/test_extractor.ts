@@ -5,7 +5,7 @@ import {
   JsonTemplateLexer,
 } from '../src/';
 
-const extractor = new JsonTemplateEngine(`.[{.city === "WILDWOOD"}{.state === "FL"}]`);
+const extractor = new JsonTemplateEngine(`^{.city === "WILDWOOD A"}._id`);
 
 const data = [
   {
@@ -30,21 +30,86 @@ const data = [
     _id: '96076',
   },
 ];
+const account = {
+  Account: {
+    'Account Name': 'Firefly',
+    Order: [
+      {
+        OrderID: 'order103',
+        Product: [
+          {
+            'Product Name': 'Bowler Hat',
+            ProductID: 858383,
+            SKU: '0406654608',
+            Description: {
+              Colour: 'Purple',
+              Width: 300,
+              Height: 200,
+              Depth: 210,
+              Weight: 0.75,
+            },
+            Price: 34.45,
+            Quantity: 2,
+          },
+          {
+            'Product Name': 'Trilby hat',
+            ProductID: 858236,
+            SKU: '0406634348',
+            Description: {
+              Colour: 'Orange',
+              Width: 300,
+              Height: 200,
+              Depth: 210,
+              Weight: 0.6,
+            },
+            Price: 21.67,
+            Quantity: 1,
+          },
+        ],
+      },
+      {
+        OrderID: 'order104',
+        Product: [
+          {
+            'Product Name': 'Bowler Hat',
+            ProductID: 858383,
+            SKU: '040657863',
+            Description: {
+              Colour: 'Purple',
+              Width: 300,
+              Height: 200,
+              Depth: 210,
+              Weight: 0.75,
+            },
+            Price: 34.45,
+            Quantity: 4,
+          },
+          {
+            ProductID: 345664,
+            SKU: '0406654603',
+            'Product Name': 'Cloak',
+            Description: {
+              Colour: 'Black',
+              Width: 30,
+              Height: 20,
+              Depth: 210,
+              Weight: 2,
+            },
+            Price: 107.99,
+            Quantity: 1,
+          },
+        ],
+      },
+    ],
+  },
+};
 console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
-
-// const context = {}
-// console.log(JSON.stringify(new JsonTemplateEngine(`
-// .pop
-// `).evaluate(data[0], {context, fn: () => 100})));
-// console.log(context);
 
 console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
-    const a = [{ a: {c: 2} }, {b: 1}];
-    const b = 2 + 2 ** 10;
-    a...c
-    `).evaluate([{ a:1 }, {b: 1}], {a : {fn: (...args) => args.map((e) => e*e)}}),
+      ^{["ProductID", "SKU"]}
+    `).evaluate(account.Account.Order[0].Product[0]),
   ),
 );
 
@@ -53,9 +118,7 @@ console.log(
   new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      const a = [{ a:1 }, {b: 1}];
-      const b = 2 + 2 ** 10;
-      [1, 2 ,3][0]
+      ^{["ProductID", "SKU"]}
       `),
     ).parse(),
   ).translate(),

@@ -88,7 +88,7 @@ export interface ConcatExpression extends Expression {
   args: Expression[];
 }
 export interface AssignmentExpression extends Expression {
-  id: string;
+  path: PathExpression;
   value: Expression;
   definition?: string;
 }
@@ -100,6 +100,7 @@ export interface RangeFilterExpression extends Expression {
 
 export interface IndexFilterExpression extends Expression {
   indexes: Expression[];
+  exclude?: boolean;
 }
 
 export interface ObjectFilterExpression extends Expression {

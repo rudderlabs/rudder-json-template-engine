@@ -1,4 +1,5 @@
 import { DATA_PARAM_KEY, RESULT_KEY, VARS_PREFIX } from './constants';
+import { JsosTemplateTranslatorError } from './errors';
 import { binaryOperators } from './operators';
 import {
   ArrayExpression,
@@ -135,11 +136,11 @@ export class JsonTemplateTranslator {
         break;
 
       case SyntaxType.ARRAY_INDEX_FILTER_EXPR:
-        this.translateArrayIndexFilterExpr(expr as IndexFilterExpression, dest, dest);
+        this.translateIndexFilterExpr(expr as IndexFilterExpression, dest, dest);
         break;
 
       case SyntaxType.OBJECT_INDEX_FILTER_EXPR:
-        this.translateObjectIndexFilterExpr(expr as IndexFilterExpression, dest, dest);
+        this.translateIndexFilterExpr(expr as IndexFilterExpression, dest, dest);
         break;
 
       case SyntaxType.SELECTOR:
@@ -171,7 +172,7 @@ export class JsonTemplateTranslator {
   }
 
   private pathContainsVariables(expr: PathExpression): boolean {
-    return expr.parts
+    return !!expr.parts  && expr.parts
       .filter((part) => part.type === SyntaxType.SELECTOR)
       .map((part) => part as SelectorExpression)
       .some((part) => part.contextVar || part.posVar);
@@ -395,11 +396,44 @@ export class JsonTemplateTranslator {
     this.body.push(';');
   }
 
+  private tranlateAssignmentPath(expr: PathExpression, ctx: string): string {
+    const assignmentPathParts: string[] = [];
+    if(!expr.root || expr.root === DATA_PARAM_KEY) {
+      throw new JsosTemplateTranslatorError('Invalid assignment path');
+    }
+    assignmentPathParts.push(expr.root);
+    for(let part of expr.parts) {
+      let expr: SelectorExpression | IndexFilterExpression;
+      switch(part.type) {
+        case SyntaxType.SELECTOR: 
+          expr = part as SelectorExpression;
+          if(expr.selector !== '.' || expr.prop?.type !== TokenType.ID) {
+            throw new JsosTemplateTranslatorError('Invalid assignment path');
+          }
+          assignmentPathParts.push('.', expr.prop.value);
+          break;
+        case SyntaxType.ARRAY_INDEX_FILTER_EXPR:
+          expr = part as IndexFilterExpression;
+          if(expr.indexes.length > 1) {
+            throw new JsosTemplateTranslatorError('Invalid assignment path');
+          }
+          const keyVar = this.acquireVar();
+          this.translateExpr(expr.indexes[0], keyVar, ctx);
+          assignmentPathParts.push('[', keyVar, ']');
+          break;
+        default:
+          throw new JsosTemplateTranslatorError('Invalid assignment path');
+      }
+    }
+    return assignmentPathParts.join('');
+  }
+
   private translateAssignmentExpr(expr: AssignmentExpression, dest: string, ctx: string) {
     const varName = this.acquireVar();
     this.translateExpr(expr.value, varName, ctx);
-    this.body.push(`${expr.definition || ''} ${expr.id}=${varName};`);
-    this.body.push(`${dest} = ${expr.id};`);
+    const assignmentPath = this.tranlateAssignmentPath(expr.path, ctx);
+    this.body.push(`${expr.definition || ''} ${assignmentPath}=${varName};`);
+    this.body.push(`${dest} = ${expr.path.root};`);
     this.releaseVars(varName);
   }
 
@@ -730,7 +764,7 @@ export class JsonTemplateTranslator {
   private translateObjectFilterExpr(expr: ObjectFilterExpression, dest: string, ctx: string) {
     for (let filter of expr.filters) {
       if (filter.type === SyntaxType.OBJECT_INDEX_FILTER_EXPR) {
-        this.translateObjectIndexFilterExpr(filter as IndexFilterExpression, dest, ctx);
+        this.translateIndexFilterExpr(filter as IndexFilterExpression, dest, ctx);
         continue;
       }
       const resVar = this.acquireVar();
@@ -781,41 +815,36 @@ export class JsonTemplateTranslator {
     }
   }
 
-  private translateObjectIndexFilterExpr(expr: IndexFilterExpression, dest: string, ctx: string) {
+  private translateIndexFilterExpr(expr: IndexFilterExpression, dest: string, ctx: string) {
     const keyVars: string[] = [];
-    const resultVar = this.acquireVar();
-    this.body.push(`${resultVar}={};`);
+    const allKeys = this.acquireVar();
+    this.body.push(`${allKeys}=[];`);
     for (let idx of expr.indexes) {
       const keyVar = this.acquireVar();
       this.translateExpr(idx, keyVar, ctx);
-      this.body.push(`${resultVar}[${keyVar}] = ${ctx}[${keyVar}];`);
+      this.body.push(`(Array.isArray(${keyVar}) || (${keyVar} = [${keyVar}]));`);
+      this.body.push(`${allKeys} = ${allKeys}.concat(${keyVar});`);
       keyVars.push(keyVar);
     }
-    this.body.push(`${dest}=${resultVar};`);
-    this.releaseVars(resultVar);
     this.releaseVars(...keyVars);
-  }
-
-  private translateArrayIndexFilterExpr(expr: IndexFilterExpression, dest: string, ctx: string) {
-    this.body.push(JsonTemplateTranslator.covertToArrayValue(dest));
-    const keyVars: string[] = [],
-      valueVars: string[] = [];
-    for (let idx of expr.indexes) {
-      const key = this.acquireVar();
-      const value = this.acquireVar();
-      this.translateExpr(idx, key, ctx);
-      this.body.push(`(${key} < 0 && (${key} = ${ctx}.length + ${key}));`);
-      this.body.push(`${value} = ${ctx}[${key}];`);
-      keyVars.push(key);
-      valueVars.push(value);
-    }
-    if (expr.indexes.length === 1) {
-      this.body.push(`${dest} = ${valueVars[0]};`);
+    const resultVar = this.acquireVar();
+    if (expr.type === SyntaxType.OBJECT_INDEX_FILTER_EXPR) {
+      if (expr.exclude) {
+        this.body.push(`${allKeys}=Object.keys(${ctx}).filter(key => !${allKeys}.includes(key));`);
+      }
+      this.body.push(`${resultVar} = {};`);
+      this.body.push(`for(let key of ${allKeys}){`);
+      this.body.push(`${resultVar}[key] = ${ctx}[key];`);
+      this.body.push('}');
     } else {
-      this.body.push(`${dest} = [${valueVars.join(',')}];`);
+      this.body.push(`${resultVar} = [];`);
+      this.body.push(`for(let key of ${allKeys}){`);
+      this.body.push(`${ctx}[key] && ${resultVar}.push(${ctx}[key]);`);
+      this.body.push('}');
     }
-    this.releaseVars(...keyVars);
-    this.releaseVars(...valueVars);
+    this.body.push(`${dest}=${resultVar};`);
+    this.releaseVars(allKeys);
+    this.releaseVars(resultVar);
   }
 
   private translateRangeFilterExpr(expr: RangeFilterExpression, dest: string, ctx: string) {
@@ -888,7 +917,8 @@ export class JsonTemplateTranslator {
 
       case '||':
         while (i < len) {
-          conditionVars.push((val = this.acquireVar()));
+          val = this.acquireVar();
+          conditionVars.push(val);
           this.translateExpr(args[i], val, ctx);
           this.body.push(
             'if(',

@@ -426,7 +426,7 @@ export class JsonTemplateLexer {
     let start = this.idx,
       ch1 = this.codeChars[this.idx];
 
-    if (',;:{}()[]^+-*/%!><|=@'.includes(ch1)) {
+    if (',;:{}()[]^+-*/%!><|=@~'.includes(ch1)) {
       return {
         type: TokenType.PUNCT,
         value: ch1,

@@ -9,3 +9,9 @@ export class JsosTemplateParserError extends Error {
     super(message);
   }
 }
+
+export class JsosTemplateTranslatorError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}

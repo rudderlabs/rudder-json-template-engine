@@ -71,13 +71,6 @@ export class JsonTemplateParser {
     return this.parseAssignmentExpr();
   }
 
-  private static getIDPath(expr: PathExpression): string {
-    if (!expr.root || expr.root.startsWith(DATA_PARAM_KEY) || expr.parts.length) {
-      throw new JsosTemplateParserError('Invalid ID path');
-    }
-    return expr.root;
-  }
-
   private parseAssignmentExpr(): AssignmentExpression | Expression {
     const expr = this.parseLogicalORExpr();
     if (expr.type === SyntaxType.PATH && this.lexer.match('=')) {
@@ -85,7 +78,7 @@ export class JsonTemplateParser {
       return {
         type: SyntaxType.ASSIGNMENT_EXPR,
         value: this.parseLogicalORExpr(),
-        id: JsonTemplateParser.getIDPath(expr as PathExpression),
+        path: expr as PathExpression,
       };
     }
     return expr;
@@ -264,10 +257,17 @@ export class JsonTemplateParser {
   }
 
   private parseObjectFilterExpr(): IndexFilterExpression | Expression {
-    if (this.lexer.match('[')) {
+    let exclude = false;
+    if (this.lexer.match('~')) {
+      this.lexer.lex();
+      exclude = true;
+    }
+    // excluding is applicaple only for index filters
+    if (exclude || this.lexer.match('[')) {
       return {
         type: SyntaxType.OBJECT_INDEX_FILTER_EXPR,
         indexes: this.parseArrayElements(),
+        exclude
       };
     }
     return this.parseLogicalORExpr();
@@ -484,7 +484,11 @@ export class JsonTemplateParser {
 
     return {
       type: SyntaxType.ASSIGNMENT_EXPR,
-      id,
+      path: {
+        type: SyntaxType.PATH,
+        root: id,
+        parts: []
+      },
       value: this.parseLogicalORExpr(),
       definition,
     };
@@ -685,9 +689,9 @@ export class JsonTemplateParser {
     return statements.length === 1
       ? statements[0]
       : {
-          type: SyntaxType.FUNCTION_EXPR,
-          statements,
-          block: true,
-        };
+        type: SyntaxType.FUNCTION_EXPR,
+        statements,
+        block: true,
+      };
   }
 }

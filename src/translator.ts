@@ -21,6 +21,7 @@ import {
   Keyword,
   TokenType,
   IndexFilterExpression,
+  DefinitionExpression,
 } from './types';
 
 export class JsonTemplateTranslator {
@@ -123,6 +124,10 @@ export class JsonTemplateTranslator {
         this.translateFunctionCallExpr(expr as FunctionCallExpression, dest, ctx);
         break;
 
+      case SyntaxType.DEFINTION_EXPR:
+        this.translateDefinitionExpr(expr as DefinitionExpression, dest, ctx);
+        break;
+
       case SyntaxType.ASSIGNMENT_EXPR:
         this.translateAssignmentExpr(expr as AssignmentExpression, dest, ctx);
         break;
@@ -172,7 +177,7 @@ export class JsonTemplateTranslator {
   }
 
   private pathContainsVariables(expr: PathExpression): boolean {
-    return !!expr.parts  && expr.parts
+    return !!expr.parts && expr.parts
       .filter((part) => part.type === SyntaxType.SELECTOR)
       .map((part) => part as SelectorExpression)
       .some((part) => part.contextVar || part.posVar);
@@ -398,23 +403,23 @@ export class JsonTemplateTranslator {
 
   private tranlateAssignmentPath(expr: PathExpression, ctx: string): string {
     const assignmentPathParts: string[] = [];
-    if(!expr.root || expr.root === DATA_PARAM_KEY) {
+    if (!expr.root || expr.root === DATA_PARAM_KEY) {
       throw new JsosTemplateTranslatorError('Invalid assignment path');
     }
     assignmentPathParts.push(expr.root);
-    for(let part of expr.parts) {
+    for (let part of expr.parts) {
       let expr: SelectorExpression | IndexFilterExpression;
-      switch(part.type) {
-        case SyntaxType.SELECTOR: 
+      switch (part.type) {
+        case SyntaxType.SELECTOR:
           expr = part as SelectorExpression;
-          if(expr.selector !== '.' || expr.prop?.type !== TokenType.ID) {
+          if (expr.selector !== '.' || expr.prop?.type !== TokenType.ID) {
             throw new JsosTemplateTranslatorError('Invalid assignment path');
           }
           assignmentPathParts.push('.', expr.prop.value);
           break;
         case SyntaxType.ARRAY_INDEX_FILTER_EXPR:
           expr = part as IndexFilterExpression;
-          if(expr.indexes.length > 1) {
+          if (expr.indexes.length > 1) {
             throw new JsosTemplateTranslatorError('Invalid assignment path');
           }
           const keyVar = this.acquireVar();
@@ -429,12 +434,30 @@ export class JsonTemplateTranslator {
   }
 
   private translateAssignmentExpr(expr: AssignmentExpression, dest: string, ctx: string) {
-    const varName = this.acquireVar();
-    this.translateExpr(expr.value, varName, ctx);
+    const valueVar = this.acquireVar();
+    this.translateExpr(expr.value, valueVar, ctx);
     const assignmentPath = this.tranlateAssignmentPath(expr.path, ctx);
-    this.body.push(`${expr.definition || ''} ${assignmentPath}=${varName};`);
-    this.body.push(`${dest} = ${expr.path.root};`);
-    this.releaseVars(varName);
+    this.body.push(`${assignmentPath}=${valueVar};`);
+    this.body.push(`${dest} = ${valueVar};`);
+    this.releaseVars(valueVar);
+  }
+
+  private translateDefinitionVars(expr: DefinitionExpression): string {
+    let vars : string[] = [expr.vars.join(',')];
+    if(expr.fromObject) {
+      vars.unshift('{');
+      vars.push('}');
+    }  
+    return vars.join('')
+  }
+
+  private translateDefinitionExpr(expr: DefinitionExpression, dest: string, ctx: string) {
+    const valueVar = this.acquireVar();
+    this.translateExpr(expr.value, valueVar, ctx);
+    const defVars = this.translateDefinitionVars(expr);
+    this.body.push(`${expr.definition} ${defVars}=${valueVar};`);
+    this.body.push(`${dest} = ${valueVar};`);
+    this.releaseVars(valueVar);
   }
 
   private translateStatementsExpr(expr: StatementsExpression, dest: string, ctx: string) {

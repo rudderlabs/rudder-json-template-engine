@@ -108,9 +108,9 @@ console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
 console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
-    let a = [0, 1, {a: {b: 2}}];
-    let idx = 2;
-    a[idx].a.b = 3;
+    let a = [0, 1, {a: {b: 1}}];
+    let c = 2;
+    a[c].a.b = c;
     `).evaluate(account.Account.Order[0].Product[0]),
   ),
 );
@@ -120,8 +120,7 @@ console.log(
   new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      let a = null;
-    a || [1];
+      let {idx} = {idx : 2};
       `),
     ).parse(),
   ).translate(),

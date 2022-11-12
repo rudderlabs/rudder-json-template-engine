@@ -20,6 +20,7 @@ import {
   FunctionCallArgExpression,
   Token,
   IndexFilterExpression,
+  DefinitionExpression,
 } from './types';
 import { JsosTemplateParserError } from './errors';
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
@@ -474,23 +475,46 @@ export class JsonTemplateParser {
     return idParts.join('.').replace(/^\$/, `${BINDINGS_PARAM_KEY}.`);
   }
 
-  private parseDefinitionExpr(): AssignmentExpression {
-    const definition = this.lexer.value();
-    if (!this.lexer.matchID()) {
-      this.lexer.throwUnexpectedToken();
+  private parseObjectDefVars(): string[] {
+    const vars: string[] = [];
+    this.lexer.expect('{');
+    while(!this.lexer.match('}')) {
+      if(!this.lexer.matchID()) {
+        throw new JsosTemplateParserError('Invalid object vars at '+ this.lexer.getContext());
+      }
+      vars.push(this.lexer.value());
+      if(!this.lexer.match('}')) {
+        this.lexer.expect(',');
+      }
     }
-    const id = this.lexer.value();
+    this.lexer.expect('}');
+    if(vars.length === 0) {
+      throw new JsosTemplateParserError('Empty object vars at '+ this.lexer.getContext());
+    }
+    return vars;
+  }
+
+  private parseNormalDefVars(): string[] {
+    const vars: string[] = [];
+    if(!this.lexer.matchID()) {
+      throw new JsosTemplateParserError('Invalid normal vars at '+ this.lexer.getContext());
+    }
+    vars.push(this.lexer.value());
+    return vars;
+  }
+
+  private parseDefinitionExpr(): DefinitionExpression {
+    const definition = this.lexer.value();
+    let fromObject = this.lexer.match('{');
+    let vars: string[] = fromObject ? this.parseObjectDefVars() : this.parseNormalDefVars();
     this.lexer.expect('=');
 
     return {
-      type: SyntaxType.ASSIGNMENT_EXPR,
-      path: {
-        type: SyntaxType.PATH,
-        root: id,
-        parts: []
-      },
+      type: SyntaxType.DEFINTION_EXPR,
       value: this.parseLogicalORExpr(),
+      vars,
       definition,
+      fromObject
     };
   }
 

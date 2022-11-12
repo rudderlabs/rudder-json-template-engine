@@ -35,6 +35,7 @@ export enum SyntaxType {
   OBJECT_INDEX_FILTER_EXPR,
   RANGE_FILTER_EXPR,
   OBJECT_FILTER_EXPR,
+  DEFINTION_EXPR,
   ASSIGNMENT_EXPR,
   LITERAL,
   OBJECT_EXPR,
@@ -90,7 +91,13 @@ export interface ConcatExpression extends Expression {
 export interface AssignmentExpression extends Expression {
   path: PathExpression;
   value: Expression;
-  definition?: string;
+}
+
+export interface DefinitionExpression extends Expression {
+  vars: string[];
+  fromObject?: boolean;
+  value: Expression;
+  definition: string;
 }
 
 export interface RangeFilterExpression extends Expression {

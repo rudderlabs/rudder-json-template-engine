@@ -22,6 +22,8 @@ import {
   TokenType,
   IndexFilterExpression,
   DefinitionExpression,
+  SpreadExpression,
+  LambdaArgExpression,
 } from './types';
 
 export class JsonTemplateTranslator {
@@ -80,6 +82,7 @@ export class JsonTemplateTranslator {
       case SyntaxType.STATEMENTS_EXPR:
         this.translateStatementsExpr(expr as StatementsExpression, dest, ctx);
         break;
+
       case SyntaxType.PATH:
         this.translatePath(expr as PathExpression, dest, ctx);
         break;
@@ -104,6 +107,13 @@ export class JsonTemplateTranslator {
         this.translateUnaryExpr(expr as UnaryExpression, dest, ctx);
         break;
 
+      case SyntaxType.LAMBDA_ARG:
+          this.translateLambdaArgExpr(expr as LambdaArgExpression, dest, ctx);
+          break;
+
+      case SyntaxType.SPREAD_EXPR:
+        this.translateSpreadExpr(expr as SpreadExpression, dest, ctx);
+        break;
       case SyntaxType.LITERAL:
         this.translateLiteralExpr(expr as LiteralExpression, dest, ctx);
         break;
@@ -181,6 +191,15 @@ export class JsonTemplateTranslator {
       .filter((part) => part.type === SyntaxType.SELECTOR)
       .map((part) => part as SelectorExpression)
       .some((part) => part.contextVar || part.posVar);
+  }
+
+
+  private translateLambdaArgExpr(expr: LambdaArgExpression, dest: string, ctx: string) {
+    this.body.push(`${dest} = args[${expr.index}];`)
+  }
+
+  private translateSpreadExpr(expr: SpreadExpression, dest: string, ctx: string) {
+    this.translateExpr(expr.value, dest, ctx);
   }
 
   private translateAsBlockExpr(expr: Expression, dest: string, ctx: string) {
@@ -352,47 +371,55 @@ export class JsonTemplateTranslator {
   }
 
   private translateFunctionCallExpr(expr: FunctionCallExpression, dest: string, ctx: string) {
-    const vars: string[] = [];
-    const functionArgs: string[] = [];
-    for (let arg of expr.args) {
-      const varName = this.acquireVar();
-      this.translateExpr(arg.value, varName, ctx);
-      vars.push(varName);
-      functionArgs.push(arg.spread ? `...${varName}` : varName);
-    }
-
-    this.body.push(dest, '=', this.getFunctionName(expr, dest), '(', functionArgs.join(','), ');');
-    this.releaseVars(...vars);
+    const functionArgsStr = this.translateSpreadableExpressions(expr.args, ctx);
+    this.body.push(dest, '=', this.getFunctionName(expr, dest), '(', functionArgsStr, ');');
   }
 
   private translateObjectExpr(expr: ObjectExpression, dest: string, ctx: string) {
     const propExprs: string[] = [];
     const vars: string[] = [];
     for (let prop of expr.props) {
-      const valueVar = this.acquireVar();
-      let key = prop.key;
-      if (typeof prop.key !== 'string') {
-        const keyVar = this.acquireVar();
-        this.translateExpr(prop.key, keyVar, ctx);
-        key = `[${keyVar}]`;
-        vars.push(keyVar);
+      const propParts: string[] = [];
+      if (prop.key) {
+        if (typeof prop.key !== 'string') {
+          const keyVar = this.acquireVar();
+          this.translateExpr(prop.key, keyVar, ctx);
+          propParts.push(`[${keyVar}]`);
+          vars.push(keyVar);
+        } else {
+          propParts.push(prop.key);
+        }
+        propParts.push(':');
       }
+      const valueVar = this.acquireVar();
       this.translateExpr(prop.value, valueVar, ctx);
-      propExprs.push(`${key}:${valueVar}`);
+      if(prop.value.type === SyntaxType.SPREAD_EXPR) {
+        propParts.push('...');
+      }
+      propParts.push(valueVar);
+      propExprs.push(propParts.join(''));
       vars.push(valueVar);
     }
     this.body.push(dest, '={', propExprs.join(','), '};');
     this.releaseVars(...vars);
   }
 
-  private translateArrayExpr(expr: ArrayExpression, dest: string, ctx: string) {
-    const vars = expr.elements.map((arg) => {
+  private translateSpreadableExpressions(items: Expression[], ctx: string): string {
+    const vars: string[] = [];
+    const itemParts: string[] = [];
+    for (let item of items) {
       const varName = this.acquireVar();
-      this.translateExpr(arg, varName, ctx);
-      return varName;
-    });
-    this.body.push(dest, '=[', vars.join(','), '];');
+      this.translateExpr(item, varName, ctx);
+      itemParts.push(item.type === SyntaxType.SPREAD_EXPR ? `...${varName}` : varName);
+      vars.push(varName);
+    };
     this.releaseVars(...vars);
+    return itemParts.join(',');
+  }
+
+  private translateArrayExpr(expr: ArrayExpression, dest: string, ctx: string) {
+    const elementsStr = this.translateSpreadableExpressions(expr.elements, ctx);
+    this.body.push(dest, '=[', elementsStr, '];');
   }
 
   private translateLiteralExpr(expr: LiteralExpression, dest: string, _ctx: string) {
@@ -419,11 +446,11 @@ export class JsonTemplateTranslator {
           break;
         case SyntaxType.ARRAY_INDEX_FILTER_EXPR:
           expr = part as IndexFilterExpression;
-          if (expr.indexes.length > 1) {
+          if (expr.indexes.elements.length > 1) {
             throw new JsosTemplateTranslatorError('Invalid assignment path');
           }
           const keyVar = this.acquireVar();
-          this.translateExpr(expr.indexes[0], keyVar, ctx);
+          this.translateExpr(expr.indexes.elements[0], keyVar, ctx);
           assignmentPathParts.push('[', keyVar, ']');
           break;
         default:
@@ -443,11 +470,11 @@ export class JsonTemplateTranslator {
   }
 
   private translateDefinitionVars(expr: DefinitionExpression): string {
-    let vars : string[] = [expr.vars.join(',')];
-    if(expr.fromObject) {
+    let vars: string[] = [expr.vars.join(',')];
+    if (expr.fromObject) {
       vars.unshift('{');
       vars.push('}');
-    }  
+    }
     return vars.join('')
   }
 
@@ -839,17 +866,9 @@ export class JsonTemplateTranslator {
   }
 
   private translateIndexFilterExpr(expr: IndexFilterExpression, dest: string, ctx: string) {
-    const keyVars: string[] = [];
     const allKeys = this.acquireVar();
-    this.body.push(`${allKeys}=[];`);
-    for (let idx of expr.indexes) {
-      const keyVar = this.acquireVar();
-      this.translateExpr(idx, keyVar, ctx);
-      this.body.push(`(Array.isArray(${keyVar}) || (${keyVar} = [${keyVar}]));`);
-      this.body.push(`${allKeys} = ${allKeys}.concat(${keyVar});`);
-      keyVars.push(keyVar);
-    }
-    this.releaseVars(...keyVars);
+    this.translateArrayExpr(expr.indexes, allKeys, ctx);
+    this.body.push(`${allKeys} = ${allKeys}.flat();`);
     const resultVar = this.acquireVar();
     if (expr.type === SyntaxType.OBJECT_INDEX_FILTER_EXPR) {
       if (expr.exclude) {

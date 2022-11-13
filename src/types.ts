@@ -7,6 +7,7 @@ export enum Keyword {
   RETURN = 'return',
   LET = 'let',
   CONST = 'const',
+  LAMBDA = 'lambda',
 }
 
 export enum TokenType {
@@ -16,6 +17,7 @@ export enum TokenType {
   STR,
   BOOL,
   NULL,
+  LAMBDA_ARG,
   PUNCT,
   THROW,
   OPERATOR,
@@ -24,20 +26,24 @@ export enum TokenType {
 
 export enum SyntaxType {
   EMPTY,
+  TEMPLATE,
   PATH,
   SELECTOR,
+  LAMBDA_ARG,
+  LITERAL,
   LOGICAL_EXPR,
   COMPARISON_EXPR,
   MATH_EXPR,
   CONCAT_EXPR,
   UNARY_EXPR,
+  SPREAD_EXPR,
   ARRAY_INDEX_FILTER_EXPR,
   OBJECT_INDEX_FILTER_EXPR,
   RANGE_FILTER_EXPR,
   OBJECT_FILTER_EXPR,
   DEFINTION_EXPR,
   ASSIGNMENT_EXPR,
-  LITERAL,
+  OBJECT_PROP_EXPR,
   OBJECT_EXPR,
   ARRAY_EXPR,
   FUNCTION_EXPR,
@@ -57,14 +63,22 @@ export interface Expression {
   [key: string]: any;
 }
 
+export interface LambdaArgExpression extends Expression {
+  index: number
+}
+
 export interface FunctionExpression extends Expression {
   params?: string[];
   statements: Expression[];
   block?: boolean;
 }
+export interface ObjectPropExpression extends Expression {
+  key?: Expression | string; 
+  value: Expression;
+}
 
 export interface ObjectExpression extends Expression {
-  props: { key: Expression | string; value: Expression }[];
+  props: ObjectPropExpression[];
 }
 
 export interface ArrayExpression extends Expression {
@@ -106,7 +120,7 @@ export interface RangeFilterExpression extends Expression {
 }
 
 export interface IndexFilterExpression extends Expression {
-  indexes: Expression[];
+  indexes: ArrayExpression;
   exclude?: boolean;
 }
 
@@ -128,12 +142,11 @@ export interface SelectorExpression extends Expression {
   prop?: Token;
   contextVar?: string;
 }
-export interface FunctionCallArgExpression extends Expression {
+export interface SpreadExpression extends Expression {
   value: Expression;
-  spread?: boolean;
 }
 export interface FunctionCallExpression extends Expression {
-  args: FunctionCallArgExpression[];
+  args: Expression[];
   id?: string;
   dot?: boolean;
 }

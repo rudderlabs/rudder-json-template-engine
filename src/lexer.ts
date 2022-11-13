@@ -64,32 +64,36 @@ export class JsonTemplateLexer {
     return Object.values(Keyword).some((op) => op.toString() === id);
   }
 
-  matchOperator(op: string): boolean {
+  matchKeyword(op: string): boolean {
     let token = this.lookahead();
     return token.type === TokenType.OPERATOR && token.value === op;
   }
 
   matchFunction(): boolean {
-    return this.matchOperator(Keyword.FUNCTION);
+    return this.matchKeyword(Keyword.FUNCTION);
   }
 
   matchNew(): boolean {
-    return this.matchOperator(Keyword.NEW);
+    return this.matchKeyword(Keyword.NEW);
   }
 
   matchReturn(): boolean {
-    return this.matchOperator(Keyword.RETURN);
+    return this.matchKeyword(Keyword.RETURN);
   }
 
   matchTypeOf(): boolean {
-    return this.matchOperator(Keyword.TYPEOF);
+    return this.matchKeyword(Keyword.TYPEOF);
+  }
+
+  matchLambda(): boolean {
+    return this.matchKeyword(Keyword.LAMBDA);
   }
 
   matchDefinition(): boolean {
-    return this.matchOperator(Keyword.LET) || this.matchOperator(Keyword.CONST);
+    return this.matchKeyword(Keyword.LET) || this.matchKeyword(Keyword.CONST);
   }
 
-  expectOperator(op: string) {
+  expectKeyword(op: string) {
     let token = this.lex();
     if (token.type !== TokenType.OPERATOR || token.value !== op) {
       this.throwUnexpectedToken(token);
@@ -426,7 +430,7 @@ export class JsonTemplateLexer {
     let start = this.idx,
       ch1 = this.codeChars[this.idx];
 
-    if (',;:{}()[]^+-*/%!><|=@~'.includes(ch1)) {
+    if (',;:{}()[]^+-*/%!><|=@~?'.includes(ch1)) {
       return {
         type: TokenType.PUNCT,
         value: ch1,
@@ -435,9 +439,25 @@ export class JsonTemplateLexer {
     }
   }
 
+  private scanPunctuatorForShortFunctionArgs(): Token | undefined {
+    let start = this.idx,
+      ch1 = this.codeChars[this.idx],
+      ch2 = this.codeChars[this.idx+1];
+
+    if(ch1 === '?' && JsonTemplateLexer.isDigit(ch2)) {
+      this.idx += 2;
+      return {
+        type: TokenType.LAMBDA_ARG,
+        value: Number(ch2),
+        range: [start, this.idx],
+      };
+    }
+  }
+
   private scanPunctuator(): Token | undefined {
     return (
       this.scanPunctuatorForDots() ||
+      this.scanPunctuatorForShortFunctionArgs() ||
       this.scanPunctuatorForEquality() ||
       this.scanPunctuatorForRepeatedTokens() ||
       this.scanSingleCharPunctuators()

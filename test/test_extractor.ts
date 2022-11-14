@@ -110,16 +110,17 @@ console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
     let a = {a: 2, b: [3]};
-    `).evaluate(account.Account.Order[0].Product[0], {a: {b: {c: () => 1, d: 2}}}),
+    $.a.b.c()[](1);
+    `).evaluate(account.Account.Order[0].Product[0], {a: {b: {c: () => (a) => a, d: 2}}}),
   ),
 );
 
-console.log(
+console.log(JSON.stringify(
   new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      console.log(.)
+      $.a.b.c()[](1);
       `),
     ).parse(),
   ).translate(),
-);
+));

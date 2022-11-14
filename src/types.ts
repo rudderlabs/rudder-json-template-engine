@@ -26,7 +26,6 @@ export enum TokenType {
 
 export enum SyntaxType {
   EMPTY,
-  TEMPLATE,
   PATH,
   SELECTOR,
   LAMBDA_ARG,
@@ -150,6 +149,7 @@ export interface ToArrayExpression extends Expression {
 }
 export interface FunctionCallExpression extends Expression {
   args: Expression[];
+  object?: Expression;
   id?: string;
   dot?: boolean;
 }

@@ -25,6 +25,7 @@ import {
   LambdaArgExpression,
   ToArrayExpression
 } from './types';
+import { CommonUtils } from './utils';
 
 export class JsonTemplateTranslator {
   private vars: string[] = [];
@@ -145,10 +146,6 @@ export class JsonTemplateTranslator {
     }
   }
 
-  private prependFunctionID(prefix: string, id?: string): string {
-    return id ? prefix + '.' + id : prefix;
-  }
-
   private pathContainsVariables(expr: PathExpression): boolean {
     return !!expr.parts && expr.parts
       .filter((part) => part.type === SyntaxType.SELECTOR)
@@ -189,53 +186,17 @@ export class JsonTemplateTranslator {
     }
   }
 
-  private combinePathParts(parts: Expression[]): Expression[] {
-    if(parts.length < 2) {
-      return parts;
-    }
-    let newParts: Expression[] = [];
-    for (let i = 0; i < parts.length; i++) {
-      let expr = parts[i];
-      if (parts[i].type === SyntaxType.SELECTOR) {
-        const selectorExpr = parts[i] as SelectorExpression;
-        if (
-          selectorExpr.selector === '.' &&
-          !selectorExpr.contextVar &&
-          selectorExpr.prop?.type === TokenType.ID &&
-          parts[i + 1]?.type === SyntaxType.FUNCTION_CALL_EXPR
-        ) {
-          expr = parts[i + 1] as FunctionCallExpression;
-          expr.id = this.prependFunctionID(selectorExpr.prop.value, expr.id)
-          expr.dot = true;
-          i++;
-        }
-      }
-      newParts.push(expr);
-    }
-    if(newParts.length < parts.length) {
-      newParts = this.combinePathParts(newParts);
-    }
-    return newParts;
-  }
-
-  private restructurePathExpr(expr: PathExpression, ctx: string) {
-    expr.parts = this.combinePathParts(expr.parts);
-    if(expr.parts[0]?.type === SyntaxType.FUNCTION_CALL_EXPR && typeof expr.root !== "object"){
-      const fnExpr = expr.parts.shift() as FunctionCallExpression;
-      fnExpr.id = this.prependFunctionID(expr.root || ctx, fnExpr.id);
-      fnExpr.dot = false;
-      expr.root = fnExpr;
-    }
-  }
-
   private translatePath(expr: PathExpression, dest: string, ctx: string): string {
     if (!expr.block && this.pathContainsVariables(expr)) {
       expr.block = true;
       return this.translateAsBlockExpr(expr, dest, ctx);
     }
-    this.restructurePathExpr(expr, ctx); 
-    let code: string[] = [];
-    code.push(this.translatePathRoot(expr.root, dest, ctx));
+    const rootCode = this.translatePathRoot(expr.root, dest, ctx);
+    if(!expr.parts.length){
+      return rootCode;
+    }
+    let code: string[] = [rootCode];
+    code.push(JsonTemplateTranslator.covertToArrayValue(dest));
     // .b
     for(let part of expr.parts) {
       code.push(this.translateExpr(part, dest, dest));
@@ -255,7 +216,6 @@ export class JsonTemplateTranslator {
     const result = this.acquireVar();
     let code: string[] = [];
 
-    code.push(JsonTemplateTranslator.covertToArrayValue(dest));
     code.push(
       ctx,
       '=',
@@ -378,8 +338,16 @@ export class JsonTemplateTranslator {
 
   private translateFunctionCallExpr(expr: FunctionCallExpression, dest: string, ctx: string): string {
     let code: string[] = [];
-    const functionArgsStr = this.translateSpreadableExpressions(expr.args, ctx, code);
-    code.push(dest, '=', this.getFunctionName(expr, ctx), '(', functionArgsStr, ');');
+    const resultVar = this.acquireVar();
+    code.push(resultVar, '=', ctx, ';');
+    if(expr.object) {
+      code.push(this.translateExpr(expr.object, resultVar, ctx));
+    }
+    if(!expr.id) {
+      code.push(JsonTemplateTranslator.convertToSingleValue(resultVar));
+    }
+    const functionArgsStr = this.translateSpreadableExpressions(expr.args, resultVar, code);
+    code.push(dest, '=', this.getFunctionName(expr, resultVar), '(', functionArgsStr, ');');
     return code.join('');
   }
 
@@ -648,7 +616,6 @@ export class JsonTemplateTranslator {
       const val = this.acquireVar();
       const tmpArr = this.acquireVar();
 
-      code.push(JsonTemplateTranslator.covertToArrayValue(dest));
       code.push(result, '= [];');
       code.push(i, '= 0;');
       code.push(len, '=',  ctx, '.length;');
@@ -697,7 +664,7 @@ export class JsonTemplateTranslator {
         break;
 
       case '-':
-        code.push(dest, '= -', JsonTemplateTranslator.convertToSingleValue(arg, val), ';');
+        code.push(dest, '= -', JsonTemplateTranslator.returnSingleValue(arg, val), ';');
         break;
 
       case Keyword.TYPEOF:
@@ -742,12 +709,16 @@ export class JsonTemplateTranslator {
     }
   }
 
-  private static convertToSingleValue(arg, varName) {
+  private static returnSingleValue(arg, varName) {
     if (arg.type === SyntaxType.LITERAL) {
       return varName;
     }
 
     return `(Array.isArray(${varName}) ? ${varName}[0] : ${varName})`;
+  }
+
+  private static convertToSingleValue(varName) {
+    return `${varName} = Array.isArray(${varName}) ? ${varName}[0] : ${varName};`;
   }
 
   private static covertToArrayValue(varName) {
@@ -766,8 +737,6 @@ export class JsonTemplateTranslator {
       const len = this.acquireVar();
       const cond = this.acquireVar();
       const curItem = this.acquireVar();
-
-      code.push(JsonTemplateTranslator.covertToArrayValue(dest));
 
       code.push(
         resVar,
@@ -843,7 +812,6 @@ export class JsonTemplateTranslator {
       return '';
     }
     const code: string[] = [];
-    code.push(JsonTemplateTranslator.covertToArrayValue(dest));
     let fromIdx, toIdx;
     if (expr.fromIdx) {
       if (expr.toIdx) {
@@ -880,8 +848,8 @@ export class JsonTemplateTranslator {
       dest,
       '=',
       binaryOperators[expr.op](
-        JsonTemplateTranslator.convertToSingleValue(args[0], val1),
-        JsonTemplateTranslator.convertToSingleValue(args[1], val2),
+        JsonTemplateTranslator.returnSingleValue(args[0], val1),
+        JsonTemplateTranslator.returnSingleValue(args[1], val2),
       ),
       ';',
     );

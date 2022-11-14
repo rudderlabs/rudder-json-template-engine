@@ -26,6 +26,7 @@ import {
 import { JsosTemplateParserError } from './errors';
 import { DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
+import { CommonUtils } from './utils';
 
 const EMPTY_EXPR = { type: SyntaxType.EMPTY };
 export class JsonTemplateParser {
@@ -99,32 +100,87 @@ export class JsonTemplateParser {
     let part: Expression | undefined;
     while ((part = this.parsePathPart())) {
       parts.push(part);
-      if(part.type === SyntaxType.FUNCTION_CALL_EXPR) {
+      if (part.type === SyntaxType.FUNCTION_CALL_EXPR) {
         break;
       }
     }
-    return parts;
+    return this.combinePathParts(parts);
   }
 
-  private parsePath(): PathExpression {
-    if (!this.lexer.matchPath()) {
+  private prependFunctionID(prefix: string, id?: string): string {
+    return id ? prefix + '.' + id : prefix;
+  }
+
+  private combinePathParts(parts: Expression[]): Expression[] {
+    if (parts.length < 2) {
+      return parts;
+    }
+    let newParts: Expression[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      let expr = parts[i];
+      if (parts[i].type === SyntaxType.SELECTOR) {
+        const selectorExpr = parts[i] as SelectorExpression;
+        if (
+          selectorExpr.selector === '.' &&
+          !selectorExpr.contextVar &&
+          selectorExpr.prop?.type === TokenType.ID &&
+          parts[i + 1]?.type === SyntaxType.FUNCTION_CALL_EXPR
+        ) {
+          expr = parts[i + 1] as FunctionCallExpression;
+          expr.id = this.prependFunctionID(selectorExpr.prop.value, expr.id)
+          expr.dot = true;
+          i++;
+        }
+      }
+      newParts.push(expr);
+    }
+    if (newParts.length < parts.length) {
+      newParts = this.combinePathParts(newParts);
+    }
+    return newParts;
+  }
+
+  private convertToFunctionCallExpr(expr: PathExpression): FunctionCallExpression | PathExpression {
+    if (expr.parts[0]?.type === SyntaxType.FUNCTION_CALL_EXPR && typeof expr.root !== "object") {
+      const fnExpr = expr.parts.shift() as FunctionCallExpression;
+      if (expr.root) {
+        fnExpr.id = this.prependFunctionID(expr.root, fnExpr.id);
+        fnExpr.dot = false;
+      }
+      return fnExpr;
+    }
+    if (CommonUtils.getLastElement(expr.parts)?.type === SyntaxType.FUNCTION_CALL_EXPR) {
+      const fnExpr = expr.parts.pop() as FunctionCallExpression;
+      fnExpr.object = expr;
+      return fnExpr;
+    }
+    return expr;
+  }
+
+  private parsePathRoot(root?: Expression): Expression | string | undefined {
+    if (root) {
+      return root;
+    }
+    let newRoot: Expression | string | undefined;
+    if (this.lexer.match('^')) {
+      this.lexer.lex();
+      newRoot = DATA_PARAM_KEY;
+    } else if (this.lexer.matchID()) {
+      newRoot = this.lexer.value();
+    }
+    return newRoot;
+  }
+  
+  private parsePath(root?: Expression): PathExpression | FunctionCallExpression {
+    if (!root && !this.lexer.matchPath()) {
       this.lexer.throwUnexpectedToken();
     }
 
-    let root: string | undefined;
-
-    if (this.lexer.match('^')) {
-      this.lexer.lex();
-      root = DATA_PARAM_KEY;
-    } else if (this.lexer.matchID()) {
-      root = this.lexer.value();
-    }
-
-    return {
+    return this.convertToFunctionCallExpr({
       type: SyntaxType.PATH,
-      root,
+      root: this.parsePathRoot(root),
       parts: this.parsePathParts(),
-    };
+    });
   }
 
   private parsePathVariable(expected: string): string | undefined {
@@ -395,11 +451,7 @@ export class JsonTemplateParser {
         }
         continue;
       }
-      expr = {
-        type: SyntaxType.PATH,
-        root: expr,
-        parts: this.parsePathParts(),
-      };
+      expr = this.parsePath(expr);
     }
     return expr;
   }

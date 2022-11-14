@@ -36,7 +36,6 @@ export class JsonTemplateLexer {
   }
 
   matchPath(): boolean {
-    const token = this.lookahead();
     return this.matchSelector() || this.matchID() || this.match('^');
   }
 

@@ -23,7 +23,10 @@ export class JsonTemplateLexer {
       .split('');
   }
 
-  match(value: string, steps = 0): boolean {
+  match(value?: string, steps = 0): boolean {
+    if(!value) {
+      return true;
+    }
     let token = this.lookahead(steps);
     return token.type === TokenType.PUNCT && token.value === value;
   }

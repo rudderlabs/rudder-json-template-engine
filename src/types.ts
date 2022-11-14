@@ -45,6 +45,7 @@ export enum SyntaxType {
   ASSIGNMENT_EXPR,
   OBJECT_PROP_EXPR,
   OBJECT_EXPR,
+  TO_ARRAY_EXPR,
   ARRAY_EXPR,
   FUNCTION_EXPR,
   FUNCTION_CALL_ARG,
@@ -133,7 +134,7 @@ export interface LiteralExpression extends Expression {
 }
 export interface PathExpression extends Expression {
   parts: Expression[];
-  root?: string;
+  root?: Expression | string;
   block?: boolean;
 }
 

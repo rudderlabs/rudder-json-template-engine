@@ -5,8 +5,6 @@ import {
   JsonTemplateLexer,
 } from '../src/';
 
-const extractor = new JsonTemplateEngine(`^{.city === "WILDWOOD A"}._id`);
-
 const data = [
   {
     city: 'WILDWOOD A',
@@ -30,6 +28,7 @@ const data = [
     _id: '96076',
   },
 ];
+
 const account = {
   Account: {
     'Account Name': 'Firefly',
@@ -103,24 +102,26 @@ const account = {
     ],
   },
 };
+const extractor = new JsonTemplateEngine(`.{.city === "WILDWOOD A"}.pop`);
+
 console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
 
 console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
-    let a = [1, 2, 3].map(lambda ?0 + 20);
-    a
+    (2 + 2)[].map(lambda 2 * ?0)
     `).evaluate(account.Account.Order[0].Product[0]),
   ),
 );
 
 // console.log(JSON.stringify(new JsonTemplateParser(new JsonTemplateLexer('.a.(.b+.c)')).parse()));
-console.log(
-  new JsonTemplateTranslator(
-    new JsonTemplateParser(
-      new JsonTemplateLexer(`
-      lambda ?0 + 10
-      `),
-    ).parse(),
-  ).translate(),
-);
+// console.log(
+//   new JsonTemplateTranslator(
+//     new JsonTemplateParser(
+//       new JsonTemplateLexer(`
+//       let a = [1, 2, 3].map(lambda ?0 + 20);
+//       a
+//       `),
+//     ).parse(),
+//   ).translate(),
+// );

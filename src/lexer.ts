@@ -354,6 +354,7 @@ export class JsonTemplateLexer {
       };
     }
   }
+
   private scanPunctuatorForEquality(): Token | undefined {
     let start = this.idx,
       ch1 = this.codeChars[this.idx],

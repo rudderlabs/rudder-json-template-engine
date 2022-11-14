@@ -41,6 +41,7 @@ export enum SyntaxType {
   FUNCTION_CALL_ARG_EXPR,
   FUNCTION_CALL_EXPR,
   STATEMENTS_EXPR,
+  CONDITIONAL_EXPR
 }
 
 export type Token = {
@@ -87,6 +88,7 @@ export interface BinaryExpression extends Expression {
 export interface ConcatExpression extends Expression {
   args: Expression[];
 }
+
 export interface AssignmentExpression extends Expression {
   id: string;
   value: Expression;
@@ -103,6 +105,7 @@ export interface PosFilterExpression extends Expression {
 export interface ObjectFilterExpression extends Expression {
   filters: Expression[];
 }
+
 export interface LiteralExpression extends Expression {
   value: string | number | boolean | null;
   tokenType: TokenType;
@@ -116,13 +119,19 @@ export interface SelectorExpression extends Expression {
   selector: string;
   prop?: string;
 }
+
 export interface FunctionCallArgExpression extends Expression {
   value: Expression;
   spread?: boolean;
 }
+
 export interface FunctionCallExpression extends Expression {
   args: FunctionCallArgExpression[];
   id?: string;
   dot?: boolean;
   isNew?: boolean;
+}
+
+export interface ConditionalExpression extends Expression {
+  args: [Expression, Expression, Expression];
 }

@@ -17,7 +17,8 @@ import {
   StatementsExpression,
   SyntaxType,
   UnaryExpression,
-  Keyword
+  Keyword,
+  ConditionalExpression
 } from './types';
 
 export class JsonTemplateTranslator {
@@ -135,7 +136,32 @@ export class JsonTemplateTranslator {
       case SyntaxType.SELECTOR:
           this.translateSelector(expr as SelectorExpression, dest, dest);
         break;
+
+      case SyntaxType.CONDITIONAL_EXPR:
+          this.translateConditionalExpression(expr as ConditionalExpression, dest, dest);
     }
+  }
+
+  private translateConditionalExpression(expr: ConditionalExpression, dest: string, ctx: string) {
+    const { args } = expr;
+    let val = this.acquireVar();
+    let val1 = this.acquireVar();
+    this.translateExpr(args[1], val1, ctx);
+    let val2 = this.acquireVar();
+    this.translateExpr(args[2], val2, ctx);
+    this.body.push(
+    dest,
+    '=',
+    'if(',
+    JsonTemplateTranslator.convertToBool(args[0], val),
+    ') {',
+    JsonTemplateTranslator.convertToSingleValue(args[1], val1),
+    '} else {',
+    JsonTemplateTranslator.convertToSingleValue(args[2], val2),
+    '}'
+    )
+
+    this.releaseVars(val, val1, val2);
   }
 
   private translatePath(expr: PathExpression, dest: string, ctx: string) {

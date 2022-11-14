@@ -18,6 +18,7 @@ import {
   PosFilterExpression,
   Keyword,
   FunctionCallArgExpression,
+  ConditionalExpression,
 } from './types';
 import { JsosTemplateParserError } from './errors';
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
@@ -73,12 +74,12 @@ export class JsonTemplateParser {
   }
 
   private parseAssignmentExpr(): AssignmentExpression | Expression {
-    const expr = this.parseLogicalORExpr();
+    const expr = this.parseConditionalExpr();
     if (expr.type === SyntaxType.PATH && this.lexer.match('=')) {
       this.lexer.lex();
       return {
         type: SyntaxType.ASSIGNMENT_EXPR,
-        value: this.parseLogicalORExpr(),
+        value: this.parseConditionalExpr(),
         id: JsonTemplateParser.getIDPath(expr as PathExpression),
       };
     }
@@ -111,7 +112,7 @@ export class JsonTemplateParser {
 
   private parsePathGroupExpr(): Expression {
     this.lexer.expect('(');
-    let expr = this.parseLogicalORExpr();
+    let expr = this.parseConditionalExpr();
     this.lexer.expect(')');
 
     let parts: Expression[] = [];
@@ -207,11 +208,11 @@ export class JsonTemplateParser {
       this.lexer.lex();
       return {
         type: SyntaxType.POS_FILTER_EXPR,
-        toIdx: this.parseLogicalORExpr(),
+        toIdx: this.parseConditionalExpr(),
       };
     }
 
-    let fromExpr = this.parseLogicalORExpr();
+    let fromExpr = this.parseConditionalExpr();
     if (this.lexer.match(':')) {
       this.lexer.lex();
       if (this.lexer.match(']')) {
@@ -224,7 +225,7 @@ export class JsonTemplateParser {
       return {
         type: SyntaxType.POS_FILTER_EXPR,
         fromIdx: fromExpr,
-        toIdx: this.parseLogicalORExpr(),
+        toIdx: this.parseConditionalExpr(),
       };
     }
 
@@ -238,7 +239,7 @@ export class JsonTemplateParser {
     const filters: Expression[] = [];
     while (this.lexer.match('{')) {
       this.lexer.expect('{');
-      filters.push(this.parseLogicalORExpr());
+      filters.push(this.parseConditionalExpr());
       this.lexer.expect('}');
     }
 
@@ -255,6 +256,22 @@ export class JsonTemplateParser {
       : this.parsePosFilterExpr();
 
     this.lexer.expect(']');
+
+    return expr;
+  }
+
+  private parseConditionalExpr(): ConditionalExpression | Expression {
+    let expr = this.parseLogicalORExpr();
+
+    while (this.lexer.match('?')) {
+      let successExpr = this.parseLogicalORExpr();
+      while (this.lexer.match(':')) {
+        expr = {
+          type: SyntaxType.CONDITIONAL_EXPR,
+          args: [expr, successExpr, this.parseLogicalORExpr()],
+        };
+      }
+    }
 
     return expr;
   }
@@ -451,7 +468,7 @@ export class JsonTemplateParser {
     return {
       type: SyntaxType.ASSIGNMENT_EXPR,
       id,
-      value: this.parseLogicalORExpr(),
+      value: this.parseConditionalExpr(),
       operator,
     };
   }
@@ -465,7 +482,7 @@ export class JsonTemplateParser {
     }
     return {
       type: SyntaxType.FUNCTION_CALL_ARG_EXPR,
-      value: this.parseLogicalORExpr(),
+      value: this.parseConditionalExpr(),
       spread
     }
   }
@@ -593,7 +610,7 @@ export class JsonTemplateParser {
     let key: Expression | string;
     if (this.lexer.match('[')) {
       this.lexer.lex();
-      key = this.parseLogicalORExpr();
+      key = this.parseConditionalExpr();
       this.lexer.expect(']');
     } else {
       key = `${this.lexer.lex().value}`;
@@ -610,7 +627,7 @@ export class JsonTemplateParser {
     while (!this.lexer.match('}')) {
       const key = this.parseObjectKeyExpr();
       this.lexer.expect(':');
-      const value = this.parseLogicalORExpr();
+      const value = this.parseConditionalExpr();
       expr.props.push({ key, value });
       if (!this.lexer.match('}')) {
         this.lexer.expect(',');
@@ -636,7 +653,7 @@ export class JsonTemplateParser {
 
   private parseGroupExpr(): Expression {
     this.lexer.expect('(');
-    let expr = this.parseLogicalORExpr();
+    let expr = this.parseConditionalExpr();
     this.lexer.expect(')');
 
     return expr;

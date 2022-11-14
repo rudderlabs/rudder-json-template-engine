@@ -60,3 +60,15 @@ console.log(
     ).parse(),
   ).translate(),
 );
+
+console.log(
+  new JsonTemplateTranslator(
+    new JsonTemplateParser(
+      new JsonTemplateLexer(`
+      const a = true;
+      const b = false;
+      a ? a : b
+      `),
+    ).parse(),
+  ).translate(),
+);

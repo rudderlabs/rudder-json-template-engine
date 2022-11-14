@@ -102,26 +102,24 @@ const account = {
     ],
   },
 };
-const extractor = new JsonTemplateEngine(`.{.city === "WILDWOOD A"}.pop`);
+const extractor = new JsonTemplateEngine(`.{.city === "WILDWOOD"}.pop`);
 
 console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
 
 console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
-    (2 + 2)[].map(lambda 2 * ?0)
-    `).evaluate(account.Account.Order[0].Product[0]),
+    let a = {a: 2, b: [3]};
+    `).evaluate(account.Account.Order[0].Product[0], {a: {b: {c: () => 1, d: 2}}}),
   ),
 );
 
-// console.log(JSON.stringify(new JsonTemplateParser(new JsonTemplateLexer('.a.(.b+.c)')).parse()));
-// console.log(
-//   new JsonTemplateTranslator(
-//     new JsonTemplateParser(
-//       new JsonTemplateLexer(`
-//       let a = [1, 2, 3].map(lambda ?0 + 20);
-//       a
-//       `),
-//     ).parse(),
-//   ).translate(),
-// );
+console.log(
+  new JsonTemplateTranslator(
+    new JsonTemplateParser(
+      new JsonTemplateLexer(`
+      console.log(.)
+      `),
+    ).parse(),
+  ).translate(),
+);

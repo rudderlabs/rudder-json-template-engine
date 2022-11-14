@@ -1,4 +1,4 @@
-import { VARS_PREFIX } from './constants';
+import { BINDINGS_PARAM_KEY, VARS_PREFIX } from './constants';
 import { JsonTemplateLexerError } from './errors';
 import { Keyword, Token, TokenType } from './types';
 
@@ -25,7 +25,7 @@ export class JsonTemplateLexer {
 
   match(value?: string, steps = 0): boolean {
     if(!value) {
-      return true;
+      return false;
     }
     let token = this.lookahead(steps);
     return token.type === TokenType.PUNCT && token.value === value;
@@ -217,9 +217,9 @@ export class JsonTemplateLexer {
     return this.isIdStart(ch) || (ch >= '0' && ch <= '9');
   }
 
-  private validateIDToken(token: Token) {
-    if (token.value.startsWith(VARS_PREFIX)) {
-      this.throwError(MESSAGES.RESERVED_ID, token.value);
+  private validateID(id: string) {
+    if (id.startsWith(VARS_PREFIX)) {
+      this.throwError(MESSAGES.RESERVED_ID, id);
     }
   }
 
@@ -266,12 +266,12 @@ export class JsonTemplateLexer {
         };
 
       default:
+        this.validateID(id);
         const token: Token = {
           type: TokenType.ID,
-          value: id,
+          value: id.replace(/^\$/, `${BINDINGS_PARAM_KEY}`),
           range: [start, this.idx],
         };
-        this.validateIDToken(token);
         return token;
     }
   }

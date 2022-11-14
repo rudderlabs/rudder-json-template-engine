@@ -34,7 +34,6 @@ export enum SyntaxType {
   LOGICAL_EXPR,
   COMPARISON_EXPR,
   MATH_EXPR,
-  CONCAT_EXPR,
   UNARY_EXPR,
   SPREAD_EXPR,
   ARRAY_INDEX_FILTER_EXPR,
@@ -144,6 +143,9 @@ export interface SelectorExpression extends Expression {
   contextVar?: string;
 }
 export interface SpreadExpression extends Expression {
+  value: Expression;
+}
+export interface ToArrayExpression extends Expression {
   value: Expression;
 }
 export interface FunctionCallExpression extends Expression {

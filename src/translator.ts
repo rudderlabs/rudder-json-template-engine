@@ -5,7 +5,6 @@ import {
   ArrayExpression,
   AssignmentExpression,
   BinaryExpression,
-  ConcatExpression,
   Expression,
   FunctionCallExpression,
   FunctionExpression,
@@ -24,6 +23,7 @@ import {
   DefinitionExpression,
   SpreadExpression,
   LambdaArgExpression,
+  ToArrayExpression
 } from './types';
 
 export class JsonTemplateTranslator {
@@ -84,9 +84,6 @@ export class JsonTemplateTranslator {
       case SyntaxType.PATH:
         return this.translatePath(expr as PathExpression, dest, ctx);
 
-      case SyntaxType.CONCAT_EXPR:
-        return this.translateConcatExpr(expr as ConcatExpression, dest, ctx);
-
       case SyntaxType.COMPARISON_EXPR:
         return this.translateComparisonExpr(expr as BinaryExpression, dest, ctx);
 
@@ -104,7 +101,8 @@ export class JsonTemplateTranslator {
 
       case SyntaxType.SPREAD_EXPR:
         return this.translateSpreadExpr(expr as SpreadExpression, dest, ctx);
-      case SyntaxType.LITERAL:
+      
+        case SyntaxType.LITERAL:
         return this.translateLiteralExpr(expr as LiteralExpression, dest, ctx);
 
       case SyntaxType.ARRAY_EXPR:
@@ -126,48 +124,29 @@ export class JsonTemplateTranslator {
         return this.translateAssignmentExpr(expr as AssignmentExpression, dest, ctx);
 
       case SyntaxType.OBJECT_FILTER_EXPR:
-        return this.translateObjectFilterExpr(expr as ObjectFilterExpression, dest, dest);
+        return this.translateObjectFilterExpr(expr as ObjectFilterExpression, dest, ctx);
 
       case SyntaxType.RANGE_FILTER_EXPR:
-        return this.translateRangeFilterExpr(expr as RangeFilterExpression, dest, dest);
+        return this.translateRangeFilterExpr(expr as RangeFilterExpression, dest, ctx);
 
       case SyntaxType.ARRAY_INDEX_FILTER_EXPR:
-        return this.translateIndexFilterExpr(expr as IndexFilterExpression, dest, dest);
+        return this.translateIndexFilterExpr(expr as IndexFilterExpression, dest, ctx);
 
       case SyntaxType.OBJECT_INDEX_FILTER_EXPR:
-        return this.translateIndexFilterExpr(expr as IndexFilterExpression, dest, dest);
+        return this.translateIndexFilterExpr(expr as IndexFilterExpression, dest, ctx);
 
       case SyntaxType.SELECTOR:
-        return this.translateSelector(expr as SelectorExpression, dest, dest);
+        return this.translateSelector(expr as SelectorExpression, dest, ctx);
       
       case SyntaxType.TO_ARRAY_EXPR:
-          return JsonTemplateTranslator.covertToArrayValue(dest);
+        return this.translateToArrayExpr(expr as ToArrayExpression, dest, ctx);
       default:
         return '';
     }
   }
 
-  private combinePathParts(parts: Expression[]): Expression[] {
-    const newParts: Expression[] = [];
-    for (let i = 0; i < parts.length; i++) {
-      let expr = parts[i];
-      if (parts[i].type === SyntaxType.SELECTOR) {
-        const selectorExpr = parts[i] as SelectorExpression;
-        if (
-          selectorExpr.selector === '.' &&
-          !selectorExpr.contextVar &&
-          selectorExpr.prop?.type === TokenType.ID &&
-          parts[i + 1]?.type === SyntaxType.FUNCTION_CALL_EXPR
-        ) {
-          expr = parts[i + 1] as FunctionCallExpression;
-          expr.id = selectorExpr.prop.value;
-          expr.dot = true;
-          i++;
-        }
-      }
-      newParts.push(expr);
-    }
-    return newParts;
+  private prependFunctionID(prefix: string, id?: string): string {
+    return id ? prefix + '.' + id : prefix;
   }
 
   private pathContainsVariables(expr: PathExpression): boolean {
@@ -180,6 +159,13 @@ export class JsonTemplateTranslator {
 
   private translateLambdaArgExpr(expr: LambdaArgExpression, dest: string, ctx: string): string {
     return `${dest} = args[${expr.index}];`;
+  }
+
+  private translateToArrayExpr(expr: ToArrayExpression, dest: string, ctx: string): string {
+    const code: string[] = [];
+    code.push(this.translateExpr(expr.value, dest, ctx));
+    code.push(JsonTemplateTranslator.covertToArrayValue(dest));
+    return code.join('');
   }
 
   private translateSpreadExpr(expr: SpreadExpression, dest: string, ctx: string): string {
@@ -202,16 +188,56 @@ export class JsonTemplateTranslator {
       return `${dest} = ${root || ctx};`;
     }
   }
+
+  private combinePathParts(parts: Expression[]): Expression[] {
+    if(parts.length < 2) {
+      return parts;
+    }
+    let newParts: Expression[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      let expr = parts[i];
+      if (parts[i].type === SyntaxType.SELECTOR) {
+        const selectorExpr = parts[i] as SelectorExpression;
+        if (
+          selectorExpr.selector === '.' &&
+          !selectorExpr.contextVar &&
+          selectorExpr.prop?.type === TokenType.ID &&
+          parts[i + 1]?.type === SyntaxType.FUNCTION_CALL_EXPR
+        ) {
+          expr = parts[i + 1] as FunctionCallExpression;
+          expr.id = this.prependFunctionID(selectorExpr.prop.value, expr.id)
+          expr.dot = true;
+          i++;
+        }
+      }
+      newParts.push(expr);
+    }
+    if(newParts.length < parts.length) {
+      newParts = this.combinePathParts(newParts);
+    }
+    return newParts;
+  }
+
+  private restructurePathExpr(expr: PathExpression, ctx: string) {
+    expr.parts = this.combinePathParts(expr.parts);
+    if(expr.parts[0]?.type === SyntaxType.FUNCTION_CALL_EXPR && typeof expr.root !== "object"){
+      const fnExpr = expr.parts.shift() as FunctionCallExpression;
+      fnExpr.id = this.prependFunctionID(expr.root || ctx, fnExpr.id);
+      fnExpr.dot = false;
+      expr.root = fnExpr;
+    }
+  }
+
   private translatePath(expr: PathExpression, dest: string, ctx: string): string {
     if (!expr.block && this.pathContainsVariables(expr)) {
       expr.block = true;
       return this.translateAsBlockExpr(expr, dest, ctx);
     }
-    const parts = this.combinePathParts(expr.parts);
+    this.restructurePathExpr(expr, ctx); 
     let code: string[] = [];
     code.push(this.translatePathRoot(expr.root, dest, ctx));
     // .b
-    for(let part of parts) {
+    for(let part of expr.parts) {
       code.push(this.translateExpr(part, dest, dest));
     }
     return code.join('');
@@ -331,25 +357,6 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private translateConcatExpr(expr: ConcatExpression, dest: string, ctx: string): string {
-    const argVars: any[] = [];
-    const { args } = expr;
-    const len = args.length;
-    let i = 0;
-    let code: string[] = [];
-
-    while (i < len) {
-      argVars.push(this.acquireVar());
-      code.push(this.translateExpr(args[i], argVars[i++], ctx));
-    }
-
-    code.push(JsonTemplateTranslator.covertToArrayValue(dest));
-    code.push(dest, '= concat.call(', argVars.join(','), ');');
-
-    this.releaseVars(argVars);
-    return code.join('');
-  }
-
   private translateFunctionExpr(expr: FunctionExpression, dest: string, ctx: string): string {
     let code: string[] = [];
     code.push(dest, '= function(', (expr.params || []).join(','), '){');
@@ -365,14 +372,14 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private getFunctionName(expr: FunctionCallExpression, dest: string): string {
-    return expr.dot ? `${dest}.${expr.id}` : expr.id || dest;
+  private getFunctionName(expr: FunctionCallExpression, ctx: string): string {
+    return expr.dot ? `${ctx}.${expr.id}` : expr.id || ctx;
   }
 
   private translateFunctionCallExpr(expr: FunctionCallExpression, dest: string, ctx: string): string {
     let code: string[] = [];
     const functionArgsStr = this.translateSpreadableExpressions(expr.args, ctx, code);
-    code.push(dest, '=', this.getFunctionName(expr, dest), '(', functionArgsStr, ');');
+    code.push(dest, '=', this.getFunctionName(expr, ctx), '(', functionArgsStr, ');');
     return code.join('');
   }
 
@@ -744,7 +751,7 @@ export class JsonTemplateTranslator {
   }
 
   private static covertToArrayValue(varName) {
-    return `${varName} = Array.isArray(${varName}) ? ${varName}.flat() : [${varName}];`;
+    return `${varName} = Array.isArray(${varName}) ? ${varName} : [${varName}];`;
   }
 
   private translateObjectFilterExpr(expr: ObjectFilterExpression, dest: string, ctx: string): string {
@@ -820,8 +827,10 @@ export class JsonTemplateTranslator {
     } else {
       code.push(`${resultVar} = [];`);
       code.push(`for(let key of ${allKeys}){`);
-      code.push(`${ctx}[key] && ${resultVar}.push(${ctx}[key]);`);
+      code.push(`if(key < 0){key = ${ctx}.length + key;}`)
+      code.push(`if(${ctx}.hasOwnProperty(key)){${resultVar}.push(${ctx}[key]);}`);
       code.push('}');
+      code.push(`if(${allKeys}.length === 1) {${resultVar} = ${resultVar}[0];}`);
     }
     code.push(`${dest}=${resultVar};`);
     this.releaseVars(allKeys);

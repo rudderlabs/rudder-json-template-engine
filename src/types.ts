@@ -63,7 +63,7 @@ export interface Expression {
 }
 
 export interface LambdaArgExpression extends Expression {
-  index: number
+  index: number;
 }
 
 export interface FunctionExpression extends Expression {
@@ -72,7 +72,7 @@ export interface FunctionExpression extends Expression {
   block?: boolean;
 }
 export interface ObjectPropExpression extends Expression {
-  key?: Expression | string; 
+  key?: Expression | string;
   value: Expression;
 }
 
@@ -136,8 +136,8 @@ export interface PathExpression extends Expression {
   block?: boolean;
 }
 
-export interface ContextVariable  {
-  item?: string; 
+export interface ContextVariable {
+  item?: string;
   index?: string;
 }
 export interface SelectorExpression extends Expression {

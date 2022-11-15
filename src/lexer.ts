@@ -24,7 +24,7 @@ export class JsonTemplateLexer {
   }
 
   match(value?: string, steps = 0): boolean {
-    if(!value) {
+    if (!value) {
       return false;
     }
     let token = this.lookahead(steps);
@@ -457,9 +457,9 @@ export class JsonTemplateLexer {
   private scanPunctuatorForShortFunctionArgs(): Token | undefined {
     let start = this.idx,
       ch1 = this.codeChars[this.idx],
-      ch2 = this.codeChars[this.idx+1];
+      ch2 = this.codeChars[this.idx + 1];
 
-    if(ch1 === '?' && JsonTemplateLexer.isDigit(ch2)) {
+    if (ch1 === '?' && JsonTemplateLexer.isDigit(ch2)) {
       this.idx += 2;
       return {
         type: TokenType.LAMBDA_ARG,

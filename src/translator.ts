@@ -23,9 +23,9 @@ import {
   DefinitionExpression,
   SpreadExpression,
   LambdaArgExpression,
-  ToArrayExpression
+  ToArrayExpression,
+  ContextVariable,
 } from './types';
-import { CommonUtils } from './utils';
 
 export class JsonTemplateTranslator {
   private vars: string[] = [];
@@ -51,6 +51,14 @@ export class JsonTemplateTranslator {
     const varName = `${VARS_PREFIX}${++this.lastVarId}`;
     this.vars.push(varName);
     return varName;
+  }
+
+  private acquireVars(numVars = 1): string[] {
+    const vars: string[] = []
+    for (let i = 0; i < numVars; i++) {
+      vars.push(this.acquireVar());
+    }
+    return vars;
   }
 
   private releaseVars(...args: any[]) {
@@ -102,8 +110,8 @@ export class JsonTemplateTranslator {
 
       case SyntaxType.SPREAD_EXPR:
         return this.translateSpreadExpr(expr as SpreadExpression, dest, ctx);
-      
-        case SyntaxType.LITERAL:
+
+      case SyntaxType.LITERAL:
         return this.translateLiteralExpr(expr as LiteralExpression, dest, ctx);
 
       case SyntaxType.ARRAY_EXPR:
@@ -138,7 +146,7 @@ export class JsonTemplateTranslator {
 
       case SyntaxType.SELECTOR:
         return this.translateSelector(expr as SelectorExpression, dest, ctx);
-      
+
       case SyntaxType.TO_ARRAY_EXPR:
         return this.translateToArrayExpr(expr as ToArrayExpression, dest, ctx);
       default:
@@ -179,141 +187,137 @@ export class JsonTemplateTranslator {
   }
 
   private translatePathRoot(root: Expression | string | undefined, dest: string, ctx: string): string {
-    if(typeof root === 'object') {
+    if (typeof root === 'object') {
       return this.translateExpr(root, dest, ctx);
     } else {
       return `${dest} = ${root || ctx};`;
     }
   }
 
-  private translatePath(expr: PathExpression, dest: string, ctx: string): string {
+  private translatePath(expr: PathExpression, dest: string, baseCtx: string): string {
     if (!expr.block && this.pathContainsVariables(expr)) {
       expr.block = true;
-      return this.translateAsBlockExpr(expr, dest, ctx);
+      return this.translateAsBlockExpr(expr, dest, baseCtx);
     }
-    const rootCode = this.translatePathRoot(expr.root, dest, ctx);
-    if(!expr.parts.length){
+    const rootCode = this.translatePathRoot(expr.root, dest, baseCtx);
+    if (!expr.parts.length) {
       return rootCode;
     }
     let code: string[] = [rootCode];
-    code.push(JsonTemplateTranslator.covertToArrayValue(dest));
-    // .b
-    for(let part of expr.parts) {
-      code.push(this.translateExpr(part, dest, dest));
+    const numParts = expr.parts.length;
+    const dataVars = this.acquireVars(numParts)
+    const indexVars = this.acquireVars(numParts);
+    const itemVars = this.acquireVars(numParts);
+    const resultVar = this.acquireVar(); 
+    code.push(resultVar, '= [];');
+    code.push(dataVars[0], '=', dest, ';');
+    for (let i = 0; i < numParts; i++) {
+      const part = expr.parts[i];
+      const idx = indexVars[i];
+      const item = itemVars[i];
+      const data = dataVars[i];
+      code.push(JsonTemplateTranslator.covertToArrayValue(data));
+      if(part.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
+        code.push(`${data} = [${data}];`)
+      }
+      code.push(`for(let ${idx}=0; ${idx}<${data}.length; ${idx}++) {`);
+      code.push(`${item} = ${data}[${idx}];`);
+      if (i > 0 && expr.parts[i - 1].context) {
+        const context = expr.parts[i - 1].context as ContextVariable;
+        if (context.item) {
+          code.push(`let ${context.item} = ${item};`);
+        }
+        if (context.index) {
+          code.push(`let ${context.index} = ${idx};`);
+        }
+      }
+      code.push(this.translateExpr(part, item, item));
+      code.push('if(!', item, ') { continue; }');
+      if (i < numParts - 1) {
+        code.push(dataVars[i + 1], '=', item, ';');
+      } else {
+        code.push(JsonTemplateTranslator.covertToArrayValue(item));
+        code.push(`${resultVar}.push(...${item});`);
+      }
+    }
+    for (let i = 0; i < numParts; i++) {
+      code.push('}');
+    }
+    this.releaseVars(...indexVars);
+    this.releaseVars(...itemVars);
+    this.releaseVars(...dataVars);
+    this.releaseVars(resultVar);
+    code.push(dest, '=', JsonTemplateTranslator.returnSingleValueIfPossible(resultVar), ';');
+    return code.join('');
+  }
+
+  private translateCurrentSelector(expr: SelectorExpression, dest, ctx) {
+    if (!expr.prop) {
+      return '';
+    }
+    const code: string[] = [];
+    const prop = expr.prop.value;
+    if (prop === '*') {
+      code.push(`${dest} = Object.values(${ctx});`);
+    } else {
+      const propStr = JsonTemplateTranslator.escapeStr(prop);
+      code.push(`if(${ctx}.hasOwnProperty(${propStr})){`)
+      code.push(`${dest}=${ctx}[${propStr}];`);
+      code.push('} else {')
+      code.push(`${dest} = undefined`);
+      code.push('}');
     }
     return code.join('');
   }
 
-  private translateDescendantSelector(expr: SelectorExpression, dest: string, baseCtx: string): string {
-    const { prop } = expr;
-    const ctx = this.acquireVar();
-    const curCtx = this.acquireVar();
-    const childCtxs = this.acquireVar();
-    const i = this.acquireVar();
-    const j = this.acquireVar();
-    const val = this.acquireVar();
-    const len = this.acquireVar();
-    const result = this.acquireVar();
-    let code: string[] = [];
-
-    code.push(
-      ctx,
-      '=',
-      baseCtx,
-      '.slice(),',
-      result,
-      '=[];',
-      'while(',
-      ctx,
-      '.length) {',
-      curCtx,
-      '=',
-      ctx,
-      '.shift();',
-    );
-    prop
-      ? code.push('if(typeof ', curCtx, '=== "object" &&', curCtx, ') {')
-      : code.push('if(typeof ', curCtx, '!= null) {');
-    code.push(
-      childCtxs,
-      '= [];',
-      'if(Array.isArray(',
-      curCtx,
-      ')) {',
-      i,
-      '= 0,',
-      len,
-      '=',
-      curCtx,
-      '.length;',
-      'while(',
-      i,
-      '<',
-      len,
-      ') {',
-      val,
-      '=',
-      curCtx,
-      '[',
-      i,
-      '++];',
-    );
-    prop && code.push('if(typeof ', val, '=== "object") {');
-    code.push(this.inlineAppendToArray(childCtxs, val));
-    prop && code.push('}');
-    code.push('}', '}', 'else {');
-    if (prop) {
-      if (prop.value !== '*') {
-        const propStr = JsonTemplateTranslator.escapeStr(prop.value);
-        code.push(`${val}=${curCtx}[${propStr}];`);
-        code.push(this.inlineAppendToArray(result, val));
-      }
-    } else {
-      code.push(this.inlineAppendToArray(result, curCtx));
-      code.push('if(typeof ', curCtx, '=== "object") {');
+  private translateParentSelector(expr: SelectorExpression, dest: string, ctx: string): string {
+    if(!expr.parent) {
+      throw new JsosTemplateTranslatorError('Parent is undefined');
     }
+    return `${dest} = ${expr.parent};`
+  }
+  
+  private translateSelector(expr: SelectorExpression, dest: string, ctx: string): string {
+    if(expr.selector === '.') {
+      return this.translateCurrentSelector(expr, dest, ctx);
+    }
+    return this.translateDescendantSelector(expr, dest, ctx);
+  }
 
-    code.push(
-      'for(',
-      j,
-      ' in ',
-      curCtx,
-      ') {',
-      'if(',
-      curCtx,
-      '.hasOwnProperty(',
-      j,
-      ')) {',
-      val,
-      '=',
-      curCtx,
-      '[',
-      j,
-      '];',
-    );
-    code.push(this.inlineAppendToArray(childCtxs, val));
-    prop?.value === '*' && this.inlineAppendToArray(result, val);
-    code.push('}', '}');
-    prop?.value || code.push('}');
-    code.push(
-      '}',
-      childCtxs,
-      '.length &&',
-      ctx,
-      '.unshift.apply(',
-      ctx,
-      ',',
-      childCtxs,
-      ');',
-      '}',
-      '}',
-      dest,
-      '=',
-      result,
-      ';',
-    );
+  private translateDescendantSelector(expr: SelectorExpression, dest: string, baseCtx: string): string {
+    let code: string[] = [];
+    const ctxs = this.acquireVar();
+    const currCtx = this.acquireVar();
+    const result = this.acquireVar();
 
-    this.releaseVars(ctx, curCtx, childCtxs, i, j, val, len, result);
+    code.push(`${result} = [];`);
+    const { prop } = expr;
+    const propStr = JsonTemplateTranslator.escapeStr(prop?.value);
+    code.push(`${ctxs}=[${baseCtx}];`);
+    code.push(`while(${ctxs}.length){`)
+    code.push(`${currCtx} = ${ctxs}.shift();`)
+    code.push(`if(!${currCtx}){continue;}`)
+    code.push(`if(Array.isArray(${currCtx})){`);
+    code.push(`${ctxs} = ${ctxs}.concat(${currCtx});`)
+    code.push('continue;');
+    code.push('}');
+    code.push(`if(typeof ${currCtx} === "object") {`);
+    code.push(`${ctxs} = ${ctxs}.concat(Object.values(${currCtx}));`);
+    if (prop) {
+      if (prop?.value === '*') {
+        code.push(`${result} = ${result}.concat(Object.values(${currCtx}));`);
+      } else {
+        code.push(`if(${currCtx}.hasOwnProperty(${propStr})){`);
+        code.push(`${result}.push(${currCtx}[${propStr}]);`);
+        code.push('}');
+      }
+    }
+    code.push('}');
+    if (!prop) {
+      code.push(`${result}.push(${currCtx});`);
+    }
+    code.push('}');
+    code.push(`${dest} = ${result}.flat();`);
     return code.join('');
   }
 
@@ -340,10 +344,10 @@ export class JsonTemplateTranslator {
     let code: string[] = [];
     const resultVar = this.acquireVar();
     code.push(resultVar, '=', ctx, ';');
-    if(expr.object) {
+    if (expr.object) {
       code.push(this.translateExpr(expr.object, resultVar, ctx));
     }
-    if(!expr.id) {
+    if (!expr.id) {
       code.push(JsonTemplateTranslator.convertToSingleValue(resultVar));
     }
     const functionArgsStr = this.translateSpreadableExpressions(expr.args, resultVar, code);
@@ -577,10 +581,10 @@ export class JsonTemplateTranslator {
     }
     code.push(`${result} = ${result}.length ? ${result}.concat(${val}) : ${val}.slice();`);
     code.push('} else {');
-    if(tmpArr){
+    if (tmpArr) {
       code.push(`if(${tmpArr}.length) {`);
-      code.push (`${result} = ${result}.concat(tmpArr);`);
-      code.push (`${tmpArr} = [];}`);
+      code.push(`${result} = ${result}.concat(tmpArr);`);
+      code.push(`${tmpArr} = [];}`);
     }
     code.push(this.inlinePushToArray(result, val));
     code.push(';', '}', '}');
@@ -597,59 +601,6 @@ export class JsonTemplateTranslator {
       return JsonTemplateTranslator.escapeStr(val);
     }
     return String(val);
-  }
-
-  private translateSelector(expr: SelectorExpression, dest: string, ctx: string): string {
-    if (expr.selector === '...') {
-      return this.translateDescendantSelector(expr, dest, dest);
-    }
-
-    const code: string[] = [];
-    if (expr.prop) {
-      const prop = expr.prop.value;
-      const propStr = JsonTemplateTranslator.escapeStr(prop);
-      const result = this.acquireVar();
-      const i = this.acquireVar();
-      const len = this.acquireVar();
-      const curCtx = this.acquireVar();
-      const j = this.acquireVar();
-      const val = this.acquireVar();
-      const tmpArr = this.acquireVar();
-
-      code.push(result, '= [];');
-      code.push(i, '= 0;');
-      code.push(len, '=',  ctx, '.length;');
-      code.push(tmpArr, '= [];');
-      code.push('while(', i, '<',len, ') {');
-      code.push(curCtx, '=', ctx, '[', i,'++];');
-      code.push( 'if(', curCtx, '!= null) {');
-      if (prop === '*') {
-        code.push( 'if(typeof ', curCtx, '=== "object") {');
-        code.push('if(Array.isArray(', curCtx,')) {');
-        code.push(result, '=', result, '.concat(', curCtx,');');
-        code.push(  '}', 'else {');
-        code.push('for(', j,' in ', curCtx,') {');
-        code.push('if(',curCtx,'.hasOwnProperty(',j,')) {');
-        code.push( val, '=', curCtx, '[', j, '];');
-        code.push(this.inlineAppendToArray(result, val));
-        code.push('}', '}', '}', '}');
-      } else {
-        code.push(val, '=', curCtx, '[', propStr, '];');
-        code.push(this.inlineAppendToArray(result, val, tmpArr, len));
-      }
-      code.push('}','}');
-      code.push( 'if(',len,'> 1 &&', tmpArr,'.length) {');
-      code.push('if(', tmpArr,'.length > 1) {', result,'= concat.apply(',result,',',tmpArr,');}');
-      code.push('else {', result, '=', result, '.concat(',tmpArr,'[0]);}');  
-      code.push('}');
-      code.push(dest, '=', result, ';');
-
-      if (expr.contextVar) {
-        code.push(`let ${expr.contextVar} = ${dest};`);
-      }
-      this.releaseVars(result, i, len, curCtx, j, val, tmpArr);
-    }
-    return code.join('');
   }
 
   private translateUnaryExpr(expr: UnaryExpression, dest: string, ctx: string): string {
@@ -676,7 +627,10 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private static escapeStr(s) {
+  private static escapeStr(s?: string): string {
+    if (!s) {
+      return '';
+    }
     return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
   }
 
@@ -709,7 +663,7 @@ export class JsonTemplateTranslator {
     }
   }
 
-  private static returnSingleValue(arg, varName) {
+  private static returnSingleValue(arg: Expression, varName: string): string {
     if (arg.type === SyntaxType.LITERAL) {
       return varName;
     }
@@ -717,11 +671,15 @@ export class JsonTemplateTranslator {
     return `(Array.isArray(${varName}) ? ${varName}[0] : ${varName})`;
   }
 
-  private static convertToSingleValue(varName) {
+  private static convertToSingleValue(varName: string): string {
     return `${varName} = Array.isArray(${varName}) ? ${varName}[0] : ${varName};`;
   }
 
-  private static covertToArrayValue(varName) {
+  private static returnSingleValueIfPossible(varName: string): string {
+    return `(${varName}.length === 1 ? ${varName}[0] : ${varName})`;
+  }
+
+  private static covertToArrayValue(varName: string) {
     return `${varName} = Array.isArray(${varName}) ? ${varName} : [${varName}];`;
   }
 
@@ -732,49 +690,12 @@ export class JsonTemplateTranslator {
         code.push(this.translateIndexFilterExpr(filter as IndexFilterExpression, dest, ctx));
         continue;
       }
-      const resVar = this.acquireVar();
-      const i = this.acquireVar();
-      const len = this.acquireVar();
-      const cond = this.acquireVar();
-      const curItem = this.acquireVar();
-
-      code.push(
-        resVar,
-        '= [];',
-        i,
-        '= 0;',
-        len,
-        '=',
-        ctx,
-        '.length;',
-        'while(',
-        i,
-        '<',
-        len,
-        ') {',
-        curItem,
-        '=',
-        ctx,
-        '[',
-        i,
-        '++];',
-      );
-      code.push(this.translateExpr(filter, cond, curItem));
-      code.push(
-        JsonTemplateTranslator.convertToBool(filter, cond),
-        '&&',
-        resVar,
-        '.push(',
-        curItem,
-        ');',
-        '}',
-        dest,
-        '=',
-        resVar,
-        ';',
-      );
-
-      this.releaseVars(resVar, i, len, curItem, cond);
+      const condition = this.acquireVar();
+      
+      code.push(this.translateExpr(filter, condition, ctx));
+      const conditionCode = JsonTemplateTranslator.convertToBool(filter, condition);
+      code.push(`if(!${conditionCode}) {${dest} = undefined;}`);  
+      this.releaseVars(condition);
     }
     return code.join('');
   }

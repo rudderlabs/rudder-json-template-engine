@@ -136,10 +136,14 @@ export interface PathExpression extends Expression {
   block?: boolean;
 }
 
+export interface ContextVariable  {
+  item?: string; 
+  index?: string;
+}
 export interface SelectorExpression extends Expression {
   selector: string;
   prop?: Token;
-  contextVar?: string;
+  context?: ContextVariable;
 }
 export interface SpreadExpression extends Expression {
   value: Expression;

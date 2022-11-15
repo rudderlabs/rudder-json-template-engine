@@ -102,25 +102,101 @@ const account = {
     ],
   },
 };
-const extractor = new JsonTemplateEngine(`.{.city === "WILDWOOD"}.pop`);
 
-console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
+const address = {
+  "FirstName": "Fred",
+  "Surname": "Smith",
+  "Age": 28,
+  "Address": {
+    "Street": "Hursley Park",
+    "City": "Winchester",
+    "Postcode": "SO21 2JN"
+  },
+  "Phone": [
+    {
+      "type": "home",
+      "number": "0203 544 1234"
+    },
+    {
+      "type": "office",
+      "number": "01962 001234"
+    },
+    {
+      "type": "office",
+      "number": "01962 001235"
+    },
+    {
+      "type": "mobile",
+      "number": "077 7700 1234"
+    }
+  ],
+  "Email": [
+    {
+      "type": "office",
+      "address": [
+        "fred.smith@my-work.com",
+        "fsmith@my-work.com"
+      ]
+    },
+    {
+      "type": "home",
+      "address": [
+        "freddy@my-social.com",
+        "frederic.smith@very-serious.com"
+      ]
+    }
+  ],
+  "Other": {
+    "Over 18 ?": true,
+    "Misc": null,
+    "Alternative.Address": {
+      "Street": "Brick Lane",
+      "City": "London",
+      "Postcode": "E1 6RF"
+    }
+  }
+};
+// const extractor = new JsonTemplateEngine(`.{.city === "WILDWOOD"}.pop`);
+
+// console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
 
 console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
-    let a = {a: 2, b: [3]};
-    $.a.b.c()[](1);
-    `).evaluate(account.Account.Order[0].Product[0], {a: {b: {c: () => (a) => a, d: 2}}}),
+    .Product@p#i{i === 0}.Description.({id: p.ProductID, color: .Colour, idx: i})
+    `).evaluate(account.Account.Order, { a: { b: { c: () => (a) => a, d: 2 } } }),
   ),
 );
 
-console.log(JSON.stringify(
+console.log(
+  JSON.stringify(
+    new JsonTemplateEngine(`
+    .Account.Order@o#oi.Product@p#pi.({
+      orderId: o.OrderID,
+      productId: p.ProductID,
+      oi: oi,
+      pi: pi
+    })
+    `).evaluate(account, { a: { b: { c: () => (a) => a, d: 2 } } }),
+  ),
+);
+console.log(
+  JSON.stringify(
+    new JsonTemplateEngine(`
+    ...Email@e#i.address.({
+      "email": .,
+      "idx": i,
+      "type": e.type
+  })
+    `).evaluate(address),
+  ),
+);
+console.log(
   new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      $.a.b.c()[](1);
+      ...Postcode
       `),
     ).parse(),
   ).translate(),
-));
+);

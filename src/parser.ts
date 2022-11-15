@@ -21,7 +21,8 @@ import {
   DefinitionExpression,
   SpreadExpression,
   ObjectPropExpression,
-  ToArrayExpression
+  ToArrayExpression,
+  ContextVariable
 } from './types';
 import { JsosTemplateParserError } from './errors';
 import { DATA_PARAM_KEY } from './constants';
@@ -86,7 +87,7 @@ export class JsonTemplateParser {
       return this.parseBlockExpr();
     } else if (this.lexer.match('(')) {
       return this.parseFunctionCallExpr();
-    } else if (this.lexer.matchSelector()) {
+    } else if (this.lexer.matchPathPartSelector()) {
       return this.parseSelector();
     } else if (this.lexer.match('[') && !this.lexer.match(']', 1)) {
       return this.parseArrayFilterExpr();
@@ -183,32 +184,45 @@ export class JsonTemplateParser {
     });
   }
 
-  private parsePathVariable(expected: string): string | undefined {
+  private parseContextVariable(expected: string): string | undefined {
     if (this.lexer.match(expected)) {
-      this.lexer.expect(expected);
-      if (this.lexer.matchID()) {
-        return this.lexer.value();
+      this.lexer.lex();
+      if (!this.lexer.matchID()) {
+        this.lexer.throwUnexpectedToken();
       }
-      this.lexer.throwUnexpectedToken();
+      return this.lexer.value();
     }
   }
 
   private parseSelector(): SelectorExpression | Expression {
     let selector = this.lexer.value();
+    if(selector === '%') {
+      return {
+        type: SyntaxType.SELECTOR,
+        selector: selector,
+      }
+    }
+    if(this.lexer.match('%')) {
+      throw this.lexer.throwUnexpectedToken();
+    }
     let prop: Token | undefined;
-    let contextVar: string | undefined;
+    let context: ContextVariable | undefined;
     if (this.lexer.match('*')) {
       prop = this.lexer.lex();
     }
     if (this.lexer.matchID() || this.lexer.matchTokenType(TokenType.STR)) {
       prop = this.lexer.lex();
-      contextVar = this.parsePathVariable('@');
+      while(this.lexer.match('@') || this.lexer.match('#')) {
+        context = context || {};
+        context.item = context.item || this.parseContextVariable('@');
+        context.index = context.index || this.parseContextVariable('#');
+      }
     }
     return {
       type: SyntaxType.SELECTOR,
       selector: selector,
       prop,
-      contextVar,
+      context
     };
   }
 
@@ -238,6 +252,9 @@ export class JsonTemplateParser {
       };
     }
 
+    if(!this.lexer.match(']')) {
+      this.lexer.expect(',');
+    }
     return {
       type: SyntaxType.ARRAY_INDEX_FILTER_EXPR,
       indexes: {
@@ -443,7 +460,7 @@ export class JsonTemplateParser {
 
   private parsePathAfterExpr(): PathExpression | ToArrayExpression | Expression {
     let expr = this.parsePrimaryExpr();
-    while (this.lexer.matchSelector() || this.lexer.match('[') || this.lexer.match('(')) {
+    while (this.lexer.matchPathPartSelector() || this.lexer.match('[') || this.lexer.match('(')) {
       if (this.isToArrayExpr()) {
         expr = {
           type: SyntaxType.TO_ARRAY_EXPR,
@@ -549,7 +566,7 @@ export class JsonTemplateParser {
 
   private parseFunctionDefinitionParam(): string {
     let spread: string = '';
-    if (this.lexer.match('...')) {
+    if (this.lexer.matchSpread()) {
       this.lexer.lex();
       spread = '...';
       // rest param should be last param.
@@ -599,19 +616,9 @@ export class JsonTemplateParser {
     return key;
   }
 
-  // private parseShortFunction(): FunctionExpression {
-  //   this.lexer.expect('{');
-  //   let body: Expression;
-  //   if(this.lexer.match('{')) {
-  //     body = this.parseObjectExpr();
-  //   } else {
-  //     body = 
-  //   }
-  // }
-
   private parseObjectPropExpr(): ObjectPropExpression {
     let key: Expression | string | undefined;
-    if (!this.lexer.match('...')) {
+    if (!this.lexer.matchSpread()) {
       key = this.parseObjectKeyExpr();
       this.lexer.expect(':');
     }
@@ -636,8 +643,7 @@ export class JsonTemplateParser {
   private parseCommaSeparatedElements<T>(blockEnd: string, parseFn: () => T): T[] {
     const elements: T[] = [];
     while (!this.lexer.match(blockEnd)) {
-      const expr = parseFn();
-      elements.push(expr);
+      elements.push(parseFn());
       if (!this.lexer.match(blockEnd)) {
         this.lexer.expect(',');
       }
@@ -646,7 +652,7 @@ export class JsonTemplateParser {
   }
 
   private parseSpreadExpr(): SpreadExpression | Expression {
-    if (this.lexer.match('...')) {
+    if (this.lexer.matchSpread()) {
       this.lexer.lex();
       return {
         type: SyntaxType.SPREAD_EXPR,

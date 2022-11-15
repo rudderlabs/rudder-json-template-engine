@@ -150,15 +150,15 @@ const address = {
     },
   },
 };
-// const extractor = new JsonTemplateEngine(`.{.city === "WILDWOOD"}.pop`);
+const extractor = new JsonTemplateEngine(`.{.city == "wildwood"}.pop`);
 
-// console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
+console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
 
 console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
-    .Product@p#i{i === 0}.Description.({id: p.ProductID, color: .Colour, idx: i})
-    `).evaluate(account.Account.Order, { a: { b: { c: () => (a) => a, d: 2 } } }),
+    .Product[{(console.log(.); .length > 1)}].Description
+    `).evaluate(account.Account.Order),
   ),
 );
 
@@ -174,22 +174,38 @@ console.log(
     `).evaluate(account, { a: { b: { c: () => (a) => a, d: 2 } } }),
   ),
 );
+
 console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
-    ...Email@e#i.address.({
-      "email": .,
-      "idx": i,
-      "type": e.type
-  })
-    `).evaluate(address),
+    let a = null;
+    let b = undefined;
+    let c = "";
+    let d = {};
+    a || b || c || d
+    `).evaluate(account, { a: { b: { c: () => (a) => a, d: 2 } } }),
   ),
 );
+// console.log(
+//   JSON.stringify(
+//     new JsonTemplateEngine(`
+//     ...Email@e#i.address.({
+//       "email": .,
+//       "idx": i,
+//       "type": e.type
+//   })
+//     `).evaluate(address),
+//   ),
+// );
 console.log(
   new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      ...Postcode
+      let a = null;
+    let b = undefined;
+    let c = '';
+    let d = {};
+    a ?? b ?? c ?? d
       `),
     ).parse(),
   ).translate(),

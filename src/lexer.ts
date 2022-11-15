@@ -189,7 +189,8 @@ export class JsonTemplateLexer {
       token.type === TokenType.BOOL ||
       token.type === TokenType.NUM ||
       token.type === TokenType.STR ||
-      token.type === TokenType.NULL
+      token.type === TokenType.NULL ||
+      token.type === TokenType.UNDEFINED
     );
   }
 
@@ -274,6 +275,13 @@ export class JsonTemplateLexer {
         return {
           type: TokenType.NULL,
           value: null,
+          range: [start, this.idx],
+        };
+
+      case 'undefined':
+        return {
+          type: TokenType.UNDEFINED,
+          value: undefined,
           range: [start, this.idx],
         };
 
@@ -431,7 +439,7 @@ export class JsonTemplateLexer {
       ch1 = this.codeChars[this.idx],
       ch2 = this.codeChars[this.idx + 1];
 
-    if (ch1 === ch2 && '|&*.=><'.includes(ch1)) {
+    if (ch1 === ch2 && '|&*.=>?<'.includes(ch1)) {
       this.idx += 2;
       return {
         type: TokenType.PUNCT,
@@ -454,7 +462,7 @@ export class JsonTemplateLexer {
     }
   }
 
-  private scanPunctuatorForShortFunctionArgs(): Token | undefined {
+  private scanPunctuatorForQuestionMarks(): Token | undefined {
     let start = this.idx,
       ch1 = this.codeChars[this.idx],
       ch2 = this.codeChars[this.idx + 1];
@@ -472,7 +480,7 @@ export class JsonTemplateLexer {
   private scanPunctuator(): Token | undefined {
     return (
       this.scanPunctuatorForDots() ||
-      this.scanPunctuatorForShortFunctionArgs() ||
+      this.scanPunctuatorForQuestionMarks() ||
       this.scanPunctuatorForEquality() ||
       this.scanPunctuatorForRepeatedTokens() ||
       this.scanSingleCharPunctuators()

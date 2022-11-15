@@ -13,6 +13,28 @@
       "type": "node"
     },
     {
+      "name": "Test Scenario",
+      "program": "${workspaceFolder}/test/test_scenario.ts",
+      "request": "launch",
+      "runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
+      "skipFiles": ["<node_internals>/**"],
+      "args": ["--scenario=${input:scenario}", "--index=${input:index}"],
+      "type": "node"
+    },
+    {
+      "runtimeExecutable": "/usr/local/bin/node",
+      "type": "node",
+      "request": "launch",
+      "name": "Jest Scenarios",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": ["test/e2e.test.ts", "--config", "jest.config.ts", "--scenarios=${input:scenarios}"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "windows": {
+        "program": "${workspaceFolder}/node_modules/jest/bin/jest"
+      }
+    },
+    {
       "name": "Test Extractor",
       "program": "${workspaceFolder}/test/test_extractor.ts",
       "request": "launch",
@@ -32,6 +54,26 @@
       "windows": {
         "program": "${workspaceFolder}/node_modules/jest/bin/jest"
       }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "scenarios",
+      "type": "promptString",
+      "description": "Enter Scenarios",
+      "default": "all"
+    },
+    {
+      "id": "scenario",
+      "type": "promptString",
+      "description": "Enter Scenario",
+      "default": "basic_workflow"
+    },
+    {
+      "id": "index",
+      "type": "promptString",
+      "description": "Enter test index",
+      "default": "0"
     }
   ]
 }

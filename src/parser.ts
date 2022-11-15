@@ -13,7 +13,7 @@ import {
   SyntaxType,
   TokenType,
   UnaryExpression,
-  ObjectFilterExpression,
+  FilterExpression,
   RangeFilterExpression,
   Keyword,
   Token,
@@ -68,16 +68,20 @@ export class JsonTemplateParser {
   }
 
   private parseAssignmentExpr(): AssignmentExpression | Expression {
-    const expr = this.parseLogicalORExpr();
+    const expr = this.parseBaseExpr();
     if (expr.type === SyntaxType.PATH && this.lexer.match('=')) {
       this.lexer.lex();
       return {
         type: SyntaxType.ASSIGNMENT_EXPR,
-        value: this.parseLogicalORExpr(),
+        value: this.parseBaseExpr(),
         path: expr as PathExpression,
       };
     }
     return expr;
+  }
+
+  private parseBaseExpr(): Expression {
+    return this.parseCoalescingExpr();
   }
 
   private parsePathPart(): Expression | undefined {
@@ -89,7 +93,7 @@ export class JsonTemplateParser {
     } else if (this.lexer.matchPathPartSelector()) {
       return this.parseSelector();
     } else if (this.lexer.match('[') && !this.lexer.match(']', 1)) {
-      return this.parseArrayFilterExpr();
+      return this.parseArrayFiltersExpr();
     } else if (this.lexer.match('{')) {
       return this.parseObjectFiltersExpr();
     }
@@ -161,14 +165,12 @@ export class JsonTemplateParser {
     if (root) {
       return root;
     }
-    let newRoot: Expression | string | undefined;
     if (this.lexer.match('^')) {
       this.lexer.lex();
-      newRoot = DATA_PARAM_KEY;
+      return DATA_PARAM_KEY;
     } else if (this.lexer.matchID()) {
-      newRoot = this.lexer.value();
+      return this.lexer.value();
     }
-    return newRoot;
   }
 
   private parsePath(root?: Expression): PathExpression | FunctionCallExpression {
@@ -195,15 +197,6 @@ export class JsonTemplateParser {
 
   private parseSelector(): SelectorExpression | Expression {
     let selector = this.lexer.value();
-    if (selector === '%') {
-      return {
-        type: SyntaxType.SELECTOR,
-        selector: selector,
-      };
-    }
-    if (this.lexer.match('%')) {
-      throw this.lexer.throwUnexpectedToken();
-    }
     let prop: Token | undefined;
     let context: ContextVariable | undefined;
     if (this.lexer.match('*')) {
@@ -225,16 +218,33 @@ export class JsonTemplateParser {
     };
   }
 
-  private parsePositionFilterExpr(): RangeFilterExpression | IndexFilterExpression | Expression {
+  private praseArrayLogicalFiltersExpr(): FilterExpression {
+    const filters: Expression[] = [];
+    while(this.lexer.match('{')) {
+      this.lexer.lex();
+      filters.push(this.parseBaseExpr());
+      this.lexer.expect('}');
+    }
+    return {
+      type: SyntaxType.ARRAY_FILTER_EXPR,
+      filters
+    };
+
+  }
+  
+  private parsePositionFilterExpr(): RangeFilterExpression | IndexFilterExpression | FilterExpression {
+    if(this.lexer.match('{')) {
+      return this.praseArrayLogicalFiltersExpr();
+    }
     if (this.lexer.match(':')) {
       this.lexer.lex();
       return {
         type: SyntaxType.RANGE_FILTER_EXPR,
-        toIdx: this.parseLogicalORExpr(),
+        toIdx: this.parseBaseExpr(),
       };
     }
 
-    let fromExpr = this.parseLogicalORExpr();
+    let fromExpr = this.parseBaseExpr();
     if (this.lexer.match(':')) {
       this.lexer.lex();
       if (this.lexer.match(']')) {
@@ -247,7 +257,7 @@ export class JsonTemplateParser {
       return {
         type: SyntaxType.RANGE_FILTER_EXPR,
         fromIdx: fromExpr,
-        toIdx: this.parseLogicalORExpr(),
+        toIdx: this.parseBaseExpr(),
       };
     }
 
@@ -280,10 +290,10 @@ export class JsonTemplateParser {
         exclude,
       };
     }
-    return this.parseLogicalORExpr();
+    return this.parseBaseExpr();
   }
 
-  private parseObjectFiltersExpr(): ObjectFilterExpression {
+  private parseObjectFiltersExpr(): FilterExpression {
     const filters: Expression[] = [];
     while (this.lexer.match('{')) {
       this.lexer.expect('{');
@@ -297,21 +307,34 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseArrayFilterExpr(): Expression {
-    this.lexer.expect('[');
+  private parseArrayFiltersExpr(): RangeFilterExpression | IndexFilterExpression | FilterExpression {
+    this.lexer.expect('['); 
     const expr = this.parsePositionFilterExpr();
     this.lexer.expect(']');
     return expr;
   }
+  
+  private parseCoalescingExpr(): BinaryExpression | Expression {
+    let expr = this.parseLogicalORExpr();
 
+    if (this.lexer.match('??')) {
+      return {
+        type: SyntaxType.COALESCING_EXPR,
+        op: this.lexer.value(),
+        args: [expr, this.parseCoalescingExpr()],
+      };
+    }
+
+    return expr;
+  }
   private parseLogicalORExpr(): BinaryExpression | Expression {
     let expr = this.parseLogicalANDExpr();
 
-    while (this.lexer.match('||')) {
-      expr = {
-        type: SyntaxType.LOGICAL_EXPR,
+    if (this.lexer.match('||')) {
+      return {
+        type: SyntaxType.LOGICAL_OR_EXPR,
         op: this.lexer.value(),
-        args: [expr, this.parseLogicalANDExpr()],
+        args: [expr, this.parseLogicalORExpr()],
       };
     }
 
@@ -321,11 +344,11 @@ export class JsonTemplateParser {
   private parseLogicalANDExpr(): BinaryExpression | Expression {
     let expr = this.parseEqualityExpr();
 
-    while (this.lexer.match('&&')) {
-      expr = {
-        type: SyntaxType.LOGICAL_EXPR,
+    if (this.lexer.match('&&')) {
+      return {
+        type: SyntaxType.LOGICAL_AND_EXPR,
         op: this.lexer.value(),
-        args: [expr, this.parseEqualityExpr()],
+        args: [expr, this.parseLogicalANDExpr()],
       };
     }
 
@@ -335,7 +358,7 @@ export class JsonTemplateParser {
   private parseEqualityExpr(): BinaryExpression | Expression {
     let expr = this.parseRelationalExpr();
 
-    while (
+    if (
       this.lexer.match('==') ||
       this.lexer.match('!=') ||
       this.lexer.match('===') ||
@@ -353,10 +376,10 @@ export class JsonTemplateParser {
       this.lexer.match('*=') ||
       this.lexer.match('=*')
     ) {
-      expr = {
+      return {
         type: SyntaxType.COMPARISON_EXPR,
         op: this.lexer.value(),
-        args: [expr, this.parseRelationalExpr()],
+        args: [expr, this.parseEqualityExpr()],
       };
     }
 
@@ -366,16 +389,16 @@ export class JsonTemplateParser {
   private parseRelationalExpr(): BinaryExpression | Expression {
     let expr = this.parseShiftExpr();
 
-    while (
+    if (
       this.lexer.match('<') ||
       this.lexer.match('>') ||
       this.lexer.match('<=') ||
       this.lexer.match('>=')
     ) {
-      expr = {
+      return {
         type: SyntaxType.COMPARISON_EXPR,
         op: this.lexer.value(),
-        args: [expr, this.parseShiftExpr()],
+        args: [expr, this.parseRelationalExpr()],
       };
     }
 
@@ -385,11 +408,11 @@ export class JsonTemplateParser {
   private parseShiftExpr(): BinaryExpression | Expression {
     let expr = this.parseAdditiveExpr();
 
-    while (this.lexer.match('>>') || this.lexer.match('<<')) {
-      expr = {
+    if (this.lexer.match('>>') || this.lexer.match('<<')) {
+      return {
         type: SyntaxType.MATH_EXPR,
         op: this.lexer.value(),
-        args: [expr, this.parseAdditiveExpr()],
+        args: [expr, this.parseShiftExpr()],
       };
     }
 
@@ -399,11 +422,11 @@ export class JsonTemplateParser {
   private parseAdditiveExpr(): BinaryExpression | Expression {
     let expr = this.parseMultiplicativeExpr();
 
-    while (this.lexer.match('+') || this.lexer.match('-')) {
-      expr = {
+    if (this.lexer.match('+') || this.lexer.match('-')) {
+      return {
         type: SyntaxType.MATH_EXPR,
         op: this.lexer.value(),
-        args: [expr, this.parseMultiplicativeExpr()],
+        args: [expr, this.parseAdditiveExpr()],
       };
     }
 
@@ -413,11 +436,11 @@ export class JsonTemplateParser {
   private parseMultiplicativeExpr(): BinaryExpression | Expression {
     let expr: Expression = this.parsePowerExpr();
 
-    while (this.lexer.match('*') || this.lexer.match('/') || this.lexer.match('%')) {
-      expr = {
+    if (this.lexer.match('*') || this.lexer.match('/') || this.lexer.match('%')) {
+      return {
         type: SyntaxType.MATH_EXPR,
         op: this.lexer.value() as string,
-        args: [expr, this.parsePowerExpr()],
+        args: [expr, this.parseMultiplicativeExpr()],
       };
     }
 
@@ -427,8 +450,8 @@ export class JsonTemplateParser {
   private parsePowerExpr(): BinaryExpression | Expression {
     let expr: Expression = this.parseUnaryExpr();
 
-    while (this.lexer.match('**')) {
-      expr = {
+    if (this.lexer.match('**')) {
+      return {
         type: SyntaxType.MATH_EXPR,
         op: this.lexer.value() as string,
         args: [expr, this.parsePowerExpr()],
@@ -443,7 +466,7 @@ export class JsonTemplateParser {
       return {
         type: SyntaxType.UNARY_EXPR,
         op: this.lexer.value() as string,
-        arg: this.parsePathAfterExpr(),
+        arg: this.parseUnaryExpr(),
       };
     }
 
@@ -534,7 +557,7 @@ export class JsonTemplateParser {
 
     return {
       type: SyntaxType.DEFINTION_EXPR,
-      value: this.parseLogicalORExpr(),
+      value: this.parseBaseExpr(),
       vars,
       definition,
       fromObject,
@@ -606,7 +629,7 @@ export class JsonTemplateParser {
     let key: Expression | string;
     if (this.lexer.match('[')) {
       this.lexer.lex();
-      key = this.parseLogicalORExpr();
+      key = this.parseBaseExpr();
       this.lexer.expect(']');
     } else if (this.lexer.matchID()) {
       key = this.lexer.value();
@@ -658,10 +681,10 @@ export class JsonTemplateParser {
       this.lexer.lex();
       return {
         type: SyntaxType.SPREAD_EXPR,
-        value: this.parseLogicalORExpr(),
+        value: this.parseBaseExpr(),
       };
     }
-    return this.parseLogicalORExpr();
+    return this.parseBaseExpr();
   }
 
   private parseArrayExpr(): ArrayExpression {
@@ -692,7 +715,7 @@ export class JsonTemplateParser {
 
   private parseLambdaExpr(): FunctionExpression {
     this.lexer.expectKeyword(Keyword.LAMBDA);
-    const expr = this.parseLogicalORExpr();
+    const expr = this.parseBaseExpr();
     return {
       type: SyntaxType.FUNCTION_EXPR,
       statements: [expr],

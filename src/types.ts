@@ -17,6 +17,7 @@ export enum TokenType {
   STR,
   BOOL,
   NULL,
+  UNDEFINED,
   LAMBDA_ARG,
   PUNCT,
   THROW,
@@ -30,7 +31,9 @@ export enum SyntaxType {
   SELECTOR,
   LAMBDA_ARG,
   LITERAL,
-  LOGICAL_EXPR,
+  COALESCING_EXPR,
+  LOGICAL_OR_EXPR,
+  LOGICAL_AND_EXPR,
   COMPARISON_EXPR,
   MATH_EXPR,
   UNARY_EXPR,
@@ -39,6 +42,7 @@ export enum SyntaxType {
   OBJECT_INDEX_FILTER_EXPR,
   RANGE_FILTER_EXPR,
   OBJECT_FILTER_EXPR,
+  ARRAY_FILTER_EXPR,
   DEFINTION_EXPR,
   ASSIGNMENT_EXPR,
   OBJECT_PROP_EXPR,
@@ -122,8 +126,7 @@ export interface IndexFilterExpression extends Expression {
   indexes: ArrayExpression;
   exclude?: boolean;
 }
-
-export interface ObjectFilterExpression extends Expression {
+export interface FilterExpression extends Expression {
   filters: Expression[];
 }
 export interface LiteralExpression extends Expression {

@@ -15,9 +15,9 @@ if (scenarios[0] === 'all') {
 }
 
 describe('Scenarios tests', () => {
-  scenarios.forEach((scenario) => {
-    describe(`${scenario}`, () => {
-      const scenarioDir = join(__dirname, rootDirName, scenario);
+  scenarios.forEach((scenarioName) => {
+    describe(`${scenarioName}`, () => {
+      const scenarioDir = join(__dirname, rootDirName, scenarioName);
       const sceanarios = SceanarioUtils.extractScenarios(scenarioDir);
       sceanarios.forEach((scenario, index) => {
         it(`Scenario ${index}`, () => {
@@ -33,4 +33,3 @@ describe('Scenarios tests', () => {
     });
   });
 });
-

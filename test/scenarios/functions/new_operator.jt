@@ -1,0 +1,2 @@
+const date = new Date('2022-08-19');
+[date.getFullYear(), date.getMonth()+1, date.getDate()]

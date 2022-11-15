@@ -67,7 +67,7 @@
       "id": "scenario",
       "type": "promptString",
       "description": "Enter Scenario",
-      "default": "basic_workflow"
+      "default": "assignments"
     },
     {
       "id": "index",

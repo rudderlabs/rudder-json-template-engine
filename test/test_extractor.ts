@@ -150,63 +150,76 @@ const address = {
     },
   },
 };
-const extractor = new JsonTemplateEngine(`.{.city == "wildwood"}.pop`);
+// const extractor = new JsonTemplateEngine(`.{.city == "wildwood"}.pop`);
 
-console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
-
-console.log(
-  JSON.stringify(
-    new JsonTemplateEngine(`
-    .Product[{(console.log(.); .length > 1)}].Description
-    `).evaluate(account.Account.Order),
-  ),
-);
+// console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
 
 console.log(
   JSON.stringify(
     new JsonTemplateEngine(`
-    .Account.Order@o#oi.Product@p#pi.({
-      orderId: o.OrderID,
-      productId: p.ProductID,
-      oi: oi,
-      pi: pi
-    })
-    `).evaluate(account, { a: { b: { c: () => (a) => a, d: 2 } } }),
+    ..Product
+    `).evaluate(account),
   ),
 );
 
-console.log(
-  JSON.stringify(
-    new JsonTemplateEngine(`
-    let a = null;
-    let b = undefined;
-    let c = "";
-    let d = {};
-    a || b || c || d
-    `).evaluate(account, { a: { b: { c: () => (a) => a, d: 2 } } }),
-  ),
-);
 // console.log(
 //   JSON.stringify(
 //     new JsonTemplateEngine(`
-//     ...Email@e#i.address.({
-//       "email": .,
-//       "idx": i,
-//       "type": e.type
-//   })
+//     .Account.Order@o#oi.Product@p#pi.({
+//       orderId: o.OrderID,
+//       productId: p.ProductID,
+//       oi: oi,
+//       pi: pi
+//     })
+//     `).evaluate(account, { a: { b: { c: () => (a) => a, d: 2 } } }),
+//   ),
+// );
+
+// console.log(
+//   JSON.stringify(
+//     new JsonTemplateEngine(`
+//     let a = null;
+//     let b = undefined;
+//     let c = "";
+//     let d = {};
+//     a || b || c || d
+//     `).evaluate(account, { a: { b: { c: () => (a) => a, d: 2 } } }),
+//   ),
+// );
+// console.log(
+//   JSON.stringify(
+//     new JsonTemplateEngine(`
+//     let c = "c key";
+// let d = 3;
+// {
+//     // short form for "a"
+//     a: 1,
+//     "b": 2,
+//     // [c] coverts to "c key"
+//     [c]: {
+//         // this coverts to d: 3
+//         d: d
+//     }
+// }
 //     `).evaluate(address),
 //   ),
 // );
 console.log(
-  new JsonTemplateTranslator(
+  JSON.stringify(
+    // new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      let a = null;
-    let b = undefined;
-    let c = '';
-    let d = {};
-    a ?? b ?? c ?? d
+      ..d
       `),
     ).parse(),
-  ).translate(),
+    // ).translate(),
+  ),
 );
+
+// console.log(
+//   JSON.stringify(
+//     new JsonTemplateEngine(`
+//     $.b(1, 2, 3)
+//     `).evaluate(account, { a: null, b: (...args) => args }),
+//   ),
+// );

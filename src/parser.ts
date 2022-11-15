@@ -220,20 +220,22 @@ export class JsonTemplateParser {
 
   private praseArrayLogicalFiltersExpr(): FilterExpression {
     const filters: Expression[] = [];
-    while(this.lexer.match('{')) {
+    while (this.lexer.match('{')) {
       this.lexer.lex();
       filters.push(this.parseBaseExpr());
       this.lexer.expect('}');
     }
     return {
       type: SyntaxType.ARRAY_FILTER_EXPR,
-      filters
+      filters,
     };
-
   }
-  
-  private parsePositionFilterExpr(): RangeFilterExpression | IndexFilterExpression | FilterExpression {
-    if(this.lexer.match('{')) {
+
+  private parsePositionFilterExpr():
+    | RangeFilterExpression
+    | IndexFilterExpression
+    | FilterExpression {
+    if (this.lexer.match('{')) {
       return this.praseArrayLogicalFiltersExpr();
     }
     if (this.lexer.match(':')) {
@@ -307,13 +309,16 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseArrayFiltersExpr(): RangeFilterExpression | IndexFilterExpression | FilterExpression {
-    this.lexer.expect('['); 
+  private parseArrayFiltersExpr():
+    | RangeFilterExpression
+    | IndexFilterExpression
+    | FilterExpression {
+    this.lexer.expect('[');
     const expr = this.parsePositionFilterExpr();
     this.lexer.expect(']');
     return expr;
   }
-  
+
   private parseCoalescingExpr(): BinaryExpression | Expression {
     let expr = this.parseLogicalORExpr();
 

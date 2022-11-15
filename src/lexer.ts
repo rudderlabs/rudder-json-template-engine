@@ -47,7 +47,7 @@ export class JsonTemplateLexer {
     let token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
       let value = token.value;
-      return value === '.' || value === '...';
+      return value === '.' || value === '..';
     }
     return false;
   }
@@ -56,7 +56,7 @@ export class JsonTemplateLexer {
     let token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
       let value = token.value;
-      return value === '.' || value === '...' || value === '^';
+      return value === '.' || value === '..' || value === '^';
     }
 
     return false;
@@ -371,6 +371,13 @@ export class JsonTemplateLexer {
       return {
         type: TokenType.PUNCT,
         value: '...',
+        range: [start, this.idx],
+      };
+    } else if (ch2 === '.') {
+      this.idx = this.idx + 2;
+      return {
+        type: TokenType.PUNCT,
+        value: '..',
         range: [start, this.idx],
       };
     } else {

@@ -1,0 +1,12 @@
+[10>2, 
+2<10, 
+10 != 2, 
+"IgnoreCase" == "ignorecase", 
+"CompareWithCase" === "CompareWithCase",
+"I contain" *= "i",
+"I contain" *== "I",
+"I end with" $= "with",
+"I end With" $== "With",
+"I start with" ^= 'i',
+"I start with" ^== 'I',
+]

@@ -16,6 +16,6 @@ export class JsonTemplateEngine {
   }
 
   evaluate(data: any, bindings: any = {}) {
-    return this.fn(data || {}, bindings || {});
+    return this.fn(data || {}, bindings);
   }
 }

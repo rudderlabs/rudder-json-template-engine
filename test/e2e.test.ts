@@ -20,10 +20,10 @@ describe('Scenarios tests', () => {
       const scenarioDir = join(__dirname, rootDirName, scenarioName);
       const sceanarios = SceanarioUtils.extractScenarios(scenarioDir);
       sceanarios.forEach((scenario, index) => {
-        it(`Scenario ${index}`, () => {
+        it(`Scenario ${index}`, async () => {
           try {
             const templateEngine = SceanarioUtils.createTemplateEngine(scenarioDir, scenario);
-            const result = SceanarioUtils.evaluateScenario(templateEngine, scenario);
+            const result = await SceanarioUtils.evaluateScenario(templateEngine, scenario);
             expect(result).toEqual(scenario.output);
           } catch (error: any) {
             expect(error.message).toContain(scenario.error);

@@ -1,2 +1,2 @@
 let a = 1
-let b = 1
+var b = 1

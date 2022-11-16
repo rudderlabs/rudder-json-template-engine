@@ -67,4 +67,13 @@ export const data: Sceanario[] = [
     },
     output: 50,
   },
+  {
+    templatePath: 'wild_cards.jt',
+    input: {
+      a: { d: 1 },
+      b: [{ d: 2 }, { d: 3 }],
+      c: { c: { d: 4 } },
+    },
+    output: [1, 2, 3, 1, 2, 3, 4],
+  },
 ];

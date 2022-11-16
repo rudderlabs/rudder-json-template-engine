@@ -2,51 +2,23 @@ import { Sceanario } from '../../types';
 
 export const data: Sceanario[] = [
   {
-    input: {
-      a: 10,
-      b: [
-        {
-          c: [
-            {
-              id: 1,
-            },
-            {
-              id: 2,
-            },
-            {
-              id: 3,
-            },
-          ],
-          id: 1,
-        },
-        {
-          c: [
-            {
-              id: 4,
-            },
-            {
-              id: 5,
-            },
-            {
-              id: 6,
-            },
-            {
-              id: 7,
-            },
-          ],
-          id: 2,
-        },
-      ],
+    templatePath: 'object_filters.jt',
+    output: {
+      a: [3, 4],
+      b: 2,
     },
-    output: [
-      {
-        bid: 1,
-        cid: 1,
-      },
-      {
-        bid: 1,
-        cid: 3,
-      },
-    ],
+  },
+  {
+    templatePath: 'array_filters.jt',
+    output: [[3, 4, 5], [1, 2, 3], [4, 5], [2, 4], 5, [1, 2, 3, 4], [4, 5]],
+  },
+  {
+    templatePath: 'object_indexes.jt',
+    output: {
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4,
+    },
   },
 ];

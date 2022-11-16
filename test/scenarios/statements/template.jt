@@ -1,0 +1,14 @@
+// To statements in one line
+let a = 1; let b = 2
+// empty statements
+;;;
+
+let c = [3]
+// block statement
+(
+    let d = 4;
+    let fn = function(a){
+        5*a
+    }
+    [a + b + c[0] + d + fn(1)]
+)

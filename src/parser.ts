@@ -15,7 +15,6 @@ import {
   UnaryExpression,
   FilterExpression,
   RangeFilterExpression,
-  Keyword,
   Token,
   IndexFilterExpression,
   DefinitionExpression,
@@ -39,27 +38,37 @@ export class JsonTemplateParser {
   }
 
   parse(): Expression {
-    if (!this.expr) {
-      const expr = this.parseStatementsExpr();
-      this.lexer.validateNoMoreTokensLeft();
-      this.expr = expr;
+    this.lexer.init();
+    return this.parseStatementsExpr();
+  }
+
+  private parseEndOfStatement(blockEnd) {
+    if (this.lexer.matchEOT() || this.lexer.match(blockEnd)) {
+      return;
     }
-    return this.expr;
+
+    if (this.lexer.match(';')) {
+      this.lexer.lex();
+    } else if (this.lexer.matchNextChar('\n')) {
+      this.lexer.ignoreNextChar();
+    } else {
+      this.lexer.throwUnexpectedToken();
+    }
   }
 
   private parseStatements(blockEnd?: string): Expression[] {
-    let statements: Expression[] = [this.parseStatementExpr()];
-    while (!this.lexer.matchTokenType(TokenType.EOT) && !this.lexer.match(blockEnd)) {
-      this.lexer.expect(';');
+    let statements: Expression[] = [];
+    while (!this.lexer.matchEOT() && !this.lexer.match(blockEnd)) {
       statements.push(this.parseStatementExpr());
+      this.parseEndOfStatement(blockEnd);
     }
     return statements;
   }
 
-  private parseStatementsExpr(): StatementsExpression {
+  private parseStatementsExpr(blockEnd?: string): StatementsExpression {
     return {
       type: SyntaxType.STATEMENTS_EXPR,
-      statements: this.parseStatements(),
+      statements: this.parseStatements(blockEnd),
     };
   }
 
@@ -108,14 +117,14 @@ export class JsonTemplateParser {
         break;
       }
     }
-    return this.combinePathParts(parts);
+    return JsonTemplateParser.combinePathParts(parts);
   }
 
-  private prependFunctionID(prefix: string, id?: string): string {
+  private static prependFunctionID(prefix: string, id?: string): string {
     return id ? prefix + '.' + id : prefix;
   }
 
-  private combinePathParts(parts: Expression[]): Expression[] {
+  private static combinePathParts(parts: Expression[]): Expression[] {
     if (parts.length < 2) {
       return parts;
     }
@@ -144,7 +153,7 @@ export class JsonTemplateParser {
     return newParts;
   }
 
-  private convertToFunctionCallExpr(expr: PathExpression): FunctionCallExpression | PathExpression {
+  private static convertToFunctionCallExpr(expr: PathExpression): FunctionCallExpression | PathExpression | FunctionExpression {
     if (expr.parts[0]?.type === SyntaxType.FUNCTION_CALL_EXPR && typeof expr.root !== 'object') {
       const fnExpr = expr.parts.shift() as FunctionCallExpression;
       if (expr.root) {
@@ -173,16 +182,15 @@ export class JsonTemplateParser {
     }
   }
 
-  private parsePath(root?: Expression): PathExpression | FunctionCallExpression {
-    if (!root && !this.lexer.matchPath()) {
-      this.lexer.throwUnexpectedToken();
-    }
-
-    return this.convertToFunctionCallExpr({
+  private parsePath(root?: Expression): PathExpression | FunctionCallExpression | FunctionExpression {
+    const pathExpr = {
       type: SyntaxType.PATH,
       root: this.parsePathRoot(root),
       parts: this.parsePathParts(),
-    });
+    };
+    const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(pathExpr);
+    const expr = JsonTemplateParser.convertToFunctionCallExpr(pathExpr);
+    return shouldConvertAsBlock? JsonTemplateParser.convertToBlockExpr(expr): expr;
   }
 
   private parseContextVariable(expected: string): string | undefined {
@@ -218,26 +226,10 @@ export class JsonTemplateParser {
     };
   }
 
-  private praseArrayLogicalFiltersExpr(): FilterExpression {
-    const filters: Expression[] = [];
-    while (this.lexer.match('{')) {
-      this.lexer.lex();
-      filters.push(this.parseBaseExpr());
-      this.lexer.expect('}');
-    }
-    return {
-      type: SyntaxType.ARRAY_FILTER_EXPR,
-      filters,
-    };
-  }
-
   private parsePositionFilterExpr():
     | RangeFilterExpression
     | IndexFilterExpression
     | FilterExpression {
-    if (this.lexer.match('{')) {
-      return this.praseArrayLogicalFiltersExpr();
-    }
     if (this.lexer.match(':')) {
       this.lexer.lex();
       return {
@@ -278,7 +270,7 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseObjectFilterExpr(): IndexFilterExpression | Expression {
+  private parseObjectFilterExpr(): IndexFilterExpression | FilterExpression {
     let exclude = false;
     if (this.lexer.match('~')) {
       this.lexer.lex();
@@ -292,21 +284,17 @@ export class JsonTemplateParser {
         exclude,
       };
     }
-    return this.parseBaseExpr();
-  }
-
-  private parseObjectFiltersExpr(): FilterExpression {
-    const filters: Expression[] = [];
-    while (this.lexer.match('{')) {
-      this.lexer.expect('{');
-      filters.push(this.parseObjectFilterExpr());
-      this.lexer.expect('}');
-    }
-
     return {
       type: SyntaxType.OBJECT_FILTER_EXPR,
-      filters,
+      filter: this.parseBaseExpr(),
     };
+  }
+
+  private parseObjectFiltersExpr(): IndexFilterExpression | FilterExpression {
+    this.lexer.expect('{');
+    const expr = this.parseObjectFilterExpr();
+    this.lexer.expect('}');
+    return expr;
   }
 
   private parseArrayFiltersExpr():
@@ -467,7 +455,12 @@ export class JsonTemplateParser {
   }
 
   private parseUnaryExpr(): UnaryExpression | Expression {
-    if (this.lexer.match('!') || this.lexer.match('-') || this.lexer.matchTypeOf()) {
+    if (
+      this.lexer.match('!') ||
+      this.lexer.match('-') ||
+      this.lexer.matchTypeOf() ||
+      this.lexer.matchAwait()
+    ) {
       return {
         type: SyntaxType.UNARY_EXPR,
         op: this.lexer.value() as string,
@@ -488,8 +481,39 @@ export class JsonTemplateParser {
     return toArray;
   }
 
+  private shouldSkipPathParsing(expr: Expression): boolean {
+    switch (expr.type) {
+      case SyntaxType.DEFINTION_EXPR:
+      case SyntaxType.ASSIGNMENT_EXPR:
+      case SyntaxType.SPREAD_EXPR:
+        return true;
+      case SyntaxType.LITERAL:
+      case SyntaxType.MATH_EXPR:
+      case SyntaxType.COMPARISON_EXPR:
+        if (this.lexer.match('(')) {
+          return true;
+        }
+        break;
+      case SyntaxType.FUNCTION_EXPR:
+        if (!this.lexer.match('(')) {
+          return true;
+        }
+        break;
+      case SyntaxType.ARRAY_EXPR:
+      case SyntaxType.OBJECT_EXPR:
+        if (this.lexer.match('(')) {
+          return true;
+        }
+        break;
+    }
+    return false;
+  }
+
   private parsePathAfterExpr(): PathExpression | ToArrayExpression | Expression {
     let expr = this.parsePrimaryExpr();
+    if (this.shouldSkipPathParsing(expr)) {
+      return expr;
+    }
     while (this.lexer.matchPathPartSelector() || this.lexer.match('[') || this.lexer.match('(')) {
       if (this.isToArrayExpr()) {
         expr = {
@@ -581,9 +605,6 @@ export class JsonTemplateParser {
 
     if (this.lexer.matchNew()) {
       this.lexer.lex();
-      if (!this.lexer.matchID()) {
-        this.lexer.throwUnexpectedToken();
-      }
       id = 'new ' + this.parseIDPath();
     }
 
@@ -617,16 +638,17 @@ export class JsonTemplateParser {
     return params;
   }
 
-  private parseFunctionDefinitionExpr(): FunctionExpression {
-    this.lexer.expectKeyword(Keyword.FUNCTION);
+  private parseFunctionExpr(asyncFn = false): FunctionExpression {
+    this.lexer.lex();
     const params = this.parseFunctionDefinitionParams();
     this.lexer.expect('{');
-    const statements = this.parseStatements('}');
+    const statements = this.parseStatementsExpr('}');
     this.lexer.expect('}');
     return {
       type: SyntaxType.FUNCTION_EXPR,
       params,
-      statements,
+      body: statements,
+      async: asyncFn,
     };
   }
 
@@ -707,29 +729,40 @@ export class JsonTemplateParser {
     let statements: Expression[] = this.parseStatements(')');
     this.lexer.expect(')');
     if (statements.length === 0) {
-      throw new JsosTemplateParserError('Empty block detected at ' + this.lexer.getContext());
+      return EMPTY_EXPR;
+    } else if (statements.length === 1) {
+      return statements[0];
     }
-    return statements.length === 1
-      ? statements[0]
-      : {
-          type: SyntaxType.FUNCTION_EXPR,
-          statements,
-          block: true,
-        };
+    return {
+      type: SyntaxType.FUNCTION_EXPR,
+      body: CommonUtils.convertToStatementsExpr(...statements),
+      block: true,
+    };
   }
 
-  private parseLambdaExpr(): FunctionExpression {
-    this.lexer.expectKeyword(Keyword.LAMBDA);
+  private parseAsyncFunctionExpr(): FunctionExpression {
+    this.lexer.lex();
+    if (this.lexer.matchFunction()) {
+      return this.parseFunctionExpr(true);
+    } else if (this.lexer.matchLambda()) {
+      return this.parseLambdaExpr(true);
+    }
+    this.lexer.throwUnexpectedToken();
+  }
+
+  private parseLambdaExpr(asyncFn = false): FunctionExpression {
+    this.lexer.lex();
     const expr = this.parseBaseExpr();
     return {
       type: SyntaxType.FUNCTION_EXPR,
-      statements: [expr],
+      body: CommonUtils.convertToStatementsExpr(expr),
       params: ['...args'],
+      async: asyncFn,
     };
   }
 
   private parsePrimaryExpr(): Expression {
-    if (this.lexer.matchEOT() || this.lexer.match(';')) {
+    if (this.lexer.match(';')) {
       return EMPTY_EXPR;
     }
 
@@ -753,7 +786,11 @@ export class JsonTemplateParser {
     }
 
     if (this.lexer.matchFunction()) {
-      return this.parseFunctionDefinitionExpr();
+      return this.parseFunctionExpr();
+    }
+
+    if (this.lexer.matchAsync()) {
+      return this.parseAsyncFunctionExpr();
     }
 
     if (this.lexer.matchLiteral()) {
@@ -777,5 +814,23 @@ export class JsonTemplateParser {
     }
 
     return this.lexer.throwUnexpectedToken();
+  }
+
+  private static pathContainsVariables(expr: PathExpression): boolean {
+    return (
+      !!expr.parts &&
+      expr.parts
+        .filter((part) => part.type === SyntaxType.SELECTOR)
+        .map((part) => part as SelectorExpression)
+        .some((part) => part.context?.index || part.context?.item)
+    );
+  }
+
+  private static convertToBlockExpr(expr: Expression): FunctionExpression {
+    return {
+      type: SyntaxType.FUNCTION_EXPR,
+      block: true,
+      body: CommonUtils.convertToStatementsExpr(expr),
+    };
   }
 }

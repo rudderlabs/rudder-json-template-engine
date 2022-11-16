@@ -1,3 +1,6 @@
-let a = ["string", true, false, null, [1, 2, 3], {"b": [1, 2]}];
-[a[4], a[0,2], a[1:4], a[5].b[1]]
+let a = [
+    "string", "aa\"a", true, false, undefined,
+    null, .2, 0.22, [1, 2, 3], {"b": [1, 2]}
+];
+[...a[-2], a[0,6], a[1:6], a[-1].b[1]]
 

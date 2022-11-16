@@ -5,6 +5,7 @@ import { Keyword, Token, TokenType } from './types';
 const MESSAGES = {
   RESERVED_ID: 'Reserved ID pattern "%0"',
   UNEXP_TOKEN: 'Unexpected token "%0"',
+  UNKNOWN_TOKEN: 'Unknown token',
   UNEXP_EOT: 'Unexpected end of template',
 };
 
@@ -21,6 +22,11 @@ export class JsonTemplateLexer {
       .replace(BLOCK_COMMENT_REGEX, '')
       .replace(SINGLE_LINE_COMMENT_REGEX, '')
       .split('');
+  }
+
+  init() {
+    this.idx = 0;
+    this.buf = [];
   }
 
   match(value?: string, steps = 0): boolean {
@@ -81,7 +87,7 @@ export class JsonTemplateLexer {
 
   matchKeyword(op: string): boolean {
     let token = this.lookahead();
-    return token.type === TokenType.OPERATOR && token.value === op;
+    return token.type === TokenType.KEYWORD && token.value === op;
   }
 
   matchFunction(): boolean {
@@ -92,12 +98,16 @@ export class JsonTemplateLexer {
     return this.matchKeyword(Keyword.NEW);
   }
 
-  matchReturn(): boolean {
-    return this.matchKeyword(Keyword.RETURN);
-  }
-
   matchTypeOf(): boolean {
     return this.matchKeyword(Keyword.TYPEOF);
+  }
+
+  matchAwait(): boolean {
+    return this.matchKeyword(Keyword.AWAIT);
+  }
+
+  matchAsync(): boolean {
+    return this.matchKeyword(Keyword.ASYNC);
   }
 
   matchLambda(): boolean {
@@ -106,20 +116,6 @@ export class JsonTemplateLexer {
 
   matchDefinition(): boolean {
     return this.matchKeyword(Keyword.LET) || this.matchKeyword(Keyword.CONST);
-  }
-
-  expectKeyword(op: string) {
-    let token = this.lex();
-    if (token.type !== TokenType.OPERATOR || token.value !== op) {
-      this.throwUnexpectedToken(token);
-    }
-  }
-
-  expectTokenType(tokenType: TokenType) {
-    let token = this.lex();
-    if (token.type !== tokenType) {
-      this.throwUnexpectedToken(token);
-    }
   }
 
   expect(value) {
@@ -163,8 +159,7 @@ export class JsonTemplateLexer {
     if (token) {
       return token;
     }
-
-    return { range: [this.idx, this.idx], type: TokenType.UNKNOWN, value: undefined };
+    this.throwError(MESSAGES.UNKNOWN_TOKEN);
   }
 
   value(): any {
@@ -182,6 +177,18 @@ export class JsonTemplateLexer {
     }
 
     return this.advance();
+  }
+
+  nextChar(): string {
+    return this.codeChars[this.idx];
+  }
+
+  ignoreNextChar() {
+    this.idx++;
+  }
+
+  matchNextChar(ch: string): boolean {
+    return this.nextChar() === ch;
   }
 
   static isLiteralToken(token: Token) {
@@ -209,7 +216,7 @@ export class JsonTemplateLexer {
 
   private throwError(messageFormat: string, ...args): never {
     const msg = messageFormat.replace(/%(\d)/g, (_, idx) => {
-      return args[idx] || '';
+      return args[idx];
     });
     throw new JsonTemplateLexerError(msg + ' at ' + this.getContext(15));
   }
@@ -256,7 +263,7 @@ export class JsonTemplateLexer {
 
     if (JsonTemplateLexer.isOperator(id)) {
       return {
-        type: TokenType.OPERATOR,
+        type: TokenType.KEYWORD,
         value: id,
         range: [start, this.idx],
       };
@@ -287,12 +294,11 @@ export class JsonTemplateLexer {
 
       default:
         this.validateID(id);
-        const token: Token = {
+        return {
           type: TokenType.ID,
           value: id.replace(/^\$/, `${BINDINGS_PARAM_KEY}`),
           range: [start, this.idx],
         };
-        return token;
     }
   }
 
@@ -325,6 +331,7 @@ export class JsonTemplateLexer {
         range: [start, this.idx],
       };
     }
+    this.throwUnexpectedToken();
   }
 
   private scanNumeric(): Token | undefined {
@@ -338,7 +345,7 @@ export class JsonTemplateLexer {
         ch = this.codeChars[this.idx];
         if (ch === '.') {
           if (isFloat) {
-            return;
+            this.throwUnexpectedToken();
           }
           isFloat = true;
         } else if (!JsonTemplateLexer.isDigit(ch)) {
@@ -460,7 +467,7 @@ export class JsonTemplateLexer {
     let start = this.idx,
       ch1 = this.codeChars[this.idx];
 
-    if (',;:{}()[]^+-*/%!><|=@~#?'.includes(ch1)) {
+    if (',;:{}()[]^+-*/%!><|=@~#?\n'.includes(ch1)) {
       return {
         type: TokenType.PUNCT,
         value: ch1,
@@ -492,13 +499,5 @@ export class JsonTemplateLexer {
       this.scanPunctuatorForRepeatedTokens() ||
       this.scanSingleCharPunctuators()
     );
-  }
-
-  validateNoMoreTokensLeft() {
-    const token = this.lex();
-
-    if (token.type !== TokenType.EOT) {
-      this.throwUnexpectedToken(token);
-    }
   }
 }

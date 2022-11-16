@@ -2,6 +2,28 @@ import { Sceanario } from '../../types';
 
 export const data: Sceanario[] = [
   {
-    output: [true, true, true, true, true, true, true, true, true, true, true],
+    output: [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ],
   },
 ];

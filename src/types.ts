@@ -4,10 +4,11 @@ export enum Keyword {
   FUNCTION = 'function',
   NEW = 'new',
   TYPEOF = 'typeof',
-  RETURN = 'return',
   LET = 'let',
   CONST = 'const',
   LAMBDA = 'lambda',
+  AWAIT = 'await',
+  ASYNC = 'async',
 }
 
 export enum TokenType {
@@ -21,7 +22,7 @@ export enum TokenType {
   LAMBDA_ARG,
   PUNCT,
   THROW,
-  OPERATOR,
+  KEYWORD,
   EOT,
 }
 
@@ -42,7 +43,6 @@ export enum SyntaxType {
   OBJECT_INDEX_FILTER_EXPR,
   RANGE_FILTER_EXPR,
   OBJECT_FILTER_EXPR,
-  ARRAY_FILTER_EXPR,
   DEFINTION_EXPR,
   ASSIGNMENT_EXPR,
   OBJECT_PROP_EXPR,
@@ -72,8 +72,9 @@ export interface LambdaArgExpression extends Expression {
 
 export interface FunctionExpression extends Expression {
   params?: string[];
-  statements: Expression[];
+  body: StatementsExpression;
   block?: boolean;
+  async?: boolean;
 }
 export interface ObjectPropExpression extends Expression {
   key?: Expression | string;
@@ -127,7 +128,7 @@ export interface IndexFilterExpression extends Expression {
   exclude?: boolean;
 }
 export interface FilterExpression extends Expression {
-  filters: Expression[];
+  filter: Expression;
 }
 export interface LiteralExpression extends Expression {
   value: string | number | boolean | null;
@@ -136,7 +137,6 @@ export interface LiteralExpression extends Expression {
 export interface PathExpression extends Expression {
   parts: Expression[];
   root?: Expression | string;
-  block?: boolean;
 }
 
 export interface ContextVariable {

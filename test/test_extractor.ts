@@ -154,13 +154,13 @@ const address = {
 
 // console.log(JSON.stringify(extractor.evaluate(data, { min: 1000 }), null, 2));
 
-console.log(
-  JSON.stringify(
-    new JsonTemplateEngine(`
-    ..Product
-    `).evaluate(account),
-  ),
-);
+// console.log(
+//   JSON.stringify(
+//     new JsonTemplateEngine(`
+//     ..Product
+//     `).evaluate(account),
+//   ),
+// );
 
 // console.log(
 //   JSON.stringify(
@@ -205,15 +205,25 @@ console.log(
 //   ),
 // );
 console.log(
-  JSON.stringify(
-    // new JsonTemplateTranslator(
+  // JSON.stringify(
+  new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      ..d
+      // To statements in one line
+      let a = 1; let b = 2
+      // empty statements
+      ;;;
+
+
+      // block statement
+      (
+          let c = 3
+          a + b + c
+      )
       `),
     ).parse(),
-    // ).translate(),
-  ),
+  ).translate(),
+  // ),
 );
 
 // console.log(

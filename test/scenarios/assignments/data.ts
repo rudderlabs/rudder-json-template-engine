@@ -4,7 +4,8 @@ export const data: Sceanario[] = [
   {
     output: {
       a: {
-        b: [11, 22],
+        b: [12, 22],
+        'c key': 4,
       },
     },
   },

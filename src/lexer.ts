@@ -307,7 +307,11 @@ export class JsonTemplateLexer {
   }
 
   private scanString(): Token | undefined {
-    if (this.codeChars[this.idx] !== '"' && this.codeChars[this.idx] !== "'") {
+    if (
+      this.codeChars[this.idx] !== '"' &&
+      this.codeChars[this.idx] !== '`' &&
+      this.codeChars[this.idx] !== "'"
+    ) {
       return;
     }
 
@@ -321,7 +325,7 @@ export class JsonTemplateLexer {
       ch = this.codeChars[this.idx++];
       if (ch === '\\') {
         ch = this.codeChars[this.idx++];
-      } else if ((ch === '"' || ch === "'") && ch === orig) {
+      } else if ('\'"`'.includes(ch) && ch === orig) {
         eosFound = true;
         break;
       }
@@ -408,7 +412,7 @@ export class JsonTemplateLexer {
       ch1 = this.codeChars[this.idx],
       ch2 = this.codeChars[this.idx + 1],
       ch3 = this.codeChars[this.idx + 2];
-    
+
     if (ch2 === '=') {
       if (ch3 === '=') {
         if ('=!^$*'.indexOf(ch1) >= 0) {
@@ -496,7 +500,7 @@ export class JsonTemplateLexer {
       };
     }
   }
-  
+
   private scanPunctuator(): Token | undefined {
     return (
       this.scanPunctuatorForDots() ||

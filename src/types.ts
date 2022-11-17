@@ -41,7 +41,7 @@ export enum OperatorType {
   ADDITION,
   MULTIPLICATION,
   POWER,
-  UNARY
+  UNARY,
 }
 
 export enum SyntaxType {
@@ -50,7 +50,7 @@ export enum SyntaxType {
   SELECTOR,
   LAMBDA_ARG,
   LITERAL,
-  COALESCING_EXPR,
+  LOGICAL_COALESCE_EXPR,
   LOGICAL_OR_EXPR,
   LOGICAL_AND_EXPR,
   COMPARISON_EXPR,
@@ -72,7 +72,7 @@ export enum SyntaxType {
   FUNCTION_CALL_ARG,
   FUNCTION_CALL_EXPR,
   STATEMENTS_EXPR,
-  CONDITIONAL_EXPR
+  CONDITIONAL_EXPR,
 }
 
 export type Token = {

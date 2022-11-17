@@ -1,5 +1,5 @@
 let a = 10
-let b = a + 10
+let b = -a + 30
 let cKey = "c key";
 let c = { a: { b: [a, b], [cKey]: 2 } }
 let {d, e, f} = {d: 2, e: 2, f: 1}

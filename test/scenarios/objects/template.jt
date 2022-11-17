@@ -1,0 +1,17 @@
+let c = "c key";
+let d = 3;
+let a = {
+    // short form for "a"
+    a: 1,
+    "b": 2,
+    // [c] coverts to "c key"
+    [c]: {
+        // this coverts to d: 3
+        d: d
+    }
+};
+a.({
+    a: .a,
+    b: .b,
+    ...(.[c])
+})

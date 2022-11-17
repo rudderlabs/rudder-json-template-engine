@@ -1,0 +1,4 @@
+const data = await Promise.all(.map(async lambda await $.square(?0)))
+Promise.all(data.map(async function(a){
+   await $.sqrt(a)
+}))

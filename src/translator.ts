@@ -98,10 +98,10 @@ export class JsonTemplateTranslator {
         return this.translateINExpr(expr as BinaryExpression, dest, ctx);
 
       case SyntaxType.COMPARISON_EXPR:
-        return this.translateComparisonExpr(expr as BinaryExpression, dest, ctx);
+        return this.translateBinaryExpr(expr as BinaryExpression, dest, ctx);
 
       case SyntaxType.MATH_EXPR:
-        return this.translateMathExpr(expr as BinaryExpression, dest, ctx);
+        return this.translateBinaryExpr(expr as BinaryExpression, dest, ctx);
 
       case SyntaxType.LOGICAL_AND_EXPR:
         return this.translateLogicalAndExpr(expr as BinaryExpression, dest, ctx);
@@ -583,84 +583,6 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private translateComparisonExpr(expr: BinaryExpression, dest: string, ctx: string): string {
-    const val1 = this.acquireVar();
-    const val2 = this.acquireVar();
-    const isVal1Array = this.acquireVar();
-    const isVal2Array = this.acquireVar();
-    const i = this.acquireVar();
-    const j = this.acquireVar();
-    const len1 = this.acquireVar();
-    const len2 = this.acquireVar();
-    const leftArg = expr.args[0];
-    const rightArg = expr.args[1];
-    const code: string[] = [];
-    code.push(dest, '= false;');
-
-    code.push(this.translateExpr(leftArg, val1, ctx));
-    code.push(this.translateExpr(rightArg, val2, ctx));
-
-    code.push(`${isVal1Array}=Array.isArray(${val1});`);
-    code.push(`${isVal2Array}=Array.isArray(${val2});`);
-
-    code.push(`if(${isVal1Array} && ${val1}.length === 1) {`);
-    code.push(`${val1}=${val1}[0]; ${isVal1Array}=false;}`);
-    code.push(`if(${isVal2Array} && ${val2}.length === 1) {`);
-    code.push(`${val2}=${val2}[0]; ${isVal2Array}=false;}`);
-
-    code.push(`${i}=0;if(${isVal1Array}){${len1}=${val1}.length;`);
-    code.push(`if(${isVal2Array}){${len2}=${val2}.length;`);
-
-    code.push(
-      'while(',
-      i,
-      '<',
-      len1,
-      '&& !',
-      dest,
-      ') {',
-      j,
-      '= 0;',
-      'while(',
-      j,
-      '<',
-      len2,
-      ') {',
-    );
-    code.push(this.writeCondition(expr.op, `${val1}[${i}]`, `${val2}[${j}]`));
-    code.push(dest, '= true;', 'break;', '}', '++', j, ';', '}', '++', i, ';', '}', '}', 'else {');
-
-    code.push('while(', i, '<', len1, ') {');
-    code.push(this.writeCondition(expr.op, `${val1}[${i}]`, val2));
-    code.push(dest, '= true;', 'break;', '}', '++', i, ';', '}');
-
-    code.push('}');
-
-    code.push('}');
-
-    code.push(
-      'else if(',
-      isVal2Array,
-      ') {',
-      len2,
-      '=',
-      val2,
-      '.length;',
-      'while(',
-      i,
-      '<',
-      len2,
-      ') {',
-    );
-    code.push(this.writeCondition(expr.op, val1, `${val2}[${j}]`));
-    code.push(dest, '= true;', 'break;', '}', '++', i, ';', '}', '}');
-
-    code.push('else {', dest, '=', binaryOperators[expr.op](val1, val2), ';', '}');
-
-    this.releaseVars(val1, val2, isVal1Array, isVal2Array, i, j, len1, len2);
-    return code.join('');
-  }
-
   private translateLiteral(type: TokenType, val: any): string {
     if (type === TokenType.STR) {
       return CommonUtils.escapeStr(val);
@@ -804,11 +726,7 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private writeCondition(op: string, val1: any, val2: any): string {
-    return `if(${binaryOperators[op](val1, val2)}) {`;
-  }
-
-  private translateMathExpr(expr: BinaryExpression, dest: string, ctx: string): string {
+  private translateBinaryExpr(expr: BinaryExpression, dest: string, ctx: string): string {
     const val1 = this.acquireVar();
     const val2 = this.acquireVar();
     const { args } = expr;

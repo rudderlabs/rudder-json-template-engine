@@ -1,7 +1,6 @@
 import { Expression, StatementsExpression, SyntaxType } from './types';
 
 export class CommonUtils {
-
   static toArray(val: any): any[] {
     return Array.isArray(val) ? val : [val];
   }

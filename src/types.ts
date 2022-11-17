@@ -159,6 +159,8 @@ export interface LiteralExpression extends Expression {
 export interface PathExpression extends Expression {
   parts: Expression[];
   root?: Expression | string;
+  // Used in a part of another Path
+  subPath?: boolean;
 }
 
 export interface ContextVariable {

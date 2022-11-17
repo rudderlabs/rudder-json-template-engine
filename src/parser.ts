@@ -168,7 +168,8 @@ export class JsonTemplateParser {
         const selectorExpr = expr as SelectorExpression;
         if (!selectorExpr.prop) {
           continue;
-        } else if (!selectorExpr.contextVar &&
+        } else if (
+          !selectorExpr.contextVar &&
           selectorExpr.prop?.type === TokenType.ID &&
           parts[i + 1]?.type === SyntaxType.FUNCTION_CALL_EXPR
         ) {
@@ -225,7 +226,10 @@ export class JsonTemplateParser {
       root: this.parsePathRoot(root),
       parts: this.parsePathParts(),
     };
-    const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(pathExpr);
+
+    JsonTemplateParser.setSubpath(pathExpr.parts);
+
+    const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(pathExpr.parts);
     const expr = JsonTemplateParser.convertToFunctionCallExpr(pathExpr);
     return shouldConvertAsBlock ? JsonTemplateParser.convertToBlockExpr(expr) : expr;
   }
@@ -307,7 +311,6 @@ export class JsonTemplateParser {
     };
   }
 
-
   private parseObjectFilter(): IndexFilterExpression | FilterExpression {
     let exclude = false;
     if (this.lexer.match('~')) {
@@ -329,39 +332,41 @@ export class JsonTemplateParser {
   }
 
   private combineObjectFilters(objectFilters: FilterExpression[]): FilterExpression[] {
-    if(objectFilters.length <= 1) {
+    if (objectFilters.length <= 1) {
       return objectFilters;
     }
     const expr1 = objectFilters.shift() as FilterExpression;
     const expr2 = this.combineObjectFilters(objectFilters);
-    return [{
-      type: SyntaxType.OBJECT_FILTER_EXPR,
-      filter: {
-        type: SyntaxType.LOGICAL_AND_EXPR,
-        op: '&&',
-        args: [expr1.filter, expr2[0].filter]
-      }
-    }];
+    return [
+      {
+        type: SyntaxType.OBJECT_FILTER_EXPR,
+        filter: {
+          type: SyntaxType.LOGICAL_AND_EXPR,
+          op: '&&',
+          args: [expr1.filter, expr2[0].filter],
+        },
+      },
+    ];
   }
 
   private parseObjectFiltersExpr(): (FilterExpression | IndexFilterExpression)[] {
     const objectFilters: FilterExpression[] = [];
-    const indexFilters: IndexFilterExpression[] = []
+    const indexFilters: IndexFilterExpression[] = [];
 
-    while(this.lexer.match('{')) {
+    while (this.lexer.match('{')) {
       this.lexer.expect('{');
       const expr = this.parseObjectFilter();
-      if(expr.type === SyntaxType.OBJECT_INDEX_FILTER_EXPR) {
+      if (expr.type === SyntaxType.OBJECT_INDEX_FILTER_EXPR) {
         indexFilters.push(expr as IndexFilterExpression);
       } else {
         objectFilters.push(expr as FilterExpression);
       }
       this.lexer.expect('}');
-      if(this.lexer.match('.') && this.lexer.match('{', 1)) {
+      if (this.lexer.match('.') && this.lexer.match('{', 1)) {
         this.lexer.lex();
       }
     }
-    
+
     return [...this.combineObjectFilters(objectFilters), ...indexFilters];
   }
 
@@ -916,14 +921,32 @@ export class JsonTemplateParser {
     return this.lexer.throwUnexpectedToken();
   }
 
-  private static pathContainsVariables(expr: PathExpression): boolean {
-    return (
-      !!expr.parts &&
-      expr.parts
-        .filter((part) => part.type === SyntaxType.SELECTOR)
-        .map((part) => part as SelectorExpression)
-        .some((part) => part.context?.index || part.context?.item)
-    );
+  private static setSubpath(parts: any[]) {
+    const remainingParts = parts.slice();
+    while (remainingParts.length) {
+      const part = remainingParts.shift();
+      if (typeof part !== 'object') {
+        continue;
+      }
+      if (part.type === SyntaxType.PATH && Array.isArray(part.parts)) {
+        part.subPath = !part.root;
+      } else {
+        for (let key in part) {
+          if (Array.isArray(part[key])) {
+            remainingParts.push(...part[key].flat());
+          } else if (typeof part[key] === 'object') {
+            remainingParts.push(part[key]);
+          }
+        }
+      }
+    }
+  }
+
+  private static pathContainsVariables(parts: Expression[]): boolean {
+    return parts
+      .filter((part) => part.type === SyntaxType.SELECTOR)
+      .map((part) => part as SelectorExpression)
+      .some((part) => part.context?.index || part.context?.item);
   }
 
   private static convertToBlockExpr(expr: Expression): FunctionExpression {

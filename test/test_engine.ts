@@ -218,7 +218,7 @@ const address = {
 
 new JsonTemplateEngine(`
 let a = [{a: [1, 2], b: "1"}, {a: [3, 4], b: 2}, {a:[5], b: 3}, {b: 4}]
-a{.a.length > 1}.{typeof .b === "number"}
+a{.a.length > 1}
 `)
   .evaluate({ a: 1 })
   .then((a) => console.log(JSON.stringify(a)));
@@ -227,8 +227,9 @@ console.log(
   new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-        .[1][2]
-        `),
+      let a = [{a: [1, 2], b: "1"}, {a: [3, 4], b: 2}, {a:[5], b: 3}, {b: 4}]
+      a{.a.length > 1}
+      `),
     ).parse(),
   ).translate(),
 );
@@ -237,10 +238,10 @@ console.log(
   JSON.stringify(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      a{.a.length > 1}.{typeof .b === "number"}
-        `),
+      .(.a)
+      `),
     ).parse(),
-    null,
-    2,
+    //   null,
+    //   2,
   ),
 );

@@ -16,7 +16,6 @@ import {
   StatementsExpression,
   SyntaxType,
   UnaryExpression,
-  Keyword,
   TokenType,
   IndexFilterExpression,
   DefinitionExpression,
@@ -75,7 +74,7 @@ export class JsonTemplateTranslator {
     let code: string[] = [];
     const exprCode = this.translateExpr(this.expr, dest, ctx);
 
-    code.push(`let ${dest} = undefined;`);
+    code.push(`let ${dest};`);
     code.push(this.vars.map((elm) => `let ${elm};`).join(''));
     code.push(exprCode);
     code.push(`return ${dest};`);
@@ -95,17 +94,11 @@ export class JsonTemplateTranslator {
         return this.translateINExpr(expr as BinaryExpression, dest, ctx);
 
       case SyntaxType.COMPARISON_EXPR:
-        return this.translateBinaryExpr(expr as BinaryExpression, dest, ctx);
-
       case SyntaxType.MATH_EXPR:
         return this.translateBinaryExpr(expr as BinaryExpression, dest, ctx);
 
       case SyntaxType.LOGICAL_COALESCE_EXPR:
-        return this.translateLogicalExpr(expr as BinaryExpression, dest, ctx);
-
       case SyntaxType.LOGICAL_AND_EXPR:
-        return this.translateLogicalExpr(expr as BinaryExpression, dest, ctx);
-
       case SyntaxType.LOGICAL_OR_EXPR:
         return this.translateLogicalExpr(expr as BinaryExpression, dest, ctx);
 
@@ -146,8 +139,6 @@ export class JsonTemplateTranslator {
         return this.translateRangeFilterExpr(expr as RangeFilterExpression, dest, ctx);
 
       case SyntaxType.ARRAY_INDEX_FILTER_EXPR:
-        return this.translateIndexFilterExpr(expr as IndexFilterExpression, dest, ctx);
-
       case SyntaxType.OBJECT_INDEX_FILTER_EXPR:
         return this.translateIndexFilterExpr(expr as IndexFilterExpression, dest, ctx);
 
@@ -199,16 +190,20 @@ export class JsonTemplateTranslator {
     return this.translateExpr(expr.value, dest, ctx);
   }
 
-  private translatePathRoot(
-    root: Expression | string | undefined,
-    dest: string,
-    ctx: string,
-  ): string {
-    if (typeof root === 'object') {
-      return this.translateExpr(root, dest, ctx);
-    } else {
-      return `${dest} = ${root || ctx};`;
-    }
+  private translatePathRoot(path: PathExpression, dest: string, ctx: string): string {
+    if (typeof path.root === 'object') {
+      return this.translateExpr(path.root, dest, ctx);
+    } else if(path.subPath && path.parts.length) {
+        if(JsonTemplateTranslator.isSinglePropSelection(path.parts[0])) {
+          const part = path.parts.shift() as SelectorExpression;
+          const propStr = CommonUtils.escapeStr(part.prop?.value);
+          const code: string[] = [];
+          code.push(`if(!${ctx}[${propStr}]) {continue;}`);
+          code.push(`${dest} = ${ctx}[${propStr}];`);
+          return code.join('');
+        }
+    } 
+    return `${dest} = ${path.root || ctx};`;
   }
 
   private translatePathContext(context: ContextVariable, item: string, idx: string): string {
@@ -224,23 +219,22 @@ export class JsonTemplateTranslator {
 
   private prepareDataForPathPart(part: Expression, data: string): string {
     const code: string[] = [];
-    code.push(JsonTemplateTranslator.covertToArrayValue(data));
     if (JsonTemplateTranslator.isSinglePropSelection(part)) {
       const selector = part as SelectorExpression;
       const propStr = CommonUtils.escapeStr(selector.prop?.value);
-      code.push(
-        `if(Object.prototype.hasOwnProperty.call(${data}, ${propStr})){`,
-      );
+      code.push(`if(Object.prototype.hasOwnProperty.call(${data}, ${propStr})){`);
       code.push(`${data} = [${data}];`);
       code.push('}');
-    } else if (JsonTemplateTranslator.isArrayFilterExpr(part)) {
+    }
+    code.push(JsonTemplateTranslator.covertToArrayValue(data));
+    if (JsonTemplateTranslator.isArrayFilterExpr(part)) {
       code.push(`${data} = [${data}];`);
     }
     return code.join('');
   }
 
   private translatePath(expr: PathExpression, dest: string, baseCtx: string): string {
-    const rootCode = this.translatePathRoot(expr.root, dest, baseCtx);
+    const rootCode = this.translatePathRoot(expr, dest, baseCtx);
     if (!expr.parts.length) {
       return rootCode;
     }
@@ -258,7 +252,7 @@ export class JsonTemplateTranslator {
       const item = itemVars[i];
       const data = dataVars[i];
       code.push(this.prepareDataForPathPart(part, data));
-      code.push(`for(let ${idx}=0; ${idx}<${data}.length; ${idx}++) {`);
+      code.push(`for(${idx}=0; ${idx}<${data}.length; ${idx}++) {`);
       code.push(`${item} = ${data}[${idx}];`);
       if (i > 0 && expr.parts[i - 1].context) {
         code.push(this.translatePathContext(expr.parts[i - 1].context, item, idx));
@@ -289,7 +283,7 @@ export class JsonTemplateTranslator {
     if (prop === '*') {
       const valuesCode = JsonTemplateTranslator.returnObjectValues(ctx);
       code.push(`${dest} = ${valuesCode}.flat();`);
-    } else if(prop) {
+    } else if (prop) {
       const propStr = CommonUtils.escapeStr(prop);
       code.push(`if(${ctx} && Object.prototype.hasOwnProperty.call(${ctx}, ${propStr})){`);
       code.push(`${dest}=${ctx}[${propStr}];`);
@@ -576,7 +570,7 @@ export class JsonTemplateTranslator {
     const code: string[] = [];
     const val = this.acquireVar();
     code.push(this.translateExpr(expr.arg, val, ctx));
-    code.push(`${dest} = ${expr.op} ${val};`)
+    code.push(`${dest} = ${expr.op} ${val};`);
     this.releaseVars(val);
     return code.join('');
   }
@@ -594,7 +588,9 @@ export class JsonTemplateTranslator {
   private static isSinglePropSelection(expr: Expression): boolean {
     if (expr.type === SyntaxType.SELECTOR) {
       const part = expr as SelectorExpression;
-      return part.selector === '.' && part.prop?.type === TokenType.ID;
+      return part.selector === '.' &&
+       (part.prop?.type === TokenType.ID || 
+        part.prop?.type === TokenType.STR);
     }
     return false;
   }
@@ -631,6 +627,46 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
+  private translateObjectIndexFilterExpr(
+    ctx: string,
+    allKeys: string,
+    resultVar: string,
+    shouldExclude?: boolean,
+  ): string {
+    const code: string[] = [];
+    if (shouldExclude) {
+      code.push(`${allKeys}=Object.keys(${ctx}).filter(key => !${allKeys}.includes(key));`);
+    }
+    code.push(`${resultVar} = {};`);
+    code.push(`for(let key of ${allKeys}){`);
+    code.push(
+      `if(Object.prototype.hasOwnProperty.call(${ctx}, key)){${resultVar}[key] = ${ctx}[key];}`,
+    );
+    code.push('}');
+    return code.join('');
+  }
+
+  private translateArrayIndexFilterExpr(ctx: string, allKeys: string, resultVar: string): string {
+    const code: string[] = [];
+    code.push(`${resultVar} = [];`);
+    code.push(`for(let key of ${allKeys}){`);
+    code.push(`if(typeof key === 'string'){`);
+    code.push(`for(let childCtx of ${ctx}){`);
+    code.push(`if(Object.prototype.hasOwnProperty.call(childCtx, key)){`);
+    code.push(`${resultVar}.push(childCtx[key]);`);
+    code.push('}');
+    code.push('}');
+    code.push('continue;');
+    code.push('}');
+    code.push(`if(key < 0){key = ${ctx}.length + key;}`);
+    code.push(
+      `if(Object.prototype.hasOwnProperty.call(${ctx}, key)){${resultVar}.push(${ctx}[key]);}`,
+    );
+    code.push('}');
+    code.push(`if(${allKeys}.length === 1) {${resultVar} = ${resultVar}[0];}`);
+    return code.join('');
+  }
+
   private translateIndexFilterExpr(expr: IndexFilterExpression, dest: string, ctx: string): string {
     const code: string[] = [];
     const allKeys = this.acquireVar();
@@ -638,32 +674,9 @@ export class JsonTemplateTranslator {
     code.push(`${allKeys} = ${allKeys}.flat();`);
     const resultVar = this.acquireVar();
     if (expr.type === SyntaxType.OBJECT_INDEX_FILTER_EXPR) {
-      if (expr.exclude) {
-        code.push(`${allKeys}=Object.keys(${ctx}).filter(key => !${allKeys}.includes(key));`);
-      }
-      code.push(`${resultVar} = {};`);
-      code.push(`for(let key of ${allKeys}){`);
-      code.push(
-        `if(Object.prototype.hasOwnProperty.call(${ctx}, key)){${resultVar}[key] = ${ctx}[key];}`,
-      );
-      code.push('}');
+      code.push(this.translateObjectIndexFilterExpr(ctx, allKeys, resultVar, expr.exclude));
     } else {
-      code.push(`${resultVar} = [];`);
-      code.push(`for(let key of ${allKeys}){`);
-      code.push(`if(typeof key === 'string'){`);
-      code.push(`for(let childCtx of ${ctx}){`);
-      code.push(`if(Object.prototype.hasOwnProperty.call(childCtx, key)){`);
-      code.push(`${resultVar}.push(childCtx[key]);`);
-      code.push('}');
-      code.push('}');
-      code.push('continue;');
-      code.push('}');
-      code.push(`if(key < 0){key = ${ctx}.length + key;}`);
-      code.push(
-        `if(Object.prototype.hasOwnProperty.call(${ctx}, key)){${resultVar}.push(${ctx}[key]);}`,
-      );
-      code.push('}');
-      code.push(`if(${allKeys}.length === 1) {${resultVar} = ${resultVar}[0];}`);
+      code.push(this.translateArrayIndexFilterExpr(ctx, allKeys, resultVar));
     }
     code.push(`${dest}=${resultVar};`);
     this.releaseVars(allKeys);

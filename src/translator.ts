@@ -212,15 +212,14 @@ export class JsonTemplateTranslator {
       const idx = indexVars[i];
       const item = itemVars[i];
       const data = dataVars[i];
-      const singlePropSelect = JsonTemplateTranslator.isSinglePropertySelection(part);
-      if (singlePropSelect) {
+
+      if (JsonTemplateTranslator.isSinglePropertySelection(part)) {
         const selector = part as SelectorExpression;
         const propStr = CommonUtils.escapeStr(selector.prop?.value);
-        code.push(`if(${data}.hasOwnProperty(${propStr}) && `, `Array.isArray(${data})){`);
+        code.push(`if(${data}.hasOwnProperty(${propStr}) && Array.isArray(${data})){`);
         code.push(`${data} = [${data}];`);
         code.push('}');
       }
-
       code.push(JsonTemplateTranslator.covertToArrayValue(data));
       if (JsonTemplateTranslator.isArrayFilterExpr(part)) {
         code.push(`${data} = [${data}];`);

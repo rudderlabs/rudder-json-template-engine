@@ -35,8 +35,8 @@
       }
     },
     {
-      "name": "Test Extractor",
-      "program": "${workspaceFolder}/test/test_extractor.ts",
+      "name": "Test Engine",
+      "program": "${workspaceFolder}/test/test_engine.ts",
       "request": "launch",
       "runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
       "skipFiles": ["<node_internals>/**"],

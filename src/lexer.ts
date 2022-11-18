@@ -1,10 +1,11 @@
-import { VARS_PREFIX } from './constants';
+import { BINDINGS_PARAM_KEY, VARS_PREFIX } from './constants';
 import { JsonTemplateLexerError } from './errors';
-import { Dictionary, Keyword, Token, TokenType } from './types';
+import { Keyword, Token, TokenType } from './types';
 
 const MESSAGES = {
   RESERVED_ID: 'Reserved ID pattern "%0"',
   UNEXP_TOKEN: 'Unexpected token "%0"',
+  UNKNOWN_TOKEN: 'Unknown token',
   UNEXP_EOT: 'Unexpected end of template',
 };
 
@@ -23,7 +24,15 @@ export class JsonTemplateLexer {
       .split('');
   }
 
-  match(value: string, steps = 0): boolean {
+  init() {
+    this.idx = 0;
+    this.buf = [];
+  }
+
+  match(value?: string, steps = 0): boolean {
+    if (!value) {
+      return false;
+    }
     let token = this.lookahead(steps);
     return token.type === TokenType.PUNCT && token.value === value;
   }
@@ -33,18 +42,27 @@ export class JsonTemplateLexer {
   }
 
   matchPath(): boolean {
-    const token = this.lookahead();
-    return this.matchSelector() ||
-      this.matchID() ||
-      this.match('[') ||
-      this.match('^');
+    return this.matchPathSelector() || this.matchID();
   }
 
-  matchSelector(): boolean {
+  matchSpread(): boolean {
+    return this.match('...');
+  }
+
+  matchPathPartSelector(): boolean {
     let token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
       let value = token.value;
-      return value === '.' || value === '..' || value === '...';
+      return value === '.' || value === '..';
+    }
+    return false;
+  }
+
+  matchPathSelector(): boolean {
+    let token = this.lookahead();
+    if (token.type === TokenType.PUNCT) {
+      let value = token.value;
+      return value === '.' || value === '..' || value === '^';
     }
 
     return false;
@@ -64,52 +82,50 @@ export class JsonTemplateLexer {
   }
 
   private static isOperator(id: string): boolean {
-    return Object.values(Keyword).some(op => op.toString() === id);
+    return Object.values(Keyword).some((op) => op.toString() === id);
   }
 
-  matchOperator(op: string): boolean {
+  matchKeyword(op: string): boolean {
     let token = this.lookahead();
-    return token.type === TokenType.OPERATOR && token.value === op;
+    return token.type === TokenType.KEYWORD && token.value === op;
+  }
+
+  matchIN(): boolean {
+    return this.matchKeyword(Keyword.IN);
   }
 
   matchFunction(): boolean {
-    return this.matchOperator(Keyword.FUNCTION);
+    return this.matchKeyword(Keyword.FUNCTION);
   }
 
   matchNew(): boolean {
-    return this.matchOperator(Keyword.NEW);
-  }
-
-  matchReturn(): boolean {
-    return this.matchOperator(Keyword.RETURN);
+    return this.matchKeyword(Keyword.NEW);
   }
 
   matchTypeOf(): boolean {
-    return this.matchOperator(Keyword.TYPEOF);
+    return this.matchKeyword(Keyword.TYPEOF);
+  }
+
+  matchAwait(): boolean {
+    return this.matchKeyword(Keyword.AWAIT);
+  }
+
+  matchAsync(): boolean {
+    return this.matchKeyword(Keyword.ASYNC);
+  }
+
+  matchLambda(): boolean {
+    return this.matchKeyword(Keyword.LAMBDA);
   }
 
   matchDefinition(): boolean {
-    return this.matchOperator(Keyword.LET) || this.matchOperator(Keyword.CONST);
-  }
-
-  expectOperator(op: string) {
-    let token = this.lex();
-    if (token.type !== TokenType.OPERATOR || token.value !== op) {
-      this.throwUnexpected(token);
-    }
-  }
-
-  expectTokenType(tokenType: TokenType) {
-    let token = this.lex();
-    if (token.type !== tokenType) {
-      this.throwUnexpected(token);
-    }
+    return this.matchKeyword(Keyword.LET) || this.matchKeyword(Keyword.CONST);
   }
 
   expect(value) {
     let token = this.lex();
     if (token.type !== TokenType.PUNCT || token.value !== value) {
-      this.throwUnexpected(token);
+      this.throwUnexpectedToken(token);
     }
   }
 
@@ -147,8 +163,11 @@ export class JsonTemplateLexer {
     if (token) {
       return token;
     }
+    this.throwError(MESSAGES.UNKNOWN_TOKEN);
+  }
 
-    return { range: [this.idx, this.idx], type: TokenType.UNKNOWN, value: undefined };
+  value(): any {
+    return this.lex().value;
   }
 
   lex(): Token {
@@ -164,29 +183,46 @@ export class JsonTemplateLexer {
     return this.advance();
   }
 
+  nextChar(): string {
+    return this.codeChars[this.idx];
+  }
+
+  ignoreNextChar() {
+    this.idx++;
+  }
+
+  matchNextChar(ch: string): boolean {
+    return this.nextChar() === ch;
+  }
+
   static isLiteralToken(token: Token) {
     return (
       token.type === TokenType.BOOL ||
       token.type === TokenType.NUM ||
       token.type === TokenType.STR ||
-      token.type === TokenType.NULL
+      token.type === TokenType.NULL ||
+      token.type === TokenType.UNDEFINED
     );
   }
 
-  throwUnexpected(token?: Token): never {
+  throwUnexpectedToken(token?: Token): never {
     token = token || this.lookahead();
     if (token.type === TokenType.EOT) {
-      JsonTemplateLexer.throwError(token, MESSAGES.UNEXP_EOT);
+      this.throwError(MESSAGES.UNEXP_EOT);
     }
 
-    JsonTemplateLexer.throwError(token, MESSAGES.UNEXP_TOKEN, token.value);
+    this.throwError(MESSAGES.UNEXP_TOKEN, token.value);
   }
 
-  static throwError(token: Token, messageFormat: string, ...args): never {
+  getContext(length = 10): string {
+    return this.codeChars.slice(this.idx - length, this.idx + length).join('');
+  }
+
+  private throwError(messageFormat: string, ...args): never {
     const msg = messageFormat.replace(/%(\d)/g, (_, idx) => {
-      return args[idx] || '';
+      return args[idx];
     });
-    throw new JsonTemplateLexerError(msg, token.range[0]);
+    throw new JsonTemplateLexerError(msg + ' at ' + this.getContext(15));
   }
 
   private static isDigit(ch: string) {
@@ -198,18 +234,16 @@ export class JsonTemplateLexer {
   }
 
   private static isIdStart(ch: string) {
-    return (
-      ch === '$' || ch === '@' || ch === '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
-    );
+    return ch === '$' || ch === '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
   }
 
   private static isIdPart(ch: string) {
     return this.isIdStart(ch) || (ch >= '0' && ch <= '9');
   }
 
-  private static validateIDToken(token: Token) {
-    if (token.value.startsWith(VARS_PREFIX)) {
-      this.throwError(token, MESSAGES.RESERVED_ID, token.value);
+  private validateID(id: string) {
+    if (id.startsWith(VARS_PREFIX)) {
+      this.throwError(MESSAGES.RESERVED_ID, id);
     }
   }
 
@@ -233,7 +267,7 @@ export class JsonTemplateLexer {
 
     if (JsonTemplateLexer.isOperator(id)) {
       return {
-        type: TokenType.OPERATOR,
+        type: TokenType.KEYWORD,
         value: id,
         range: [start, this.idx],
       };
@@ -255,19 +289,29 @@ export class JsonTemplateLexer {
           range: [start, this.idx],
         };
 
-      default:
-        const token: Token = {
-          type: TokenType.ID,
-          value: id,
+      case 'undefined':
+        return {
+          type: TokenType.UNDEFINED,
+          value: undefined,
           range: [start, this.idx],
         };
-        JsonTemplateLexer.validateIDToken(token);
-        return token;
+
+      default:
+        this.validateID(id);
+        return {
+          type: TokenType.ID,
+          value: id.replace(/^\$/, `${BINDINGS_PARAM_KEY}`),
+          range: [start, this.idx],
+        };
     }
   }
 
   private scanString(): Token | undefined {
-    if (this.codeChars[this.idx] !== '"' && this.codeChars[this.idx] !== "'") {
+    if (
+      this.codeChars[this.idx] !== '"' &&
+      this.codeChars[this.idx] !== '`' &&
+      this.codeChars[this.idx] !== "'"
+    ) {
       return;
     }
 
@@ -281,7 +325,7 @@ export class JsonTemplateLexer {
       ch = this.codeChars[this.idx++];
       if (ch === '\\') {
         ch = this.codeChars[this.idx++];
-      } else if ((ch === '"' || ch === "'") && ch === orig) {
+      } else if ('\'"`'.includes(ch) && ch === orig) {
         eosFound = true;
         break;
       }
@@ -295,6 +339,7 @@ export class JsonTemplateLexer {
         range: [start, this.idx],
       };
     }
+    this.throwUnexpectedToken();
   }
 
   private scanNumeric(): Token | undefined {
@@ -308,7 +353,7 @@ export class JsonTemplateLexer {
         ch = this.codeChars[this.idx];
         if (ch === '.') {
           if (isFloat) {
-            return;
+            this.throwUnexpectedToken();
           }
           isFloat = true;
         } else if (!JsonTemplateLexer.isDigit(ch)) {
@@ -343,6 +388,13 @@ export class JsonTemplateLexer {
         value: '...',
         range: [start, this.idx],
       };
+    } else if (ch2 === '.') {
+      this.idx = this.idx + 2;
+      return {
+        type: TokenType.PUNCT,
+        value: '..',
+        range: [start, this.idx],
+      };
     } else {
       if (JsonTemplateLexer.isDigit(ch2)) {
         return;
@@ -354,11 +406,13 @@ export class JsonTemplateLexer {
       };
     }
   }
+
   private scanPunctuatorForEquality(): Token | undefined {
     let start = this.idx,
       ch1 = this.codeChars[this.idx],
       ch2 = this.codeChars[this.idx + 1],
       ch3 = this.codeChars[this.idx + 2];
+
     if (ch2 === '=') {
       if (ch3 === '=') {
         if ('=!^$*'.indexOf(ch1) >= 0) {
@@ -409,7 +463,7 @@ export class JsonTemplateLexer {
       ch1 = this.codeChars[this.idx],
       ch2 = this.codeChars[this.idx + 1];
 
-    if (ch1 === ch2 && '|&*.=><'.includes(ch1)) {
+    if (ch1 === ch2 && '|&*.=>?<'.includes(ch1)) {
       this.idx += 2;
       return {
         type: TokenType.PUNCT,
@@ -423,7 +477,7 @@ export class JsonTemplateLexer {
     let start = this.idx,
       ch1 = this.codeChars[this.idx];
 
-    if (',;:{}()[]^+-*/%!><|='.includes(ch1)) {
+    if (',;:{}()[]^+-*/%!><|=@~#?\n'.includes(ch1)) {
       return {
         type: TokenType.PUNCT,
         value: ch1,
@@ -432,20 +486,28 @@ export class JsonTemplateLexer {
     }
   }
 
+  private scanPunctuatorForQuestionMarks(): Token | undefined {
+    let start = this.idx,
+      ch1 = this.codeChars[this.idx],
+      ch2 = this.codeChars[this.idx + 1];
+
+    if (ch1 === '?' && JsonTemplateLexer.isDigit(ch2)) {
+      this.idx += 2;
+      return {
+        type: TokenType.LAMBDA_ARG,
+        value: Number(ch2),
+        range: [start, this.idx],
+      };
+    }
+  }
+
   private scanPunctuator(): Token | undefined {
     return (
       this.scanPunctuatorForDots() ||
+      this.scanPunctuatorForQuestionMarks() ||
       this.scanPunctuatorForEquality() ||
       this.scanPunctuatorForRepeatedTokens() ||
       this.scanSingleCharPunctuators()
     );
-  }
-
-  validateNoMoreTokensLeft() {
-    const token = this.lex();
-
-    if (token.type !== TokenType.EOT) {
-      this.throwUnexpected(token);
-    }
   }
 }

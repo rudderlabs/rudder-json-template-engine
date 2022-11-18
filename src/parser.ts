@@ -2,7 +2,6 @@ import {
   ArrayExpression,
   AssignmentExpression,
   BinaryExpression,
-  ConcatExpression,
   Expression,
   FunctionCallExpression,
   FunctionExpression,
@@ -14,259 +13,425 @@ import {
   SyntaxType,
   TokenType,
   UnaryExpression,
-  ObjectFilterExpression,
-  PosFilterExpression,
-  Keyword,
-  FunctionCallArgExpression,
+  FilterExpression,
+  RangeFilterExpression,
+  Token,
+  IndexFilterExpression,
+  DefinitionExpression,
+  SpreadExpression,
+  ObjectPropExpression,
+  ToArrayExpression,
+  ContextVariable,
+  ConditionalExpression,
+  OperatorType,
 } from './types';
 import { JsosTemplateParserError } from './errors';
-import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
+import { DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
+import { CommonUtils } from './utils';
 
 const EMPTY_EXPR = { type: SyntaxType.EMPTY };
 export class JsonTemplateParser {
   private lexer: JsonTemplateLexer;
-  private expr?: Expression;
 
   constructor(lexer: JsonTemplateLexer) {
     this.lexer = lexer;
   }
 
   parse(): Expression {
-    if (!this.expr) {
-      const expr = this.parseStatementsExpr();
-      this.lexer.validateNoMoreTokensLeft();
-      this.expr = expr;
-    }
-    return this.expr;
+    this.lexer.init();
+    return this.parseStatementsExpr();
   }
 
-  private parseStatementsExpr(): StatementsExpression {
-    let statements: Expression[] = [];
-    while (!this.lexer.match('}')) {
-      let expr: Expression = this.parseStatementExpr();
-      if (expr.type !== SyntaxType.EMPTY) {
-        statements.push(expr);
-      }
-      if (this.lexer.matchTokenType(TokenType.EOT)) {
-        break;
-      }
-      if (!this.lexer.match('}')) {
-        this.lexer.expect(';');
-      }
+  private parseEndOfStatement(blockEnd) {
+    if (this.lexer.matchEOT() || this.lexer.match(blockEnd)) {
+      return;
     }
+
+    if (this.lexer.match(';')) {
+      this.lexer.lex();
+    } else if (this.lexer.matchNextChar('\n')) {
+      this.lexer.ignoreNextChar();
+    } else {
+      this.lexer.throwUnexpectedToken();
+    }
+  }
+
+  private parseStatements(blockEnd?: string): Expression[] {
+    let statements: Expression[] = [];
+    while (!this.lexer.matchEOT() && !this.lexer.match(blockEnd)) {
+      statements.push(this.parseStatementExpr());
+      this.parseEndOfStatement(blockEnd);
+    }
+    return statements;
+  }
+
+  private parseStatementsExpr(blockEnd?: string): StatementsExpression {
     return {
       type: SyntaxType.STATEMENTS_EXPR,
-      statements,
+      statements: this.parseStatements(blockEnd),
     };
   }
 
   private parseStatementExpr(): Expression {
-    return this.parseAssignmentExpr();
-  }
-
-  private static getIDPath(expr: PathExpression): string {
-    if (!expr.root || expr.root.startsWith(DATA_PARAM_KEY) || expr.parts.length) {
-      throw new JsosTemplateParserError('Invalid ID path');
-    }
-    return expr.root;
+    return this.parseBaseExpr();
   }
 
   private parseAssignmentExpr(): AssignmentExpression | Expression {
-    const expr = this.parseLogicalORExpr();
+    const expr = this.parseNextExpr(OperatorType.ASSIGNMENT);
     if (expr.type === SyntaxType.PATH && this.lexer.match('=')) {
       this.lexer.lex();
       return {
         type: SyntaxType.ASSIGNMENT_EXPR,
-        value: this.parseLogicalORExpr(),
-        id: JsonTemplateParser.getIDPath(expr as PathExpression),
+        value: this.parseBaseExpr(),
+        path: expr as PathExpression,
       };
     }
     return expr;
   }
 
-  private parsePathConcatExpr(): ConcatExpression | Expression {
-    const expr = this.parsePathConcatPartExpr();
-    let operands: Expression[] = [];
+  private parseBaseExpr(): Expression {
+    return this.parseNextExpr(OperatorType.BASE);
+  }
 
-    while (this.lexer.match('|')) {
-      this.lexer.lex();
-      operands.push(this.parsePathConcatPartExpr());
+  private parseNextExpr(currentOperation: OperatorType): Expression {
+    switch (currentOperation) {
+      case OperatorType.CONDITIONAL:
+        return this.parseAssignmentExpr();
+      case OperatorType.ASSIGNMENT:
+        return this.parseCoalescingExpr();
+      case OperatorType.COALESCING:
+        return this.parseLogicalORExpr();
+      case OperatorType.OR:
+        return this.parseLogicalANDExpr();
+      case OperatorType.AND:
+        return this.parseEqualityExpr();
+      case OperatorType.EQUALITY:
+        return this.parseRelationalExpr();
+      case OperatorType.RELATIONAL:
+        return this.parseShiftExpr();
+      case OperatorType.SHIFT:
+        return this.parseAdditiveExpr();
+      case OperatorType.ADDITION:
+        return this.parseMultiplicativeExpr();
+      case OperatorType.MULTIPLICATION:
+        return this.parsePowerExpr();
+      case OperatorType.POWER:
+        return this.parseUnaryExpr();
+      case OperatorType.UNARY:
+        return this.parsePathAfterExpr();
+      default:
+        return this.parseConditionalExpr();
     }
+  }
 
-    if (operands.length) {
-      operands.unshift(expr);
-      return {
-        type: SyntaxType.CONCAT_EXPR,
-        args: operands,
+  private parsePathPart(): Expression | Expression[] | undefined {
+    if (this.lexer.match('.') && this.lexer.match('(', 1)) {
+      this.lexer.lex();
+      return this.parseBlockExpr();
+    } else if (this.lexer.match('(')) {
+      return this.parseFunctionCallExpr();
+    } else if (this.lexer.matchPathPartSelector()) {
+      return this.parseSelector();
+    } else if (this.lexer.match('[') && !this.lexer.match(']', 1)) {
+      return this.parseArrayFiltersExpr();
+    } else if (this.lexer.match('{')) {
+      return this.parseObjectFiltersExpr();
+    }
+  }
+
+  private parsePathParts(): Expression[] {
+    let parts: Expression[] = [];
+    let newParts: Expression | Expression[] | undefined;
+    while ((newParts = this.parsePathPart())) {
+      newParts = CommonUtils.toArray(newParts);
+      parts.push(...newParts);
+      if (newParts[0].type === SyntaxType.FUNCTION_CALL_EXPR) {
+        break;
       }
     }
+    return JsonTemplateParser.combinePathParts(parts);
+  }
 
+  private static prependFunctionID(prefix: string, id?: string): string {
+    return id ? prefix + '.' + id : prefix;
+  }
+
+  private static combinePathParts(parts: Expression[]): Expression[] {
+    if (parts.length < 2) {
+      return parts;
+    }
+    let newParts: Expression[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      let expr = parts[i];
+      if (expr.type === SyntaxType.SELECTOR && expr.selector === '.') {
+        const selectorExpr = expr as SelectorExpression;
+        if (!selectorExpr.prop) {
+          continue;
+        } else if (
+          !selectorExpr.contextVar &&
+          selectorExpr.prop?.type === TokenType.ID &&
+          parts[i + 1]?.type === SyntaxType.FUNCTION_CALL_EXPR
+        ) {
+          expr = parts[i + 1] as FunctionCallExpression;
+          expr.id = this.prependFunctionID(selectorExpr.prop.value, expr.id);
+          expr.dot = true;
+          i++;
+        }
+      }
+      newParts.push(expr);
+    }
+    if (newParts.length < parts.length) {
+      newParts = this.combinePathParts(newParts);
+    }
+    return newParts;
+  }
+
+  private static convertToFunctionCallExpr(
+    expr: PathExpression,
+  ): FunctionCallExpression | PathExpression | FunctionExpression {
+    if (expr.parts[0]?.type === SyntaxType.FUNCTION_CALL_EXPR && typeof expr.root !== 'object') {
+      const fnExpr = expr.parts.shift() as FunctionCallExpression;
+      if (expr.root) {
+        fnExpr.id = this.prependFunctionID(expr.root, fnExpr.id);
+        fnExpr.dot = false;
+      }
+      return fnExpr;
+    }
+    if (CommonUtils.getLastElement(expr.parts)?.type === SyntaxType.FUNCTION_CALL_EXPR) {
+      const fnExpr = expr.parts.pop() as FunctionCallExpression;
+      fnExpr.object = expr;
+      return fnExpr;
+    }
     return expr;
   }
 
-  private parsePathConcatPartExpr(): Expression {
-    return this.lexer.match('(') ? this.parsePathGroupExpr() : this.parsePath();
-  }
-
-  private parsePathGroupExpr(): Expression {
-    this.lexer.expect('(');
-    let expr = this.parseLogicalORExpr();
-    this.lexer.expect(')');
-
-    let parts: Expression[] = [];
-    let part: Expression | undefined;
-    while ((part = this.parsePathPart())) {
-      parts.push(part);
+  private parsePathRoot(root?: Expression): Expression | string | undefined {
+    if (root) {
+      return root;
     }
-
-    if (!parts.length) {
-      return expr;
-    } else if (expr.type === SyntaxType.PATH) {
-      expr.parts = (expr.parts || []).concat(parts);
-      return expr;
-    }
-
-    parts.unshift(expr);
-
-    return {
-      type: SyntaxType.PATH,
-      parts: parts,
-    };
-  }
-
-  private parsePath(): PathExpression {
-    if (!this.lexer.matchPath()) {
-      this.lexer.throwUnexpected();
-    }
-
-    let root: string | undefined;
-    let parts: Expression[] = [];
-
     if (this.lexer.match('^')) {
       this.lexer.lex();
-      root = DATA_PARAM_KEY;
+      return DATA_PARAM_KEY;
     } else if (this.lexer.matchID()) {
-      const idPath = this.parsePathVariable();
-      if (this.lexer.match('(')) {
-        parts.push(this.parseFunctionCallExpr(idPath))
-      } else {
-        root = idPath;
-      }
+      return this.lexer.value();
     }
-
-    let part: Expression | undefined;
-    while ((part = this.parsePathPart())) {
-      parts.push(part);
-    }
-
-    return {
-      type: SyntaxType.PATH,
-      root,
-      parts,
-    };
   }
 
-  private parsePathPart(): Expression | undefined {
-    if (this.lexer.match('(') ||
-      (this.lexer.match('.') && this.lexer.matchID(1) && this.lexer.match('(', 2))
-    ) {
-      return this.parseFunctionCallExpr();
-    } else if (this.lexer.matchSelector()) {
-      return this.parseSelector();
-    } else if (this.lexer.match('[')) {
-      return this.parseFilterExpr();
+  private parsePath(
+    root?: Expression,
+  ): PathExpression | FunctionCallExpression | FunctionExpression {
+    const pathExpr = {
+      type: SyntaxType.PATH,
+      root: this.parsePathRoot(root),
+      parts: this.parsePathParts(),
+    };
+
+    JsonTemplateParser.setSubpath(pathExpr.parts);
+
+    const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(pathExpr.parts);
+    const expr = JsonTemplateParser.convertToFunctionCallExpr(pathExpr);
+    return shouldConvertAsBlock ? JsonTemplateParser.convertToBlockExpr(expr) : expr;
+  }
+
+  private parseContextVariable(expected: string): string | undefined {
+    if (this.lexer.match(expected)) {
+      this.lexer.lex();
+      if (!this.lexer.matchID()) {
+        this.lexer.throwUnexpectedToken();
+      }
+      return this.lexer.value();
     }
   }
 
   private parseSelector(): SelectorExpression | Expression {
-    let selector = this.lexer.lex().value;
-    let prop: string | undefined;
-
-    if (this.lexer.match('*') ||
-      this.lexer.matchID() ||
-      this.lexer.matchTokenType(TokenType.STR)) {
-      prop = this.lexer.lex().value;
+    let selector = this.lexer.value();
+    let prop: Token | undefined;
+    let context: ContextVariable | undefined;
+    if (this.lexer.match('*')) {
+      prop = this.lexer.lex();
     }
-
+    if (this.lexer.matchID() || this.lexer.matchTokenType(TokenType.STR)) {
+      prop = this.lexer.lex();
+      while (this.lexer.match('@') || this.lexer.match('#')) {
+        context = context || {};
+        context.item = context.item || this.parseContextVariable('@');
+        context.index = context.index || this.parseContextVariable('#');
+      }
+    }
     return {
       type: SyntaxType.SELECTOR,
       selector: selector,
-      prop
+      prop,
+      context,
     };
   }
 
-  private parsePosFilterExpr(): PosFilterExpression {
-    if (this.lexer.match(']')) {
-      return {
-        type: SyntaxType.POS_FILTER_EXPR,
-        empty: true,
-      };
-    }
+  private parsePositionFilterExpr():
+    | RangeFilterExpression
+    | IndexFilterExpression
+    | FilterExpression {
     if (this.lexer.match(':')) {
       this.lexer.lex();
       return {
-        type: SyntaxType.POS_FILTER_EXPR,
-        toIdx: this.parseLogicalORExpr(),
+        type: SyntaxType.RANGE_FILTER_EXPR,
+        toIdx: this.parseBaseExpr(),
       };
     }
 
-    let fromExpr = this.parseLogicalORExpr();
+    let fromExpr = this.parseBaseExpr();
     if (this.lexer.match(':')) {
       this.lexer.lex();
       if (this.lexer.match(']')) {
         return {
-          type: SyntaxType.POS_FILTER_EXPR,
+          type: SyntaxType.RANGE_FILTER_EXPR,
           fromIdx: fromExpr,
         };
       }
 
       return {
-        type: SyntaxType.POS_FILTER_EXPR,
+        type: SyntaxType.RANGE_FILTER_EXPR,
         fromIdx: fromExpr,
-        toIdx: this.parseLogicalORExpr(),
+        toIdx: this.parseBaseExpr(),
       };
     }
 
+    if (!this.lexer.match(']')) {
+      this.lexer.expect(',');
+    }
     return {
-      type: SyntaxType.POS_FILTER_EXPR,
-      idx: fromExpr,
+      type: SyntaxType.ARRAY_INDEX_FILTER_EXPR,
+      indexes: {
+        type: SyntaxType.ARRAY_EXPR,
+        elements: [
+          fromExpr,
+          ...this.parseCommaSeparatedElements(']', () => this.parseSpreadExpr()),
+        ],
+      },
     };
   }
 
-  private parseObjectFilterExpression(): ObjectFilterExpression {
-    const filters: Expression[] = [];
-    while (this.lexer.match('{')) {
-      this.lexer.expect('{');
-      filters.push(this.parseLogicalORExpr());
-      this.lexer.expect('}');
+  private parseObjectFilter(): IndexFilterExpression | FilterExpression {
+    let exclude = false;
+    if (this.lexer.match('~')) {
+      this.lexer.lex();
+      exclude = true;
     }
-
+    // excluding is applicaple only for index filters
+    if (exclude || this.lexer.match('[')) {
+      return {
+        type: SyntaxType.OBJECT_INDEX_FILTER_EXPR,
+        indexes: this.parseArrayExpr(),
+        exclude,
+      };
+    }
     return {
       type: SyntaxType.OBJECT_FILTER_EXPR,
-      filters,
+      filter: this.parseBaseExpr(),
     };
   }
 
-  private parseFilterExpr(): Expression {
-    this.lexer.expect('[');
-    let expr = this.lexer.match('{')
-      ? this.parseObjectFilterExpression()
-      : this.parsePosFilterExpr();
+  private combineObjectFilters(objectFilters: FilterExpression[]): FilterExpression[] {
+    if (objectFilters.length <= 1) {
+      return objectFilters;
+    }
+    const expr1 = objectFilters.shift() as FilterExpression;
+    const expr2 = this.combineObjectFilters(objectFilters);
+    return [
+      {
+        type: SyntaxType.OBJECT_FILTER_EXPR,
+        filter: {
+          type: SyntaxType.LOGICAL_AND_EXPR,
+          op: '&&',
+          args: [expr1.filter, expr2[0].filter],
+        },
+      },
+    ];
+  }
 
+  private parseObjectFiltersExpr(): (FilterExpression | IndexFilterExpression)[] {
+    const objectFilters: FilterExpression[] = [];
+    const indexFilters: IndexFilterExpression[] = [];
+
+    while (this.lexer.match('{')) {
+      this.lexer.expect('{');
+      const expr = this.parseObjectFilter();
+      if (expr.type === SyntaxType.OBJECT_INDEX_FILTER_EXPR) {
+        indexFilters.push(expr as IndexFilterExpression);
+      } else {
+        objectFilters.push(expr as FilterExpression);
+      }
+      this.lexer.expect('}');
+      if (this.lexer.match('.') && this.lexer.match('{', 1)) {
+        this.lexer.lex();
+      }
+    }
+
+    return [...this.combineObjectFilters(objectFilters), ...indexFilters];
+  }
+
+  private parseConditionalExpr(): ConditionalExpression | Expression {
+    const ifExpr = this.parseNextExpr(OperatorType.CONDITIONAL);
+
+    if (this.lexer.match('?')) {
+      this.lexer.lex();
+      const thenExpr = this.parseConditionalExpr();
+      if (this.lexer.match(':')) {
+        this.lexer.lex();
+        const elseExpr = this.parseConditionalExpr();
+        return {
+          type: SyntaxType.CONDITIONAL_EXPR,
+          if: ifExpr,
+          then: thenExpr,
+          else: elseExpr,
+        };
+      }
+      return {
+        type: SyntaxType.CONDITIONAL_EXPR,
+        if: ifExpr,
+        then: thenExpr,
+        else: {
+          type: SyntaxType.LITERAL,
+          tokenType: TokenType.UNDEFINED,
+        },
+      };
+    }
+
+    return ifExpr;
+  }
+
+  private parseArrayFiltersExpr():
+    | RangeFilterExpression
+    | IndexFilterExpression
+    | FilterExpression {
+    this.lexer.expect('[');
+    const expr = this.parsePositionFilterExpr();
     this.lexer.expect(']');
+    return expr;
+  }
+
+  private parseCoalescingExpr(): BinaryExpression | Expression {
+    let expr = this.parseNextExpr(OperatorType.COALESCING);
+
+    if (this.lexer.match('??')) {
+      return {
+        type: SyntaxType.LOGICAL_COALESCE_EXPR,
+        op: this.lexer.value(),
+        args: [expr, this.parseCoalescingExpr()],
+      };
+    }
 
     return expr;
   }
 
   private parseLogicalORExpr(): BinaryExpression | Expression {
-    let expr = this.parseLogicalANDExpr();
+    let expr = this.parseNextExpr(OperatorType.OR);
 
-    while (this.lexer.match('||')) {
-      expr = {
-        type: SyntaxType.LOGICAL_EXPR,
-        op: this.lexer.lex().value,
-        args: [expr, this.parseLogicalANDExpr()],
+    if (this.lexer.match('||')) {
+      return {
+        type: SyntaxType.LOGICAL_OR_EXPR,
+        op: this.lexer.value(),
+        args: [expr, this.parseLogicalORExpr()],
       };
     }
 
@@ -274,13 +439,13 @@ export class JsonTemplateParser {
   }
 
   private parseLogicalANDExpr(): BinaryExpression | Expression {
-    let expr = this.parseEqualityExpr();
+    let expr = this.parseNextExpr(OperatorType.AND);
 
-    while (this.lexer.match('&&')) {
-      expr = {
-        type: SyntaxType.LOGICAL_EXPR,
-        op: this.lexer.lex().value,
-        args: [expr, this.parseEqualityExpr()],
+    if (this.lexer.match('&&')) {
+      return {
+        type: SyntaxType.LOGICAL_AND_EXPR,
+        op: this.lexer.value(),
+        args: [expr, this.parseLogicalANDExpr()],
       };
     }
 
@@ -288,9 +453,9 @@ export class JsonTemplateParser {
   }
 
   private parseEqualityExpr(): BinaryExpression | Expression {
-    let expr = this.parseRelationalExpr();
+    let expr = this.parseNextExpr(OperatorType.EQUALITY);
 
-    while (
+    if (
       this.lexer.match('==') ||
       this.lexer.match('!=') ||
       this.lexer.match('===') ||
@@ -308,10 +473,10 @@ export class JsonTemplateParser {
       this.lexer.match('*=') ||
       this.lexer.match('=*')
     ) {
-      expr = {
+      return {
         type: SyntaxType.COMPARISON_EXPR,
-        op: this.lexer.lex().value,
-        args: [expr, this.parseRelationalExpr()],
+        op: this.lexer.value(),
+        args: [expr, this.parseEqualityExpr()],
       };
     }
 
@@ -319,18 +484,19 @@ export class JsonTemplateParser {
   }
 
   private parseRelationalExpr(): BinaryExpression | Expression {
-    let expr = this.parseShiftExpr();
+    let expr = this.parseNextExpr(OperatorType.RELATIONAL);
 
-    while (
+    if (
       this.lexer.match('<') ||
       this.lexer.match('>') ||
       this.lexer.match('<=') ||
-      this.lexer.match('>=')
+      this.lexer.match('>=') ||
+      this.lexer.matchIN()
     ) {
-      expr = {
-        type: SyntaxType.COMPARISON_EXPR,
-        op: this.lexer.lex().value,
-        args: [expr, this.parseShiftExpr()],
+      return {
+        type: this.lexer.matchIN() ? SyntaxType.IN_EXPR : SyntaxType.COMPARISON_EXPR,
+        op: this.lexer.value(),
+        args: [expr, this.parseRelationalExpr()],
       };
     }
 
@@ -338,13 +504,13 @@ export class JsonTemplateParser {
   }
 
   private parseShiftExpr(): BinaryExpression | Expression {
-    let expr = this.parseAdditiveExpr();
+    let expr = this.parseNextExpr(OperatorType.SHIFT);
 
-    while (this.lexer.match('>>') || this.lexer.match('<<')) {
-      expr = {
+    if (this.lexer.match('>>') || this.lexer.match('<<')) {
+      return {
         type: SyntaxType.MATH_EXPR,
-        op: this.lexer.lex().value,
-        args: [expr, this.parseAdditiveExpr()],
+        op: this.lexer.value(),
+        args: [expr, this.parseShiftExpr()],
       };
     }
 
@@ -352,13 +518,13 @@ export class JsonTemplateParser {
   }
 
   private parseAdditiveExpr(): BinaryExpression | Expression {
-    let expr = this.parseMultiplicativeExpr();
+    let expr = this.parseNextExpr(OperatorType.ADDITION);
 
-    while (this.lexer.match('+') || this.lexer.match('-')) {
-      expr = {
+    if (this.lexer.match('+') || this.lexer.match('-')) {
+      return {
         type: SyntaxType.MATH_EXPR,
-        op: this.lexer.lex().value,
-        args: [expr, this.parseMultiplicativeExpr()],
+        op: this.lexer.value(),
+        args: [expr, this.parseAdditiveExpr()],
       };
     }
 
@@ -366,13 +532,13 @@ export class JsonTemplateParser {
   }
 
   private parseMultiplicativeExpr(): BinaryExpression | Expression {
-    let expr: Expression = this.parsePowerExpr();
+    let expr = this.parseNextExpr(OperatorType.MULTIPLICATION);
 
-    while (this.lexer.match('*') || this.lexer.match('/') || this.lexer.match('%')) {
-      expr = {
+    if (this.lexer.match('*') || this.lexer.match('/') || this.lexer.match('%')) {
+      return {
         type: SyntaxType.MATH_EXPR,
-        op: this.lexer.lex().value as string,
-        args: [expr, this.parsePowerExpr()],
+        op: this.lexer.value() as string,
+        args: [expr, this.parseMultiplicativeExpr()],
       };
     }
 
@@ -380,12 +546,12 @@ export class JsonTemplateParser {
   }
 
   private parsePowerExpr(): BinaryExpression | Expression {
-    let expr: Expression = this.parseUnaryExpr();
+    let expr = this.parseNextExpr(OperatorType.POWER);
 
-    while (this.lexer.match('**')) {
-      expr = {
+    if (this.lexer.match('**')) {
+      return {
         type: SyntaxType.MATH_EXPR,
-        op: this.lexer.lex().value as string,
+        op: this.lexer.value() as string,
         args: [expr, this.parsePowerExpr()],
       };
     }
@@ -394,25 +560,74 @@ export class JsonTemplateParser {
   }
 
   private parseUnaryExpr(): UnaryExpression | Expression {
-    if (this.lexer.match('!') ||
+    if (
+      this.lexer.match('!') ||
       this.lexer.match('-') ||
-      this.lexer.matchTypeOf()) {
+      this.lexer.matchTypeOf() ||
+      this.lexer.matchAwait()
+    ) {
       return {
         type: SyntaxType.UNARY_EXPR,
-        op: this.lexer.lex().value as string,
-        arg: this.parseComplexExpr(),
+        op: this.lexer.value() as string,
+        arg: this.parseUnaryExpr(),
       };
     }
 
-    return this.parseComplexExpr();
+    return this.parseNextExpr(OperatorType.UNARY);
   }
 
-  private parseComplexExpr(): PathExpression | Expression {
-    const expr = this.parsePrimaryExpr();
-    if(this.lexer.match('.') || this.lexer.match('[')) {
-      const pathExpr = this.parsePath();
-      pathExpr.parts.unshift(expr);
-      return pathExpr;
+  private isToArrayExpr(): boolean {
+    let toArray = false;
+    while (this.lexer.match('[') && this.lexer.match(']', 1)) {
+      this.lexer.lex();
+      this.lexer.lex();
+      toArray = true;
+    }
+    return toArray;
+  }
+
+  private shouldSkipPathParsing(expr: Expression): boolean {
+    switch (expr.type) {
+      case SyntaxType.DEFINTION_EXPR:
+      case SyntaxType.ASSIGNMENT_EXPR:
+      case SyntaxType.SPREAD_EXPR:
+        return true;
+      case SyntaxType.LITERAL:
+      case SyntaxType.MATH_EXPR:
+      case SyntaxType.COMPARISON_EXPR:
+        if (this.lexer.match('(')) {
+          return true;
+        }
+        break;
+      case SyntaxType.FUNCTION_EXPR:
+        if (!this.lexer.match('(')) {
+          return true;
+        }
+        break;
+      case SyntaxType.ARRAY_EXPR:
+      case SyntaxType.OBJECT_EXPR:
+        if (this.lexer.match('(')) {
+          return true;
+        }
+        break;
+    }
+    return false;
+  }
+
+  private parsePathAfterExpr(): PathExpression | ToArrayExpression | Expression {
+    let expr = this.parsePrimaryExpr();
+    if (this.shouldSkipPathParsing(expr)) {
+      return expr;
+    }
+    while (this.lexer.matchPathPartSelector() || this.lexer.match('[') || this.lexer.match('(')) {
+      if (this.isToArrayExpr()) {
+        expr = {
+          type: SyntaxType.TO_ARRAY_EXPR,
+          value: expr,
+        };
+        continue;
+      }
+      expr = this.parsePath(expr);
     }
     return expr;
   }
@@ -426,86 +641,241 @@ export class JsonTemplateParser {
     };
   }
 
-  private parsePathVariable(): string {
+  private parseIDPath(): string {
     const idParts: string[] = [];
     while (this.lexer.matchID()) {
-      idParts.push(this.lexer.lex().value);
+      idParts.push(this.lexer.value());
       if (this.lexer.match('.') && this.lexer.matchID(1)) {
         this.lexer.lex();
       }
     }
     if (!idParts.length) {
-      this.lexer.throwUnexpected();
+      this.lexer.throwUnexpectedToken();
     }
-    return idParts.join('.').replace(/^\$/, `${BINDINGS_PARAM_KEY}.`);
+    return idParts.join('.');
   }
 
-  private parseDefinitionExpr(): AssignmentExpression {
-    const operator = this.lexer.lex().value;
-    if (!this.lexer.matchID()) {
-      this.lexer.throwUnexpected();
-    }
-    const id = this.lexer.lex().value;
-    this.lexer.expect('=');
-
-    return {
-      type: SyntaxType.ASSIGNMENT_EXPR,
-      id,
-      value: this.parseLogicalORExpr(),
-      operator,
-    };
-  }
-
-  private parseFunctionCallArgExpr(): FunctionCallArgExpression {
-    let spread: boolean = false;
-    if (this.lexer.match('...')) {
-      this.lexer.lex();
-      spread = true;
-
-    }
-    return {
-      type: SyntaxType.FUNCTION_CALL_ARG_EXPR,
-      value: this.parseLogicalORExpr(),
-      spread
-    }
-  }
-
-  private parseFunctionCallArgs(): FunctionCallArgExpression[] {
-    const args: FunctionCallArgExpression[] = [];
-    this.lexer.expect('(');
-    while (!this.lexer.match(')')) {
-      args.push(this.parseFunctionCallArgExpr());
-      if (!this.lexer.match(')')) {
+  private parseObjectDefVars(): string[] {
+    const vars: string[] = [];
+    this.lexer.expect('{');
+    while (!this.lexer.match('}')) {
+      if (!this.lexer.matchID()) {
+        throw new JsosTemplateParserError('Invalid object vars at ' + this.lexer.getContext());
+      }
+      vars.push(this.lexer.value());
+      if (!this.lexer.match('}')) {
         this.lexer.expect(',');
       }
     }
+    this.lexer.expect('}');
+    if (vars.length === 0) {
+      throw new JsosTemplateParserError('Empty object vars at ' + this.lexer.getContext());
+    }
+    return vars;
+  }
+
+  private parseNormalDefVars(): string[] {
+    const vars: string[] = [];
+    if (!this.lexer.matchID()) {
+      throw new JsosTemplateParserError('Invalid normal vars at ' + this.lexer.getContext());
+    }
+    vars.push(this.lexer.value());
+    return vars;
+  }
+
+  private parseDefinitionExpr(): DefinitionExpression {
+    const definition = this.lexer.value();
+    let fromObject = this.lexer.match('{');
+    let vars: string[] = fromObject ? this.parseObjectDefVars() : this.parseNormalDefVars();
+    this.lexer.expect('=');
+
+    return {
+      type: SyntaxType.DEFINTION_EXPR,
+      value: this.parseBaseExpr(),
+      vars,
+      definition,
+      fromObject,
+    };
+  }
+
+  private parseFunctionCallArgs(): Expression[] {
+    this.lexer.expect('(');
+    const args = this.parseCommaSeparatedElements(')', () => this.parseSpreadExpr());
     this.lexer.expect(')');
     return args;
   }
 
-  private parseFunctionCallExpr(id?: string): FunctionCallExpression {
-    let dot = this.lexer.match('.');
-    let isNew = this.lexer.matchNew();
-    if (dot || isNew) {
+  private parseFunctionCallExpr(): FunctionCallExpression {
+    let id: string | undefined;
+
+    if (this.lexer.matchNew()) {
       this.lexer.lex();
-      if (!this.lexer.matchID()) {
-        this.lexer.throwUnexpected();
-      }
-      id = this.parsePathVariable();
+      id = 'new ' + this.parseIDPath();
     }
 
     return {
       type: SyntaxType.FUNCTION_CALL_EXPR,
       args: this.parseFunctionCallArgs(),
       id,
-      dot,
-      isNew
+    };
+  }
+
+  private parseFunctionDefinitionParam(): string {
+    let spread: string = '';
+    if (this.lexer.matchSpread()) {
+      this.lexer.lex();
+      spread = '...';
+      // rest param should be last param.
+      if (!this.lexer.match(')', 1)) {
+        this.lexer.throwUnexpectedToken();
+      }
+    }
+    if (!this.lexer.matchID()) {
+      this.lexer.throwUnexpectedToken();
+    }
+    return `${spread}${this.lexer.value()}`;
+  }
+
+  private parseFunctionDefinitionParams(): string[] {
+    this.lexer.expect('(');
+    const params = this.parseCommaSeparatedElements(')', () => this.parseFunctionDefinitionParam());
+    this.lexer.expect(')');
+    return params;
+  }
+
+  private parseFunctionExpr(asyncFn = false): FunctionExpression {
+    this.lexer.lex();
+    const params = this.parseFunctionDefinitionParams();
+    this.lexer.expect('{');
+    const statements = this.parseStatementsExpr('}');
+    this.lexer.expect('}');
+    return {
+      type: SyntaxType.FUNCTION_EXPR,
+      params,
+      body: statements,
+      async: asyncFn,
+    };
+  }
+
+  private parseObjectKeyExpr(): Expression | string {
+    let key: Expression | string;
+    if (this.lexer.match('[')) {
+      this.lexer.lex();
+      key = this.parseBaseExpr();
+      this.lexer.expect(']');
+    } else if (this.lexer.matchID()) {
+      key = this.lexer.value();
+    } else if (this.lexer.matchTokenType(TokenType.STR)) {
+      key = this.parseLiteralExpr();
+    } else {
+      this.lexer.throwUnexpectedToken();
+    }
+    return key;
+  }
+
+  private parseObjectPropExpr(): ObjectPropExpression {
+    let key: Expression | string | undefined;
+    if (!this.lexer.matchSpread()) {
+      key = this.parseObjectKeyExpr();
+      this.lexer.expect(':');
+    }
+    const value = this.parseSpreadExpr();
+    return {
+      type: SyntaxType.OBJECT_PROP_EXPR,
+      key,
+      value,
+    };
+  }
+
+  private parseObjectExpr(): ObjectExpression {
+    this.lexer.expect('{');
+    const props = this.parseCommaSeparatedElements('}', () => this.parseObjectPropExpr());
+    this.lexer.expect('}');
+    return {
+      type: SyntaxType.OBJECT_EXPR,
+      props,
+    };
+  }
+
+  private parseCommaSeparatedElements<T>(blockEnd: string, parseFn: () => T): T[] {
+    const elements: T[] = [];
+    while (!this.lexer.match(blockEnd)) {
+      elements.push(parseFn());
+      if (!this.lexer.match(blockEnd)) {
+        this.lexer.expect(',');
+      }
+    }
+    return elements;
+  }
+
+  private parseSpreadExpr(): SpreadExpression | Expression {
+    if (this.lexer.matchSpread()) {
+      this.lexer.lex();
+      return {
+        type: SyntaxType.SPREAD_EXPR,
+        value: this.parseBaseExpr(),
+      };
+    }
+    return this.parseBaseExpr();
+  }
+
+  private parseArrayExpr(): ArrayExpression {
+    this.lexer.expect('[');
+    const elements = this.parseCommaSeparatedElements(']', () => this.parseSpreadExpr());
+    this.lexer.expect(']');
+    return {
+      type: SyntaxType.ARRAY_EXPR,
+      elements,
+    };
+  }
+
+  private parseBlockExpr(): FunctionExpression | Expression {
+    this.lexer.expect('(');
+    let statements: Expression[] = this.parseStatements(')');
+    this.lexer.expect(')');
+    if (statements.length === 0) {
+      return EMPTY_EXPR;
+    } else if (statements.length === 1) {
+      return statements[0];
+    }
+    return {
+      type: SyntaxType.FUNCTION_EXPR,
+      body: CommonUtils.convertToStatementsExpr(...statements),
+      block: true,
+    };
+  }
+
+  private parseAsyncFunctionExpr(): FunctionExpression {
+    this.lexer.lex();
+    if (this.lexer.matchFunction()) {
+      return this.parseFunctionExpr(true);
+    } else if (this.lexer.matchLambda()) {
+      return this.parseLambdaExpr(true);
+    }
+    this.lexer.throwUnexpectedToken();
+  }
+
+  private parseLambdaExpr(asyncFn = false): FunctionExpression {
+    this.lexer.lex();
+    const expr = this.parseBaseExpr();
+    return {
+      type: SyntaxType.FUNCTION_EXPR,
+      body: CommonUtils.convertToStatementsExpr(expr),
+      params: ['...args'],
+      async: asyncFn,
     };
   }
 
   private parsePrimaryExpr(): Expression {
-    if (this.lexer.matchEOT() || this.lexer.match(';')) {
+    if (this.lexer.match(';')) {
       return EMPTY_EXPR;
+    }
+
+    if (this.lexer.matchTokenType(TokenType.LAMBDA_ARG)) {
+      return {
+        type: SyntaxType.LAMBDA_ARG,
+        index: this.lexer.value(),
+      };
     }
 
     if (this.lexer.matchNew()) {
@@ -516,8 +886,16 @@ export class JsonTemplateParser {
       return this.parseDefinitionExpr();
     }
 
+    if (this.lexer.matchLambda()) {
+      return this.parseLambdaExpr();
+    }
+
     if (this.lexer.matchFunction()) {
-      return this.parseFunctionDefinitionExpr();
+      return this.parseFunctionExpr();
+    }
+
+    if (this.lexer.matchAsync()) {
+      return this.parseAsyncFunctionExpr();
     }
 
     if (this.lexer.matchLiteral()) {
@@ -532,113 +910,50 @@ export class JsonTemplateParser {
       return this.parseArrayExpr();
     }
 
-    if (this.lexer.matchSelector()) {
-      return this.parsePathConcatExpr();
-    }
-
     if (this.lexer.matchPath()) {
       return this.parsePath();
     }
 
     if (this.lexer.match('(')) {
-      return this.parseGroupExpr();
+      return this.parseBlockExpr();
     }
 
-    return this.lexer.throwUnexpected();
+    return this.lexer.throwUnexpectedToken();
   }
 
-  private parseFunctionDefinitionParam(): string {
-    let spread: string = '';
-    if (this.lexer.match('...')) {
-      this.lexer.lex();
-      spread = '...';
-      // rest param should be last param.
-      if (!this.lexer.match(')', 1)) {
-        this.lexer.throwUnexpected();
+  private static setSubpath(parts: any[]) {
+    const remainingParts = parts.slice();
+    while (remainingParts.length) {
+      const part = remainingParts.shift();
+      if (typeof part !== 'object') {
+        continue;
+      }
+      if (part.type === SyntaxType.PATH && Array.isArray(part.parts)) {
+        part.subPath = !part.root;
+      } else {
+        for (let key in part) {
+          if (Array.isArray(part[key])) {
+            remainingParts.push(...part[key].flat());
+          } else if (typeof part[key] === 'object') {
+            remainingParts.push(part[key]);
+          }
+        }
       }
     }
-    if (!this.lexer.matchID()) {
-      this.lexer.throwUnexpected();
-    }
-    return `${spread}${this.lexer.lex().value}`;
   }
 
-  private parseFunctionDefinitionParams(): string[] {
-    const params: string[] = [];
-    this.lexer.expect('(');
-    while (!this.lexer.match(')')) {
-      params.push(this.parseFunctionDefinitionParam());
-      if (!this.lexer.match(')')) {
-        this.lexer.expect(',');
-      }
-    }
-    this.lexer.expect(')');
-    return params;
+  private static pathContainsVariables(parts: Expression[]): boolean {
+    return parts
+      .filter((part) => part.type === SyntaxType.SELECTOR)
+      .map((part) => part as SelectorExpression)
+      .some((part) => part.context?.index || part.context?.item);
   }
 
-  private parseFunctionDefinitionExpr(): FunctionExpression {
-    this.lexer.expectOperator(Keyword.FUNCTION);
-    const params = this.parseFunctionDefinitionParams();
-    this.lexer.expect('{');
-    const body = this.parseStatementsExpr();
-    this.lexer.expect('}');
+  private static convertToBlockExpr(expr: Expression): FunctionExpression {
     return {
       type: SyntaxType.FUNCTION_EXPR,
-      params,
-      body,
+      block: true,
+      body: CommonUtils.convertToStatementsExpr(expr),
     };
-  }
-
-  private parseObjectKeyExpr(): Expression | string {
-    let key: Expression | string;
-    if (this.lexer.match('[')) {
-      this.lexer.lex();
-      key = this.parseLogicalORExpr();
-      this.lexer.expect(']');
-    } else {
-      key = `${this.lexer.lex().value}`;
-    }
-    return key;
-  }
-
-  private parseObjectExpr(): ObjectExpression {
-    this.lexer.expect('{');
-    const expr: ObjectExpression = {
-      type: SyntaxType.OBJECT_EXPR,
-      props: [],
-    };
-    while (!this.lexer.match('}')) {
-      const key = this.parseObjectKeyExpr();
-      this.lexer.expect(':');
-      const value = this.parseLogicalORExpr();
-      expr.props.push({ key, value });
-      if (!this.lexer.match('}')) {
-        this.lexer.expect(',');
-      }
-    }
-    this.lexer.expect('}');
-    return expr;
-  }
-
-  private parseArrayExpr(): ArrayExpression {
-    this.lexer.expect('[');
-    const elements: Expression[] = [];
-    while (!this.lexer.match(']')) {
-      const expr = this.parseLogicalANDExpr();
-      elements.push(expr);
-      if (!this.lexer.match(']')) {
-        this.lexer.expect(',');
-      }
-    }
-    this.lexer.expect(']');
-    return { type: SyntaxType.ARRAY_EXPR, elements };
-  }
-
-  private parseGroupExpr(): Expression {
-    this.lexer.expect('(');
-    let expr = this.parseLogicalORExpr();
-    this.lexer.expect(')');
-
-    return expr;
   }
 }

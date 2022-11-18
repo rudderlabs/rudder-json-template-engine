@@ -1,0 +1,5 @@
+let a = 1; let b = 2
+let fn = function(e){
+    (a+b)*e
+}
+fn(10) + fn(20)

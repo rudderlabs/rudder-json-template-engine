@@ -1,0 +1,14 @@
+// Empty blocks will be ignored
+()
+let c = (
+    let a = 1
+    let b = 2
+    a + b
+)
+/*
+ redefining a and b is possible because
+ we declared them in block previously
+ */
+let a = 2
+let b = 3
+(a + b) * c

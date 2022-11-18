@@ -1,0 +1,9 @@
+let normalFn = function(a) {
+    a + 10
+};
+let lambdaFn = lambda ?0 + 10;
+let spreadFn = function(...a) {
+    a.reduce(lambda ?0 + ?1, 0)
+};
+let fnArr = {spread: spreadFn, other: [normalFn, lambdaFn]};
+fnArr.spread(fnArr.other[0](10), fnArr.other[1](20), function(){30}())

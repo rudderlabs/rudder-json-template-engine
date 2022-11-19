@@ -217,19 +217,17 @@ const address = {
 // );
 
 new JsonTemplateEngine(`
-let a = [{a: [1, 2], b: "1"}, {a: [3, 4], b: 2}, {a:[5], b: 3}, {b: 4}]
-a{.a.length > 1}
+// .map(console.log)
 `)
-  .evaluate({ a: 1 })
+  .evaluate([1, 2])
   .then((a) => console.log(JSON.stringify(a)));
 
 console.log(
   new JsonTemplateTranslator(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      let a = [{a: [1, 2], b: "1"}, {a: [3, 4], b: 2}, {a:[5], b: 3}, {b: 4}]
-      a{.a.length > 1}
-      `),
+      "aa"[0][][0][][0],
+            `),
     ).parse(),
   ).translate(),
 );
@@ -238,7 +236,7 @@ console.log(
   JSON.stringify(
     new JsonTemplateParser(
       new JsonTemplateLexer(`
-      .(.a)
+      3[0]
       `),
     ).parse(),
     //   null,

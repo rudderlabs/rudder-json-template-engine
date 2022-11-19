@@ -6,11 +6,9 @@ export class CommonUtils {
   }
 
   static getLastElement<T>(arr: T[]): T | undefined {
-    if (!arr.length) {
-      return undefined;
-    }
     return arr[arr.length - 1];
   }
+
   static convertToStatementsExpr(...expressions: Expression[]): StatementsExpression {
     return {
       type: SyntaxType.STATEMENTS_EXPR,

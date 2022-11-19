@@ -57,9 +57,12 @@ export const data: Sceanario[] = [
     templatePath: 'invalid_variable_assignment4.jt',
     error: 'Invalid assignment path',
   },
-
   {
     templatePath: 'invalid_variable_assignment5.jt',
+    error: 'Invalid assignment path',
+  },
+  {
+    templatePath: 'invalid_variable_assignment6.jt',
     error: 'Invalid assignment path',
   },
   {

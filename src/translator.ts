@@ -615,7 +615,7 @@ export class JsonTemplateTranslator {
   }
 
   private static returnSingleValueIfSafe(varName: string): string {
-    return `(${varName}.length === 1 ? ${varName}[0] : ${varName})`;
+    return `(${varName}.length < 2 ? ${varName}[0] : ${varName})`;
   }
 
   private static covertToArrayValue(varName: string) {

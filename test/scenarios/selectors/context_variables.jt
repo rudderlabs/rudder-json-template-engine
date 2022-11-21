@@ -2,5 +2,6 @@
     cid: .id,
     cidx: ci,
     bid: b.id,
-    bidx: bi
+    bidx: bi,
+    a: ^.a
 })

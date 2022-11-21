@@ -19,24 +19,45 @@
 ---
 
 # rudder-json-template-engine
-
-A library for evaluating JSON template expressions is an extension to [jspath](https://github.com/dfilatov/jspath).
+A library to process JSON data using a custom syntax based on javascript and [jspath](https://github.com/dfilatov/jspath). We thank the jspath authors for their excellent work, as our library is an extension of the original library. We also want to thank [IBM](https://www.ibm.com/) team for their work on [jsonata](https://github.com/jsonata-js/jsonata), as we have taken several ideas from the library. You can also consider our library as an alternative to [jsonata](https://github.com/jsonata-js/jsonata).
 
 ## Overview
+This library generates a javascript function code from the template and then uses the function to evaluate the JSON data. It outputs the javascript code in the following stages:
+1. [Lexing](src/lexer.ts) (Tokenization)
+1. [Parsing](src/parser.ts) (AST Creation)
+1. [Translation](src/translator.ts) (Code generation)
 
-TODO
+[Engine](src/engine.ts) class abstracts the above steps and provides a convenient way to use the json templates to evaluate the inputs.
 
 ## Features
+1. [Variables](test/scenarios/assignments/template.jt)
+1. [Arrays](test/scenarios//arrays/template.jt)
+1. [Objects](test/scenarios/objects/template.jt)
+1. [Functions](test/scenarios/functions/template.jt)
+1. [Bindings](test/scenarios/bindings/template.jt)
+1. [Paths](test/scenarios/paths/template.jt)
+    * [Filters](test/scenarios/filters/template.jt)
+    * [Selectors](test/scenarios/selectors/template.jt)
+    * [Context Variables](test/scenarios/selectors/context_variables.jt)
+1. [Conditions](test/scenarios/conditions/template.jt)
+    * [Comparisons](test/scenarios/comparisons/template.jt)
+1. [Math operations](test/scenarios/math/template.jt)
+1. [Logical operations](test/scenarios/logics/template.jt)
 
-TODO
+For more examples, refer [Scenarios](test/scenarios)
+
+## [Syntax](docs/syntax.md)
 
 ## Getting started
+`npm install rudder-json-template-engine`
 
-TODO
+```ts
+const engine = new JsonTemplateEngine(`'Hello ' + .name`);
+engine.evaluate({name: 'World'});
+```
 
 ## Testing
-
-TODO
+`npm test`
 
 ## Contribute
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.0...v0.2.1) (2022-11-22)
+
+
+### Miscellaneous
+
+* improve path processing ([#6](https://github.com/rudderlabs/rudder-json-template-engine/issues/6)) ([5adf623](https://github.com/rudderlabs/rudder-json-template-engine/commit/5adf623c4b34b34c90c7530bc93368156dffe797))
+
 ## [0.2.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.1.0...v0.2.0) (2022-11-18)
 
 

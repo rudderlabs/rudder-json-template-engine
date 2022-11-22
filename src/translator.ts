@@ -287,7 +287,7 @@ export class JsonTemplateTranslator {
       code.push(`if(${ctx} && Object.prototype.hasOwnProperty.call(${ctx}, ${propStr})){`);
       code.push(`${dest}=${ctx}[${propStr}];`);
       code.push('} else {');
-      code.push(`${dest} = undefined`);
+      code.push(`${dest} = undefined;`);
       code.push('}');
     }
     return code.join('');

@@ -62,11 +62,12 @@ export enum SyntaxType {
   OBJECT_INDEX_FILTER_EXPR,
   RANGE_FILTER_EXPR,
   OBJECT_FILTER_EXPR,
+  ARRAY_FILTER_EXPR,
   DEFINTION_EXPR,
   ASSIGNMENT_EXPR,
   OBJECT_PROP_EXPR,
   OBJECT_EXPR,
-  TO_ARRAY_EXPR,
+  TO_ARRAY,
   ARRAY_EXPR,
   FUNCTION_EXPR,
   FUNCTION_CALL_ARG,
@@ -148,10 +149,14 @@ export interface IndexFilterExpression extends Expression {
   indexes: ArrayExpression;
   exclude?: boolean;
 }
-export interface FilterExpression extends Expression {
+
+export interface ObjectFilterExpression extends Expression {
   filter: Expression;
 }
 
+export interface ArrayFilterExpression extends Expression {
+  filters: (RangeFilterExpression | IndexFilterExpression)[];
+}
 export interface LiteralExpression extends Expression {
   value: string | number | boolean | null | undefined;
   tokenType: TokenType;
@@ -159,6 +164,7 @@ export interface LiteralExpression extends Expression {
 export interface PathExpression extends Expression {
   parts: Expression[];
   root?: Expression | string;
+  toArray?: boolean
   // Used in a part of another Path
   subPath?: boolean;
 }
@@ -173,9 +179,6 @@ export interface SelectorExpression extends Expression {
   context?: ContextVariable;
 }
 export interface SpreadExpression extends Expression {
-  value: Expression;
-}
-export interface ToArrayExpression extends Expression {
   value: Expression;
 }
 

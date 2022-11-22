@@ -217,8 +217,7 @@ const address = {
 // );
 
 new JsonTemplateEngine(`
-let a = [{a: [1, 2], b: "1"}, {a: [3, 4], b: 2}, {a:[5], b: 3}, {b: 4}]
-a{.a.length > 1}
+.b ?? .a
 `)
   .evaluate({ a: 1 })
   .then((a) => console.log(JSON.stringify(a)));

@@ -9,8 +9,6 @@ const MESSAGES = {
   UNEXP_EOT: 'Unexpected end of template',
 };
 
-const BLOCK_COMMENT_REGEX = /\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\//g;
-const SINGLE_LINE_COMMENT_REGEX = /\/\/[^\n\r]+?(?:\*\)|[\n\r])/g;
 
 export class JsonTemplateLexer {
   private readonly codeChars: string[];
@@ -18,15 +16,20 @@ export class JsonTemplateLexer {
   private idx = 0;
   constructor(template: string) {
     this.buf = [];
-    this.codeChars = template
-      .replace(BLOCK_COMMENT_REGEX, '')
-      .replace(SINGLE_LINE_COMMENT_REGEX, '')
-      .split('');
+    this.codeChars = template.split('');
   }
 
   init() {
     this.idx = 0;
     this.buf = [];
+  }
+
+  currentIndex(): number {
+    return this.idx;
+  }
+
+  getCodeChars(start: number, end: number): string[] {
+    return this.codeChars.slice(start, end);
   }
 
   match(value?: string, steps = 0): boolean {
@@ -146,10 +149,62 @@ export class JsonTemplateLexer {
     return this.buf[steps];
   }
 
-  private advance(): Token {
-    while (JsonTemplateLexer.isWhiteSpace(this.codeChars[this.idx])) {
+  private isLineCommentStart(): boolean {
+    return this.codeChars[this.idx] === '/' && this.codeChars[this.idx + 1] === '/';
+  }
+
+  private isLineCommentEnd(): boolean {
+    return this.codeChars[this.idx] === '\n';
+  }
+
+  private isBlockCommentStart(): boolean {
+    return this.codeChars[this.idx] === '/' && this.codeChars[this.idx + 1] === '*';
+  }
+
+  private isBlockCommentEnd(): boolean {
+    return this.codeChars[this.idx] === '*' && this.codeChars[this.idx + 1] === '/';
+  }
+
+  private skipLineComment() {
+    if (!this.isLineCommentStart()) {
+      return;
+    }
+    while (!this.isLineCommentEnd()) {
       ++this.idx;
     }
+    ++this.idx;
+  }
+
+  private skipBlockComment() {
+    if (!this.isBlockCommentStart()) {
+      return;
+    }
+    while (!this.isBlockCommentEnd()) {
+      ++this.idx;
+    }
+    this.idx = this.idx + 2;
+  }
+
+  private isWhiteSpace() {
+    return ' \r\n\t'.includes(this.codeChars[this.idx]);
+  }
+
+  private skipWhitespace() {
+    while (this.isWhiteSpace()) {
+      ++this.idx;
+    }
+  }
+
+  private skipInput() {
+    while (this.isWhiteSpace() || this.isBlockCommentStart() || this.isLineCommentStart()) {
+      this.skipWhitespace();
+      this.skipLineComment();
+      this.skipBlockComment();
+    }
+  }
+
+  private advance(): Token {
+    this.skipInput();
 
     if (this.idx >= this.codeChars.length) {
       return {
@@ -181,18 +236,6 @@ export class JsonTemplateLexer {
     }
 
     return this.advance();
-  }
-
-  nextChar(): string {
-    return this.codeChars[this.idx];
-  }
-
-  ignoreNextChar() {
-    this.idx++;
-  }
-
-  matchNextChar(ch: string): boolean {
-    return this.nextChar() === ch;
   }
 
   static isLiteralToken(token: Token) {
@@ -227,10 +270,6 @@ export class JsonTemplateLexer {
 
   private static isDigit(ch: string) {
     return '0123456789'.indexOf(ch) >= 0;
-  }
-
-  private static isWhiteSpace(ch: string) {
-    return ' \r\n\t'.indexOf(ch) > -1;
   }
 
   private static isIdStart(ch: string) {

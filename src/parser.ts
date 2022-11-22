@@ -48,11 +48,15 @@ export class JsonTemplateParser {
       return;
     }
 
-    if (this.lexer.match(';')) {
+    if(this.lexer.match(';')) {
       this.lexer.lex();
-    } else if (this.lexer.matchNextChar('\n')) {
-      this.lexer.ignoreNextChar();
-    } else {
+      return;
+    }
+
+    const currIdx = this.lexer.currentIndex();
+    const nextTokenStart = this.lexer.lookahead().range[0];
+    const code = this.lexer.getCodeChars(currIdx, nextTokenStart);
+    if(!code.includes('\n')) {
       this.lexer.throwUnexpectedToken();
     }
   }

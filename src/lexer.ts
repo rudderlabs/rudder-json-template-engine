@@ -24,6 +24,14 @@ export class JsonTemplateLexer {
     this.buf = [];
   }
 
+  currentIndex(): number {
+    return this.idx;
+  }
+
+  getCodeChars(start: number, end: number): string[] {
+    return this.codeChars.slice(start, end);
+  }
+
   match(value?: string, steps = 0): boolean {
     if (!value) {
       return false;
@@ -228,18 +236,6 @@ export class JsonTemplateLexer {
     }
 
     return this.advance();
-  }
-
-  nextChar(): string {
-    return this.codeChars[this.idx];
-  }
-
-  ignoreNextChar() {
-    this.idx++;
-  }
-
-  matchNextChar(ch: string): boolean {
-    return this.nextChar() === ch;
   }
 
   static isLiteralToken(token: Token) {

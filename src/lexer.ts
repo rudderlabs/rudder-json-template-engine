@@ -9,7 +9,6 @@ const MESSAGES = {
   UNEXP_EOT: 'Unexpected end of template',
 };
 
-
 export class JsonTemplateLexer {
   private readonly codeChars: string[];
   private buf: Token[];

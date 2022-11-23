@@ -939,21 +939,17 @@ export class JsonTemplateParser {
   }
 
   private static setSubpath(parts: any[]) {
-    const remainingParts = parts.slice();
+    let remainingParts = parts.slice();
     while (remainingParts.length) {
       const part = remainingParts.shift();
-      if (typeof part !== 'object') {
+      if (!part || typeof part !== 'object' ) {
         continue;
       }
       if (part.type === SyntaxType.PATH && Array.isArray(part.parts)) {
         part.subPath = !part.root;
       } else {
         for (let key in part) {
-          if (Array.isArray(part[key])) {
-            remainingParts.push(...part[key].flat());
-          } else if (typeof part[key] === 'object') {
-            remainingParts.push(part[key]);
-          }
+          remainingParts = remainingParts.concat(CommonUtils.toArray(part[key]));
         }
       }
     }

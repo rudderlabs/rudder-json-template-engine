@@ -1,0 +1,2 @@
+let add = function(a, b) { a + b }
+.a#i.b.(add(i, .))

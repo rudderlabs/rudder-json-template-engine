@@ -25,6 +25,7 @@ import {
   ConditionalExpression,
   ObjectFilterExpression,
   ArrayFilterExpression,
+  BlockExpression,
 } from './types';
 import { CommonUtils } from './utils';
 
@@ -119,6 +120,9 @@ export class JsonTemplateTranslator {
 
       case SyntaxType.OBJECT_EXPR:
         return this.translateObjectExpr(expr as ObjectExpression, dest, ctx);
+
+      case SyntaxType.BLOCK_EXPR:
+        return this.translateBlockExpr(expr as BlockExpression, dest, ctx);
 
       case SyntaxType.FUNCTION_EXPR:
         return this.translateFunctionExpr(expr as FunctionExpression, dest, ctx);
@@ -246,7 +250,7 @@ export class JsonTemplateTranslator {
       code.push(this.translateExpr(part, item, item));
       code.push(`if(!${item}) { continue; }`);
       if (i < numParts - 1) {
-        code.push(JsonTemplateTranslator.generateAssignmentCode(dataVars[i+1], item));
+        code.push(JsonTemplateTranslator.generateAssignmentCode(dataVars[i + 1], item));
       } else {
         code.push(JsonTemplateTranslator.covertToArrayValue(item));
         code.push(`${result} = ${result}.concat(${item});`);
@@ -259,7 +263,7 @@ export class JsonTemplateTranslator {
     this.releaseVars(...itemVars);
     this.releaseVars(...dataVars);
     this.releaseVars(result);
-    if(!expr.toArray) {
+    if (!expr.toArray) {
       code.push(result, '=', JsonTemplateTranslator.returnSingleValueIfSafe(result), ';');
     }
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, result));
@@ -270,7 +274,7 @@ export class JsonTemplateTranslator {
     const code: string[] = [];
     code.push(this.translatePathRoot(expr, dest, baseCtx));
     code.push(this.translatePathParts(expr, dest));
-    if(expr.toArray && !expr.parts.length) {
+    if (expr.toArray && !expr.parts.length) {
       code.push(JsonTemplateTranslator.covertToArrayValue(dest));
     }
     return code.join('');
@@ -339,6 +343,18 @@ export class JsonTemplateTranslator {
     code.push('}');
     code.push(`${dest} = ${result}.flat();`);
     return code.join('');
+  }
+
+  private translateBlockExpr(expr: BlockExpression, dest: string, ctx: string): string {
+    if (expr.statements.length === 1) {
+      return this.translateExpr(expr.statements[0], dest, ctx);
+    }
+    const fnExpr: FunctionExpression = {
+      type: SyntaxType.FUNCTION_EXPR,
+      body: CommonUtils.convertToStatementsExpr(...expr.statements),
+      block: true,
+    };
+    return this.translateExpr(fnExpr, dest, ctx);
   }
 
   private translateFunctionExpr(expr: FunctionExpression, dest: string, ctx: string): string {

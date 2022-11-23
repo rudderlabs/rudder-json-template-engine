@@ -94,5 +94,3 @@ export const data: Sceanario[] = [
     error: 'Unexpected token',
   },
 ];
-
-console.log(data[17]);

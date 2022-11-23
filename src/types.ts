@@ -69,6 +69,7 @@ export enum SyntaxType {
   OBJECT_EXPR,
   TO_ARRAY,
   ARRAY_EXPR,
+  BLOCK_EXPR,
   FUNCTION_EXPR,
   FUNCTION_CALL_ARG,
   FUNCTION_CALL_EXPR,
@@ -97,6 +98,11 @@ export interface FunctionExpression extends Expression {
   block?: boolean;
   async?: boolean;
 }
+
+export interface BlockExpression extends Expression {
+  statements: Expression[];
+}
+
 export interface ObjectPropExpression extends Expression {
   key?: Expression | string;
   value: Expression;
@@ -164,7 +170,7 @@ export interface LiteralExpression extends Expression {
 export interface PathExpression extends Expression {
   parts: Expression[];
   root?: Expression | string;
-  toArray?: boolean
+  toArray?: boolean;
   // Used in a part of another Path
   subPath?: boolean;
 }

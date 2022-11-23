@@ -24,6 +24,7 @@ import {
   ConditionalExpression,
   OperatorType,
   ArrayFilterExpression,
+  BlockExpression,
 } from './types';
 import { JsosTemplateParserError } from './errors';
 import { DATA_PARAM_KEY } from './constants';
@@ -48,7 +49,7 @@ export class JsonTemplateParser {
       return;
     }
 
-    if(this.lexer.match(';')) {
+    if (this.lexer.match(';')) {
       this.lexer.lex();
       return;
     }
@@ -56,7 +57,7 @@ export class JsonTemplateParser {
     const currIdx = this.lexer.currentIndex();
     const nextTokenStart = this.lexer.lookahead().range[0];
     const code = this.lexer.getCodeChars(currIdx, nextTokenStart);
-    if(!code.includes('\n')) {
+    if (!code.includes('\n')) {
       this.lexer.throwUnexpectedToken();
     }
   }
@@ -130,7 +131,7 @@ export class JsonTemplateParser {
   }
 
   private parseToArrayExpr(): Expression {
-    this.lexer.lex(); 
+    this.lexer.lex();
     this.lexer.lex();
     return { type: SyntaxType.TO_ARRAY };
   }
@@ -208,7 +209,7 @@ export class JsonTemplateParser {
     expr: PathExpression,
   ): FunctionCallExpression | PathExpression {
     const fnExpr = expr.parts.pop() as FunctionCallExpression;
-    if(!expr.parts.length && expr.root && typeof expr.root !== 'object') {
+    if (!expr.parts.length && expr.root && typeof expr.root !== 'object') {
       fnExpr.id = this.prependFunctionID(expr.root, fnExpr.id);
       fnExpr.dot = false;
     } else {
@@ -848,19 +849,16 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseBlockExpr(): FunctionExpression | Expression {
+  private parseBlockExpr(): BlockExpression | Expression {
     this.lexer.expect('(');
     let statements: Expression[] = this.parseStatements(')');
     this.lexer.expect(')');
     if (statements.length === 0) {
       return EMPTY_EXPR;
-    } else if (statements.length === 1) {
-      return statements[0];
     }
     return {
-      type: SyntaxType.FUNCTION_EXPR,
-      body: CommonUtils.convertToStatementsExpr(...statements),
-      block: true,
+      type: SyntaxType.BLOCK_EXPR,
+      statements,
     };
   }
 

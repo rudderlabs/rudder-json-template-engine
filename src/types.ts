@@ -47,6 +47,7 @@ export enum OperatorType {
 export enum SyntaxType {
   EMPTY,
   PATH,
+  PATH_OPTIONS,
   SELECTOR,
   LAMBDA_ARG,
   LITERAL,
@@ -58,6 +59,7 @@ export enum SyntaxType {
   MATH_EXPR,
   UNARY_EXPR,
   SPREAD_EXPR,
+  CONDITIONAL_EXPR,
   ARRAY_INDEX_FILTER_EXPR,
   OBJECT_INDEX_FILTER_EXPR,
   RANGE_FILTER_EXPR,
@@ -67,14 +69,12 @@ export enum SyntaxType {
   ASSIGNMENT_EXPR,
   OBJECT_PROP_EXPR,
   OBJECT_EXPR,
-  TO_ARRAY,
   ARRAY_EXPR,
   BLOCK_EXPR,
   FUNCTION_EXPR,
   FUNCTION_CALL_ARG,
   FUNCTION_CALL_EXPR,
   STATEMENTS_EXPR,
-  CONDITIONAL_EXPR,
 }
 
 export type Token = {
@@ -83,8 +83,15 @@ export type Token = {
   range: [number, number];
 };
 
+export interface PathOptions {
+  item?: string;
+  index?: string;
+  toArray?: boolean;
+}
+
 export interface Expression {
   type: SyntaxType;
+  options?: PathOptions;
   [key: string]: any;
 }
 
@@ -170,19 +177,14 @@ export interface LiteralExpression extends Expression {
 export interface PathExpression extends Expression {
   parts: Expression[];
   root?: Expression | string;
-  toArray?: boolean;
+  returnAsArray?: boolean;
   // Used in a part of another Path
   subPath?: boolean;
 }
 
-export interface ContextVariable {
-  item?: string;
-  index?: string;
-}
 export interface SelectorExpression extends Expression {
   selector: string;
   prop?: Token;
-  context?: ContextVariable;
 }
 export interface SpreadExpression extends Expression {
   value: Expression;

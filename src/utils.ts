@@ -1,7 +1,10 @@
 import { Expression, StatementsExpression, SyntaxType } from './types';
 
 export class CommonUtils {
-  static toArray(val: any): any[] {
+  static toArray(val: any): any[] | undefined {
+    if (val === undefined || val === null) {
+      return undefined;
+    }
     return Array.isArray(val) ? val : [val];
   }
 

@@ -1,0 +1,4 @@
+(.{.length > 1}).@item#idx.({
+    a: item.a,
+    idx: idx
+})

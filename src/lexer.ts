@@ -43,6 +43,10 @@ export class JsonTemplateLexer {
     return JsonTemplateLexer.isLiteralToken(this.lookahead());
   }
 
+  matchToArray(): boolean {
+    return this.match('[') && this.match(']', 1);
+  }
+
   matchPath(): boolean {
     return this.matchPathSelector() || this.matchID();
   }
@@ -153,7 +157,7 @@ export class JsonTemplateLexer {
   }
 
   private isLineCommentEnd(): boolean {
-    return this.codeChars[this.idx] === '\n';
+    return this.idx >= this.codeChars.length || this.codeChars[this.idx] === '\n';
   }
 
   private isBlockCommentStart(): boolean {

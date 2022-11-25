@@ -1,5 +1,3 @@
-// Empty blocks will be ignored
-()
 let c = (
     let a = 1
     let b = 2

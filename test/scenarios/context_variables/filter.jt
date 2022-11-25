@@ -1,4 +1,8 @@
-(.{.length > 1}).@item#idx.({
+/* 
+    .() breaks the path, so path before will evaluated first 
+    and then on the result rest of the path will be executed
+*/
+.{.length > 1}.().@item#idx.({
     a: item.a,
     idx: idx
 })

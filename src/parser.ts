@@ -26,7 +26,7 @@ import {
   BlockExpression,
   PathOptions,
 } from './types';
-import { JsosTemplateParserError } from './errors';
+import { JsonTemplateParserError } from './errors';
 import { DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { CommonUtils } from './utils';
@@ -50,7 +50,7 @@ export class JsonTemplateParser {
     }
 
     if (this.lexer.match(';')) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       return;
     }
 
@@ -85,7 +85,7 @@ export class JsonTemplateParser {
   private parseAssignmentExpr(): AssignmentExpression | Expression {
     const expr = this.parseNextExpr(OperatorType.ASSIGNMENT);
     if (expr.type === SyntaxType.PATH && this.lexer.match('=')) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       return {
         type: SyntaxType.ASSIGNMENT_EXPR,
         value: this.parseBaseExpr(),
@@ -131,8 +131,11 @@ export class JsonTemplateParser {
   }
 
   private parsePathPart(): Expression | Expression[] | undefined {
-    if (this.lexer.match('.') && this.lexer.match('(', 1)) {
-      this.lexer.lex();
+    if (this.lexer.match('.()')) {
+      this.lexer.ignoreTokens(1);
+      return;
+    } else if (this.lexer.match('.') && this.lexer.match('(', 1)) {
+      this.lexer.ignoreTokens(1);
       return this.parseBlockExpr();
     } else if (this.lexer.match('(')) {
       return this.parseFunctionCallExpr();
@@ -158,12 +161,11 @@ export class JsonTemplateParser {
         break;
       }
     }
-    parts = JsonTemplateParser.ignoreEmptySelectors(parts);
-    return JsonTemplateParser.combineFunctionParts(parts);
+    return JsonTemplateParser.ignoreEmptySelectors(parts);
   }
 
   private parseContextVariable(): string | undefined {
-    this.lexer.lex();
+    this.lexer.ignoreTokens(1);
     if (!this.lexer.matchID()) {
       this.lexer.throwUnexpectedToken();
     }
@@ -182,8 +184,7 @@ export class JsonTemplateParser {
         continue;
       }
       if (this.lexer.matchToArray()) {
-        this.lexer.lex();
-        this.lexer.lex();
+        this.lexer.ignoreTokens(2);
         context.toArray = true;
         continue;
       }
@@ -220,39 +221,20 @@ export class JsonTemplateParser {
     return newParts;
   }
 
-  private static combineFunctionParts(parts: Expression[]): Expression[] {
-    if (parts.length < 2) {
-      return parts;
-    }
-    let newParts: Expression[] = [];
-    for (let i = 0; i < parts.length; i++) {
-      let currPart = parts[i];
-      if (i !== parts.length - 1) {
-        if (currPart.type === SyntaxType.SELECTOR && currPart.selector === '.') {
-          const selectorExpr = currPart as SelectorExpression;
-          if (
-            selectorExpr.prop?.type === TokenType.ID &&
-            parts[i + 1].type === SyntaxType.FUNCTION_CALL_EXPR
-          ) {
-            currPart = parts[i + 1] as FunctionCallExpression;
-            currPart.id = this.prependFunctionID(selectorExpr.prop.value, currPart.id);
-            currPart.dot = true;
-            i++;
-          }
-        }
-      }
-      newParts.push(currPart);
-    }
-    if (newParts.length < parts.length) {
-      newParts = this.combineFunctionParts(newParts);
-    }
-    return newParts;
-  }
-
   private static convertToFunctionCallExpr(
     fnExpr: FunctionCallExpression,
     pathExpr: PathExpression,
   ): FunctionCallExpression | PathExpression {
+    let lastPart = CommonUtils.getLastElement(pathExpr.parts);
+    if(lastPart?.type === SyntaxType.SELECTOR){
+      const selectorExpr = lastPart as SelectorExpression;
+      if(selectorExpr.selector === '.' && selectorExpr.prop?.type === TokenType.ID) {
+        pathExpr.parts.pop();
+        fnExpr.id = selectorExpr.prop.value;
+        fnExpr.dot = true;
+      }
+    }
+
     if (!pathExpr.parts.length && pathExpr.root && typeof pathExpr.root !== 'object') {
       fnExpr.id = this.prependFunctionID(pathExpr.root, fnExpr.id);
       fnExpr.dot = false;
@@ -267,7 +249,7 @@ export class JsonTemplateParser {
       return root;
     }
     if (this.lexer.match('^')) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       return DATA_PARAM_KEY;
     } else if (this.lexer.matchID()) {
       return this.lexer.value();
@@ -320,10 +302,7 @@ export class JsonTemplateParser {
   private parseSelector(): SelectorExpression | Expression {
     let selector = this.lexer.value();
     let prop: Token | undefined;
-    if (this.lexer.match('*')) {
-      prop = this.lexer.lex();
-    }
-    if (this.lexer.matchID() || this.lexer.matchTokenType(TokenType.STR)) {
+    if (this.lexer.match('*') || this.lexer.matchID() || this.lexer.matchTokenType(TokenType.STR)) {
       prop = this.lexer.lex();
     }
     return {
@@ -335,7 +314,7 @@ export class JsonTemplateParser {
 
   private parseRangeFilterExpr(): RangeFilterExpression | Expression {
     if (this.lexer.match(':')) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       return {
         type: SyntaxType.RANGE_FILTER_EXPR,
         toIdx: this.parseBaseExpr(),
@@ -344,7 +323,7 @@ export class JsonTemplateParser {
 
     let fromExpr = this.parseBaseExpr();
     if (this.lexer.match(':')) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       if (this.lexer.match(']')) {
         return {
           type: SyntaxType.RANGE_FILTER_EXPR,
@@ -395,7 +374,7 @@ export class JsonTemplateParser {
   private parseObjectFilter(): IndexFilterExpression | ObjectFilterExpression {
     let exclude = false;
     if (this.lexer.match('~')) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       exclude = true;
     }
     // excluding is applicaple only for index filters
@@ -444,7 +423,7 @@ export class JsonTemplateParser {
       }
       this.lexer.expect('}');
       if (this.lexer.match('.') && this.lexer.match('{', 1)) {
-        this.lexer.lex();
+        this.lexer.ignoreTokens(1);
       }
     }
 
@@ -455,10 +434,10 @@ export class JsonTemplateParser {
     const ifExpr = this.parseNextExpr(OperatorType.CONDITIONAL);
 
     if (this.lexer.match('?')) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       const thenExpr = this.parseConditionalExpr();
       if (this.lexer.match(':')) {
-        this.lexer.lex();
+        this.lexer.ignoreTokens(1);
         const elseExpr = this.parseConditionalExpr();
         return {
           type: SyntaxType.CONDITIONAL_EXPR,
@@ -484,11 +463,11 @@ export class JsonTemplateParser {
   private parseArrayFiltersExpr(): ArrayFilterExpression {
     const filters: Expression[] = [];
     while (this.lexer.match('[') && !this.lexer.match(']', 1)) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       filters.push(this.parseArrayFilterExpr());
       this.lexer.expect(']');
       if (this.lexer.match('.') && this.lexer.match('[', 1)) {
-        this.lexer.lex();
+        this.lexer.ignoreTokens(1);
       }
     }
     return {
@@ -712,7 +691,7 @@ export class JsonTemplateParser {
     while (this.lexer.matchID()) {
       idParts.push(this.lexer.value());
       if (this.lexer.match('.') && this.lexer.matchID(1)) {
-        this.lexer.lex();
+        this.lexer.ignoreTokens(1);
       }
     }
     if (!idParts.length) {
@@ -726,7 +705,7 @@ export class JsonTemplateParser {
     this.lexer.expect('{');
     while (!this.lexer.match('}')) {
       if (!this.lexer.matchID()) {
-        throw new JsosTemplateParserError('Invalid object vars at ' + this.lexer.getContext());
+        throw new JsonTemplateParserError('Invalid object vars at ' + this.lexer.getContext());
       }
       vars.push(this.lexer.value());
       if (!this.lexer.match('}')) {
@@ -735,7 +714,7 @@ export class JsonTemplateParser {
     }
     this.lexer.expect('}');
     if (vars.length === 0) {
-      throw new JsosTemplateParserError('Empty object vars at ' + this.lexer.getContext());
+      throw new JsonTemplateParserError('Empty object vars at ' + this.lexer.getContext());
     }
     return vars;
   }
@@ -743,7 +722,7 @@ export class JsonTemplateParser {
   private parseNormalDefVars(): string[] {
     const vars: string[] = [];
     if (!this.lexer.matchID()) {
-      throw new JsosTemplateParserError('Invalid normal vars at ' + this.lexer.getContext());
+      throw new JsonTemplateParserError('Invalid normal vars at ' + this.lexer.getContext());
     }
     vars.push(this.lexer.value());
     return vars;
@@ -775,7 +754,7 @@ export class JsonTemplateParser {
     let id: string | undefined;
 
     if (this.lexer.matchNew()) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       id = 'new ' + this.parseIDPath();
     }
 
@@ -789,7 +768,7 @@ export class JsonTemplateParser {
   private parseFunctionDefinitionParam(): string {
     let spread: string = '';
     if (this.lexer.matchSpread()) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       spread = '...';
       // rest param should be last param.
       if (!this.lexer.match(')', 1)) {
@@ -810,7 +789,7 @@ export class JsonTemplateParser {
   }
 
   private parseFunctionExpr(asyncFn = false): FunctionExpression {
-    this.lexer.lex();
+    this.lexer.ignoreTokens(1);
     const params = this.parseFunctionDefinitionParams();
     this.lexer.expect('{');
     const statements = this.parseStatementsExpr('}');
@@ -826,7 +805,7 @@ export class JsonTemplateParser {
   private parseObjectKeyExpr(): Expression | string {
     let key: Expression | string;
     if (this.lexer.match('[')) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       key = this.parseBaseExpr();
       this.lexer.expect(']');
     } else if (this.lexer.matchID()) {
@@ -876,7 +855,7 @@ export class JsonTemplateParser {
 
   private parseSpreadExpr(): SpreadExpression | Expression {
     if (this.lexer.matchSpread()) {
-      this.lexer.lex();
+      this.lexer.ignoreTokens(1);
       return {
         type: SyntaxType.SPREAD_EXPR,
         value: this.parseBaseExpr(),
@@ -900,7 +879,7 @@ export class JsonTemplateParser {
     let statements: Expression[] = this.parseStatements(')');
     this.lexer.expect(')');
     if (statements.length === 0) {
-      return EMPTY_EXPR;
+      throw new JsonTemplateParserError('empty block is not allowed');
     }
     return {
       type: SyntaxType.BLOCK_EXPR,
@@ -909,7 +888,7 @@ export class JsonTemplateParser {
   }
 
   private parseAsyncFunctionExpr(): FunctionExpression {
-    this.lexer.lex();
+    this.lexer.ignoreTokens(1);
     if (this.lexer.matchFunction()) {
       return this.parseFunctionExpr(true);
     } else if (this.lexer.matchLambda()) {
@@ -919,7 +898,7 @@ export class JsonTemplateParser {
   }
 
   private parseLambdaExpr(asyncFn = false): FunctionExpression {
-    this.lexer.lex();
+    this.lexer.ignoreTokens(1);
     const expr = this.parseBaseExpr();
     return {
       type: SyntaxType.FUNCTION_EXPR,

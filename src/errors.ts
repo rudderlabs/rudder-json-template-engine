@@ -4,7 +4,7 @@ export class JsonTemplateLexerError extends Error {
   }
 }
 
-export class JsosTemplateParserError extends Error {
+export class JsonTemplateParserError extends Error {
   constructor(message: string) {
     super(message);
   }

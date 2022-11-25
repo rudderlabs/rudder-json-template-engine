@@ -2,6 +2,10 @@ import { Sceanario } from '../../types';
 
 export const data: Sceanario[] = [
   {
+    templatePath: 'function_calls.jt',
+    output: ["abc", null, undefined]
+  },
+  {
     templatePath: 'js_date_function.jt',
     output: [2022, 8, 19],
   },

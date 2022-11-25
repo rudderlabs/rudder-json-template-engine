@@ -228,6 +228,12 @@ export class JsonTemplateLexer {
     return this.lex().value;
   }
 
+  ignoreTokens(numTokens: number) {
+    for (let i = 0; i < numTokens; i++) {
+      this.lex();
+    }
+  }
+
   lex(): Token {
     let token;
 
@@ -423,7 +429,14 @@ export class JsonTemplateLexer {
       return;
     }
 
-    if (ch2 === '.' && ch3 === '.') {
+    if (ch2 === '(' && ch3 === ')') {
+      this.idx = this.idx + 3;
+      return {
+        type: TokenType.PUNCT,
+        value: '.()',
+        range: [start, this.idx],
+      };
+    } else if (ch2 === '.' && ch3 === '.') {
       this.idx = this.idx + 3;
       return {
         type: TokenType.PUNCT,

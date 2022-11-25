@@ -387,11 +387,12 @@ export class JsonTemplateTranslator {
     if (expr.object) {
       code.push(this.translateExpr(expr.object, result, ctx));
     }
-    if (!expr.id) {
-      code.push(JsonTemplateTranslator.convertToSingleValue(result));
-    }
+    code.push(`if(${JsonTemplateTranslator.returnIsNotEmpty(result)}){`)
     const functionArgsStr = this.translateSpreadableExpressions(expr.args, result, code);
-    code.push(dest, '=', this.getFunctionName(expr, result), '(', functionArgsStr, ');');
+    code.push(result, '=', this.getFunctionName(expr, result), '(', functionArgsStr, ');');
+    code.push('}');
+    code.push(JsonTemplateTranslator.generateAssignmentCode(dest, result));
+    this.releaseVars(result);
     return code.join('');
   }
 
@@ -628,19 +629,20 @@ export class JsonTemplateTranslator {
     return `${varName} === null || ${varName} === undefined`;
   }
 
+  private static returnIsNotEmpty(varName: string): string {
+    return `${varName} !== null && ${varName} !== undefined`;
+  }
+
   private static returnObjectValues(varName: string): string {
     return `Object.values(${varName}).filter(v => v !== null && v !== undefined)`;
   }
+
   private static returnSingleValue(arg: Expression, varName: string): string {
     if (arg.type === SyntaxType.LITERAL) {
       return varName;
     }
 
     return `(Array.isArray(${varName}) ? ${varName}[0] : ${varName})`;
-  }
-
-  private static convertToSingleValue(varName: string): string {
-    return `${varName} = Array.isArray(${varName}) ? ${varName}[0] : ${varName};`;
   }
 
   private static convertToSingleValueIfSafe(varName: string): string {

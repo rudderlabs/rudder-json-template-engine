@@ -250,7 +250,8 @@ export class JsonTemplateLexer {
   static isLiteralToken(token: Token) {
     return (
       token.type === TokenType.BOOL ||
-      token.type === TokenType.NUM ||
+      token.type === TokenType.INT ||
+      token.type === TokenType.FLOAT ||
       token.type === TokenType.STR ||
       token.type === TokenType.NULL ||
       token.type === TokenType.UNDEFINED
@@ -390,6 +391,27 @@ export class JsonTemplateLexer {
     this.throwUnexpectedToken();
   }
 
+  private scanInteger(): Token | undefined {
+    let start = this.idx;
+    let ch = this.codeChars[this.idx];
+    if(!JsonTemplateLexer.isDigit(ch)) {
+      return;
+    }
+    let num = ch;
+    while (++this.idx < this.codeChars.length ) {
+      ch = this.codeChars[this.idx];
+      if (!JsonTemplateLexer.isDigit(ch)) {
+        break;
+      }
+      num += ch;
+    }
+    return {
+      type: TokenType.INT,
+      value: parseInt(num, 10),
+      range: [start, this.idx],
+    }
+  }
+
   private scanNumeric(): Token | undefined {
     let start = this.idx,
       ch = this.codeChars[this.idx],
@@ -411,11 +433,18 @@ export class JsonTemplateLexer {
         num += ch;
       }
 
+      if(isFloat) {
+        return {
+          type: TokenType.FLOAT,
+          value: parseFloat(num),
+          range: [start, this.idx],
+        }
+      }
       return {
-        type: TokenType.NUM,
-        value: isFloat ? parseFloat(num) : parseInt(num, 10),
+        type: TokenType.INT,
+        value: parseInt(num, 10),
         range: [start, this.idx],
-      };
+      }
     }
   }
 

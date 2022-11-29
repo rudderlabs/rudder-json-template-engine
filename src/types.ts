@@ -15,7 +15,8 @@ export enum Keyword {
 export enum TokenType {
   UNKNOWN,
   ID,
-  NUM,
+  INT,
+  FLOAT,
   STR,
   BOOL,
   NULL,

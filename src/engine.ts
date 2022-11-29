@@ -7,15 +7,40 @@ import { CommonUtils } from './utils';
 
 export class JsonTemplateEngine {
   private readonly fn: Function;
-  constructor(template: string) {
-    this.fn = JsonTemplateEngine.compile(template);
+  private constructor(fn: Function) {
+    this.fn = fn;
   }
 
-  private static compile(template: string): Function {
+  static create(
+    templateOrExpr: string | Expression,
+    compileTimeBindings?: any,
+  ): JsonTemplateEngine {
+    return new JsonTemplateEngine(this.compile(templateOrExpr, compileTimeBindings));
+  }
+
+  static createSync(
+    templateOrExpr: string | Expression,
+    compileTimeBindings?: any,
+  ): JsonTemplateEngine {
+    return new JsonTemplateEngine(this.compileSync(templateOrExpr, compileTimeBindings));
+  }
+
+  private static compileSync(
+    templateOrExpr: string | Expression,
+    compileTimeBindings?: any,
+  ): Function {
+    return Function(
+      DATA_PARAM_KEY,
+      BINDINGS_PARAM_KEY,
+      this.translate(templateOrExpr, compileTimeBindings),
+    );
+  }
+
+  private static compile(templateOrExpr: string | Expression, compileTimeBindings?: any): Function {
     return CommonUtils.CreateAsyncFunction(
       DATA_PARAM_KEY,
       BINDINGS_PARAM_KEY,
-      this.translate(template),
+      this.translate(templateOrExpr, compileTimeBindings),
     );
   }
 
@@ -25,12 +50,23 @@ export class JsonTemplateEngine {
     return parser.parse();
   }
 
-  static translate(template: string): string {
-    const translator = new JsonTemplateTranslator(this.parse(template));
+  static translate(templateOrExpr: string | Expression, compileTimeBindings?: any): string {
+    if (typeof templateOrExpr === 'string') {
+      return this.translateTemplate(templateOrExpr, compileTimeBindings);
+    }
+    return this.translateExpression(templateOrExpr, compileTimeBindings);
+  }
+
+  private static translateTemplate(template: string, compileTimeBindings?: any): string {
+    return this.translateExpression(this.parse(template), compileTimeBindings);
+  }
+
+  private static translateExpression(expr: Expression, compileTimeBindings?: any): string {
+    const translator = new JsonTemplateTranslator(expr, compileTimeBindings);
     return translator.translate();
   }
 
-  evaluate(data: any, bindings: any = {}): Promise<any> {
+  evaluate(data: any, bindings: any = {}): any {
     return this.fn(data || {}, bindings);
   }
 }

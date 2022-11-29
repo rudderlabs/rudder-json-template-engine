@@ -4,7 +4,8 @@ export type Sceanario = {
   description?: string;
   input?: any;
   templatePath?: string;
-  bindings?: Dictionary<any>;
+  compileTimeBindings?: any;
+  bindings?: any;
   output?: any;
   error?: string;
 };

@@ -25,6 +25,7 @@ import {
   ArrayFilterExpression,
   BlockExpression,
   PathOptions,
+  CompileTimeExpression,
 } from './types';
 import { JsonTemplateParserError } from './errors';
 import { DATA_PARAM_KEY } from './constants';
@@ -193,55 +194,6 @@ export class JsonTemplateParser {
       type: SyntaxType.PATH_OPTIONS,
       options: context,
     };
-  }
-
-  private static prependFunctionID(prefix: string, id?: string): string {
-    return id ? prefix + '.' + id : prefix;
-  }
-
-  private static ignoreEmptySelectors(parts: Expression[]): Expression[] {
-    return parts.filter(
-      (part) => !(part.type === SyntaxType.SELECTOR && part.selector === '.' && !part.prop),
-    );
-  }
-
-  private static combinePathOptionParts(parts: Expression[]): Expression[] {
-    if (parts.length < 2) {
-      return parts;
-    }
-    let newParts: Expression[] = [];
-    for (let i = 0; i < parts.length; i++) {
-      let currPart = parts[i];
-      if (i < parts.length - 1 && parts[i + 1].type === SyntaxType.PATH_OPTIONS) {
-        currPart.options = parts[i + 1].options;
-        i++;
-      }
-      newParts.push(currPart);
-    }
-    return newParts;
-  }
-
-  private static convertToFunctionCallExpr(
-    fnExpr: FunctionCallExpression,
-    pathExpr: PathExpression,
-  ): FunctionCallExpression | PathExpression {
-    let lastPart = CommonUtils.getLastElement(pathExpr.parts);
-    if(lastPart?.type === SyntaxType.SELECTOR){
-      const selectorExpr = lastPart as SelectorExpression;
-      if(selectorExpr.selector === '.' && selectorExpr.prop?.type === TokenType.ID) {
-        pathExpr.parts.pop();
-        fnExpr.id = selectorExpr.prop.value;
-        fnExpr.dot = true;
-      }
-    }
-
-    if (!pathExpr.parts.length && pathExpr.root && typeof pathExpr.root !== 'object') {
-      fnExpr.id = this.prependFunctionID(pathExpr.root, fnExpr.id);
-      fnExpr.dot = false;
-    } else {
-      fnExpr.object = pathExpr;
-    }
-    return fnExpr;
   }
 
   private parsePathRoot(root?: Expression): Expression | string | undefined {
@@ -933,6 +885,18 @@ export class JsonTemplateParser {
     };
   }
 
+  private parseCompileTimeExpr(): CompileTimeExpression {
+    this.lexer.expect('{');
+    this.lexer.expect('{');
+    const expr = this.parseBaseExpr();
+    this.lexer.expect('}');
+    this.lexer.expect('}');
+    return {
+      type: SyntaxType.COMPILE_TIME_EXPR,
+      value: expr,
+    };
+  }
+
   private parsePrimaryExpr(): Expression {
     if (this.lexer.match(';')) {
       return EMPTY_EXPR;
@@ -967,6 +931,10 @@ export class JsonTemplateParser {
 
     if (this.lexer.matchLiteral()) {
       return this.parseLiteralExpr();
+    }
+
+    if (this.lexer.match('{') && this.lexer.match('{', 1)) {
+      return this.parseCompileTimeExpr();
     }
 
     if (this.lexer.match('{')) {
@@ -1017,5 +985,54 @@ export class JsonTemplateParser {
       block: true,
       body: CommonUtils.convertToStatementsExpr(expr),
     };
+  }
+
+  private static prependFunctionID(prefix: string, id?: string): string {
+    return id ? prefix + '.' + id : prefix;
+  }
+
+  private static ignoreEmptySelectors(parts: Expression[]): Expression[] {
+    return parts.filter(
+      (part) => !(part.type === SyntaxType.SELECTOR && part.selector === '.' && !part.prop),
+    );
+  }
+
+  private static combinePathOptionParts(parts: Expression[]): Expression[] {
+    if (parts.length < 2) {
+      return parts;
+    }
+    let newParts: Expression[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      let currPart = parts[i];
+      if (i < parts.length - 1 && parts[i + 1].type === SyntaxType.PATH_OPTIONS) {
+        currPart.options = parts[i + 1].options;
+        i++;
+      }
+      newParts.push(currPart);
+    }
+    return newParts;
+  }
+
+  private static convertToFunctionCallExpr(
+    fnExpr: FunctionCallExpression,
+    pathExpr: PathExpression,
+  ): FunctionCallExpression | PathExpression {
+    let lastPart = CommonUtils.getLastElement(pathExpr.parts);
+    if (lastPart?.type === SyntaxType.SELECTOR) {
+      const selectorExpr = lastPart as SelectorExpression;
+      if (selectorExpr.selector === '.' && selectorExpr.prop?.type === TokenType.ID) {
+        pathExpr.parts.pop();
+        fnExpr.id = selectorExpr.prop.value;
+        fnExpr.dot = true;
+      }
+    }
+
+    if (!pathExpr.parts.length && pathExpr.root && typeof pathExpr.root !== 'object') {
+      fnExpr.id = this.prependFunctionID(pathExpr.root, fnExpr.id);
+      fnExpr.dot = false;
+    } else {
+      fnExpr.object = pathExpr;
+    }
+    return fnExpr;
   }
 }

@@ -216,30 +216,26 @@ const address = {
 //   // ),
 // );
 
-new JsonTemplateEngine(`
+JsonTemplateEngine.create(
+  `
 .b ?? .a
-`)
+`,
+)
   .evaluate({ a: 1 })
   .then((a) => console.log(JSON.stringify(a)));
 
 console.log(
-  new JsonTemplateTranslator(
-    new JsonTemplateParser(
-      new JsonTemplateLexer(`
+  JsonTemplateEngine.translate(`
       let a = [{a: [1, 2], b: "1"}, {a: [3, 4], b: 2}, {a:[5], b: 3}, {b: 4}]
       a{.a.length > 1}
       `),
-    ).parse(),
-  ).translate(),
 );
 
 console.log(
   JSON.stringify(
-    new JsonTemplateParser(
-      new JsonTemplateLexer(`
+    JsonTemplateEngine.parse(`
       .(.a)
       `),
-    ).parse(),
     //   null,
     //   2,
   ),

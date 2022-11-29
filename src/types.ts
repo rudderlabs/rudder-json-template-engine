@@ -74,6 +74,7 @@ export enum SyntaxType {
   FUNCTION_EXPR,
   FUNCTION_CALL_ARG,
   FUNCTION_CALL_EXPR,
+  COMPILE_TIME_EXPR,
   STATEMENTS_EXPR,
 }
 
@@ -117,6 +118,10 @@ export interface ObjectPropExpression extends Expression {
 
 export interface ObjectExpression extends Expression {
   props: ObjectPropExpression[];
+}
+
+export interface CompileTimeExpression extends Expression {
+  value: Expression;
 }
 
 export interface ArrayExpression extends Expression {

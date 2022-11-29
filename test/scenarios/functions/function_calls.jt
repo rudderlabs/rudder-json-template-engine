@@ -1,0 +1,2 @@
+let a = {a: "Abc", b: null, c: undefined};
+a.([.a.toLowerCase(), .b.toLowerCase(), .c.toLowerCase()])

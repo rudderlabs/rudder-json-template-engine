@@ -21,11 +21,11 @@ import {
   DefinitionExpression,
   SpreadExpression,
   LambdaArgExpression,
-  ContextVariable,
   ConditionalExpression,
   ObjectFilterExpression,
   ArrayFilterExpression,
   BlockExpression,
+  PathOptions,
 } from './types';
 import { CommonUtils } from './utils';
 
@@ -191,33 +191,37 @@ export class JsonTemplateTranslator {
       if (JsonTemplateTranslator.isSinglePropSelection(path.parts[0])) {
         const part = path.parts.shift() as SelectorExpression;
         const propStr = CommonUtils.escapeStr(part.prop?.value);
+        path.options = Object.assign({}, path.options, part.options);
         return `${dest} = ${ctx}[${propStr}];`;
       }
     }
     return `${dest} = ${path.root || ctx};`;
   }
 
-  private translatePathContext(context: ContextVariable, item: string, idx: string): string {
+  private translatePathContextVariables(
+    expr: PathExpression,
+    partNum: number,
+    item: string,
+    idx: string,
+  ): string {
+    let options = JsonTemplateTranslator.getPathOptions(expr, partNum);
     const code: string[] = [];
-    if (context.item) {
-      code.push(`let ${context.item} = ${item};`);
+    if (options.item) {
+      code.push(`let ${options.item} = ${item};`);
     }
-    if (context.index) {
-      code.push(`let ${context.index} = ${idx};`);
+    if (options.index) {
+      code.push(`let ${options.index} = ${idx};`);
     }
     return code.join('');
   }
 
-  private prepareDataForPathPart(part: Expression, data: string): string {
+  private prepareDataForPathPart(expr: PathExpression, partNum: number, data: string): string {
     const code: string[] = [];
     code.push(JsonTemplateTranslator.covertToArrayValue(data));
-    if (JsonTemplateTranslator.isSinglePropSelection(part)) {
-      const selector = part as SelectorExpression;
-      const propStr = CommonUtils.escapeStr(selector.prop?.value);
-      code.push(`if(Object.prototype.hasOwnProperty.call(${data}, ${propStr})){`);
-      code.push(`${data} = [${data}];`);
-      code.push('}');
-    } else if (JsonTemplateTranslator.isArrayFilterExpr(part)) {
+    if (
+      JsonTemplateTranslator.isArrayFilterExpr(expr.parts[partNum]) ||
+      JsonTemplateTranslator.isToArray(expr, partNum)
+    ) {
       code.push(`${data} = [${data}];`);
     }
     return code.join('');
@@ -237,23 +241,20 @@ export class JsonTemplateTranslator {
     code.push(JsonTemplateTranslator.generateAssignmentCode(result, '[]'));
     code.push(JsonTemplateTranslator.generateAssignmentCode(dataVars[0], dest));
     for (let i = 0; i < numParts; i++) {
-      const part = parts[i];
+      let part = parts[i];
       const idx = indexVars[i];
       const item = itemVars[i];
       const data = dataVars[i];
-      code.push(this.prepareDataForPathPart(part, data));
+      code.push(this.prepareDataForPathPart(expr, i, data));
       code.push(`for(${idx}=0; ${idx}<${data}.length; ${idx}++) {`);
       code.push(`${item} = ${data}[${idx}];`);
-      if (i > 0 && parts[i - 1].context) {
-        code.push(this.translatePathContext(parts[i - 1].context, item, idx));
-      }
+      code.push(this.translatePathContextVariables(expr, i, item, idx));
       code.push(this.translateExpr(part, item, item));
-      code.push(`if(!${item}) { continue; }`);
+      code.push(`if(${JsonTemplateTranslator.returnIsEmpty(item)}) { continue; }`);
       if (i < numParts - 1) {
         code.push(JsonTemplateTranslator.generateAssignmentCode(dataVars[i + 1], item));
       } else {
-        code.push(JsonTemplateTranslator.covertToArrayValue(item));
-        code.push(`${result} = ${result}.concat(${item});`);
+        code.push(`${result}.push(${item});`);
       }
     }
     for (let i = 0; i < numParts; i++) {
@@ -263,8 +264,8 @@ export class JsonTemplateTranslator {
     this.releaseVars(...itemVars);
     this.releaseVars(...dataVars);
     this.releaseVars(result);
-    if (!expr.toArray) {
-      code.push(result, '=', JsonTemplateTranslator.returnSingleValueIfSafe(result), ';');
+    if (!expr.returnAsArray) {
+      code.push(JsonTemplateTranslator.convertToSingleValueIfSafe(result));
     }
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, result));
     return code.join('');
@@ -274,7 +275,7 @@ export class JsonTemplateTranslator {
     const code: string[] = [];
     code.push(this.translatePathRoot(expr, dest, baseCtx));
     code.push(this.translatePathParts(expr, dest));
-    if (expr.toArray && !expr.parts.length) {
+    if (expr.returnAsArray && expr.parts.length === 0) {
       code.push(JsonTemplateTranslator.covertToArrayValue(dest));
     }
     return code.join('');
@@ -319,7 +320,7 @@ export class JsonTemplateTranslator {
     code.push(`${ctxs}=[${baseCtx}];`);
     code.push(`while(${ctxs}.length > 0) {`);
     code.push(`${currCtx} = ${ctxs}.shift();`);
-    code.push(`if(!${currCtx}){continue;}`);
+    code.push(`if(${JsonTemplateTranslator.returnIsEmpty(currCtx)}){continue;}`);
     code.push(`if(Array.isArray(${currCtx})){`);
     code.push(`${ctxs} = ${ctxs}.concat(${currCtx});`);
     code.push('continue;');
@@ -332,7 +333,7 @@ export class JsonTemplateTranslator {
         code.push(`${result} = ${result}.concat(${valuesCode});`);
       } else {
         code.push(`if(Object.prototype.hasOwnProperty.call(${currCtx}, ${propStr})){`);
-        code.push(`${result}.push(${currCtx}[${propStr}]);`);
+        code.push(`${result} = ${result}.concat(${currCtx}[${propStr}]);`);
         code.push('}');
       }
     }
@@ -386,11 +387,12 @@ export class JsonTemplateTranslator {
     if (expr.object) {
       code.push(this.translateExpr(expr.object, result, ctx));
     }
-    if (!expr.id) {
-      code.push(JsonTemplateTranslator.convertToSingleValue(result));
-    }
+    code.push(`if(${JsonTemplateTranslator.returnIsNotEmpty(result)}){`)
     const functionArgsStr = this.translateSpreadableExpressions(expr.args, result, code);
-    code.push(dest, '=', this.getFunctionName(expr, result), '(', functionArgsStr, ');');
+    code.push(result, '=', this.getFunctionName(expr, result), '(', functionArgsStr, ');');
+    code.push('}');
+    code.push(JsonTemplateTranslator.generateAssignmentCode(dest, result));
+    this.releaseVars(result);
     return code.join('');
   }
 
@@ -596,6 +598,14 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
+  private static getPathOptions(expr: PathExpression, partNum: number): PathOptions {
+    return (partNum === 0 ? expr.options : expr.parts[partNum - 1]?.options) || {};
+  }
+
+  private static isToArray(expr: PathExpression, partNum: number): boolean {
+    return this.getPathOptions(expr, partNum).toArray === true;
+  }
+
   private static isArrayFilterExpr(expr: Expression): boolean {
     return expr.type === SyntaxType.ARRAY_FILTER_EXPR;
   }
@@ -615,9 +625,18 @@ export class JsonTemplateTranslator {
     return false;
   }
 
+  private static returnIsEmpty(varName: string): string {
+    return `${varName} === null || ${varName} === undefined`;
+  }
+
+  private static returnIsNotEmpty(varName: string): string {
+    return `${varName} !== null && ${varName} !== undefined`;
+  }
+
   private static returnObjectValues(varName: string): string {
     return `Object.values(${varName}).filter(v => v !== null && v !== undefined)`;
   }
+
   private static returnSingleValue(arg: Expression, varName: string): string {
     if (arg.type === SyntaxType.LITERAL) {
       return varName;
@@ -626,12 +645,8 @@ export class JsonTemplateTranslator {
     return `(Array.isArray(${varName}) ? ${varName}[0] : ${varName})`;
   }
 
-  private static convertToSingleValue(varName: string): string {
-    return `${varName} = Array.isArray(${varName}) ? ${varName}[0] : ${varName};`;
-  }
-
-  private static returnSingleValueIfSafe(varName: string): string {
-    return `(${varName}.length < 2 ? ${varName}[0] : ${varName})`;
+  private static convertToSingleValueIfSafe(varName: string): string {
+    return `${varName} = ${varName}.length < 2 ? ${varName}[0] : ${varName};`;
   }
 
   private static covertToArrayValue(varName: string) {

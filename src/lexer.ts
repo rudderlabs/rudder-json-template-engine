@@ -43,6 +43,10 @@ export class JsonTemplateLexer {
     return JsonTemplateLexer.isLiteralToken(this.lookahead());
   }
 
+  matchToArray(): boolean {
+    return this.match('[') && this.match(']', 1);
+  }
+
   matchPath(): boolean {
     return this.matchPathSelector() || this.matchID();
   }
@@ -153,7 +157,7 @@ export class JsonTemplateLexer {
   }
 
   private isLineCommentEnd(): boolean {
-    return this.codeChars[this.idx] === '\n';
+    return this.idx >= this.codeChars.length || this.codeChars[this.idx] === '\n';
   }
 
   private isBlockCommentStart(): boolean {
@@ -222,6 +226,12 @@ export class JsonTemplateLexer {
 
   value(): any {
     return this.lex().value;
+  }
+
+  ignoreTokens(numTokens: number) {
+    for (let i = 0; i < numTokens; i++) {
+      this.lex();
+    }
   }
 
   lex(): Token {
@@ -419,7 +429,14 @@ export class JsonTemplateLexer {
       return;
     }
 
-    if (ch2 === '.' && ch3 === '.') {
+    if (ch2 === '(' && ch3 === ')') {
+      this.idx = this.idx + 3;
+      return {
+        type: TokenType.PUNCT,
+        value: '.()',
+        range: [start, this.idx],
+      };
+    } else if (ch2 === '.' && ch3 === '.') {
       this.idx = this.idx + 3;
       return {
         type: TokenType.PUNCT,

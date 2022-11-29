@@ -26,6 +26,10 @@ export const data: Sceanario[] = [
     error: 'Unexpected end of template',
   },
   {
+    templatePath: 'empty_block.jt',
+    error: 'empty block is not allowed',
+  },
+  {
     templatePath: 'empty_object_vars_for_definition.jt',
     error: 'Empty object vars',
   },

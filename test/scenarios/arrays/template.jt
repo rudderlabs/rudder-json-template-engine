@@ -1,6 +1,6 @@
 let a = [
     "string1", `string2`, 'string3', "aa\"a", true, false, 
-    undefined, null, .2, 0.22, [1, 2, 3], {"b": [1, 2]}
+    undefined, null, 20.02, .22, [1., 2, 3], {"b": [1, 2]}
 ];
 [...a[-2], a[0,8], a[1:6], a[-1].b[1]]
 

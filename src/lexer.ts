@@ -43,6 +43,10 @@ export class JsonTemplateLexer {
     return JsonTemplateLexer.isLiteralToken(this.lookahead());
   }
 
+  matchINT(steps = 0): boolean {
+    return this.matchTokenType(TokenType.INT, steps);
+  }
+
   matchToArray(): boolean {
     return this.match('[') && this.match(']', 1);
   }
@@ -58,8 +62,7 @@ export class JsonTemplateLexer {
   matchPathPartSelector(): boolean {
     let token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
-      let value = token.value;
-      return value === '.' || value === '..';
+      return token.value === '.' || token.value === '..';
     }
     return false;
   }
@@ -91,41 +94,37 @@ export class JsonTemplateLexer {
     return Object.values(Keyword).some((op) => op.toString() === id);
   }
 
-  matchKeyword(op: string): boolean {
+  matchKeyword(): boolean {
+    return this.matchTokenType(TokenType.KEYWORD);
+  }
+
+  matchKeywordValue(val: string): boolean {
     let token = this.lookahead();
-    return token.type === TokenType.KEYWORD && token.value === op;
+    return token.type === TokenType.KEYWORD && token.value === val;
   }
 
   matchIN(): boolean {
-    return this.matchKeyword(Keyword.IN);
+    return this.matchKeywordValue(Keyword.IN);
   }
 
   matchFunction(): boolean {
-    return this.matchKeyword(Keyword.FUNCTION);
+    return this.matchKeywordValue(Keyword.FUNCTION);
   }
 
   matchNew(): boolean {
-    return this.matchKeyword(Keyword.NEW);
+    return this.matchKeywordValue(Keyword.NEW);
   }
 
   matchTypeOf(): boolean {
-    return this.matchKeyword(Keyword.TYPEOF);
+    return this.matchKeywordValue(Keyword.TYPEOF);
   }
 
   matchAwait(): boolean {
-    return this.matchKeyword(Keyword.AWAIT);
-  }
-
-  matchAsync(): boolean {
-    return this.matchKeyword(Keyword.ASYNC);
+    return this.matchKeywordValue(Keyword.AWAIT);
   }
 
   matchLambda(): boolean {
-    return this.matchKeyword(Keyword.LAMBDA);
-  }
-
-  matchDefinition(): boolean {
-    return this.matchKeyword(Keyword.LET) || this.matchKeyword(Keyword.CONST);
+    return this.matchKeywordValue(Keyword.LAMBDA);
   }
 
   expect(value) {
@@ -217,7 +216,7 @@ export class JsonTemplateLexer {
       };
     }
 
-    let token = this.scanPunctuator() || this.scanID() || this.scanString() || this.scanNumeric();
+    let token = this.scanPunctuator() || this.scanID() || this.scanString() || this.scanInteger();
     if (token) {
       return token;
     }
@@ -394,11 +393,11 @@ export class JsonTemplateLexer {
   scanInteger(): Token | undefined {
     let start = this.idx;
     let ch = this.codeChars[this.idx];
-    if(!JsonTemplateLexer.isDigit(ch)) {
+    if (!JsonTemplateLexer.isDigit(ch)) {
       return;
     }
     let num = ch;
-    while (++this.idx < this.codeChars.length ) {
+    while (++this.idx < this.codeChars.length) {
       ch = this.codeChars[this.idx];
       if (!JsonTemplateLexer.isDigit(ch)) {
         break;
@@ -407,45 +406,9 @@ export class JsonTemplateLexer {
     }
     return {
       type: TokenType.INT,
-      value: parseInt(num, 10),
+      value: num,
       range: [start, this.idx],
-    }
-  }
-
-  private scanNumeric(): Token | undefined {
-    let start = this.idx,
-      ch = this.codeChars[this.idx],
-      isFloat = ch === '.';
-
-    if (isFloat || JsonTemplateLexer.isDigit(ch)) {
-      let num = ch;
-      while (++this.idx < this.codeChars.length) {
-        ch = this.codeChars[this.idx];
-        if (ch === '.') {
-          if (isFloat) {
-            this.throwUnexpectedToken();
-          }
-          isFloat = true;
-        } else if (!JsonTemplateLexer.isDigit(ch)) {
-          break;
-        }
-
-        num += ch;
-      }
-
-      if(isFloat) {
-        return {
-          type: TokenType.FLOAT,
-          value: parseFloat(num),
-          range: [start, this.idx],
-        }
-      }
-      return {
-        type: TokenType.INT,
-        value: parseInt(num, 10),
-        range: [start, this.idx],
-      }
-    }
+    };
   }
 
   private scanPunctuatorForDots(): Token | undefined {
@@ -480,9 +443,6 @@ export class JsonTemplateLexer {
         range: [start, this.idx],
       };
     } else {
-      if (JsonTemplateLexer.isDigit(ch2)) {
-        return;
-      }
       return {
         type: TokenType.PUNCT,
         value: '.',

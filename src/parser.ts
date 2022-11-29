@@ -299,8 +299,23 @@ export class JsonTemplateParser {
     return this.updatePathExpr(expr);
   }
 
-  private parseSelector(): SelectorExpression | Expression {
+  private createArrayIndexFilterExpr(expr: Expression): IndexFilterExpression {
+    return {
+      type: SyntaxType.ARRAY_INDEX_FILTER_EXPR,
+      indexes: {
+        type: SyntaxType.ARRAY_EXPR,
+        elements: [expr]
+      }
+    }
+  }
+
+  private parseSelector(): SelectorExpression | IndexFilterExpression | Expression {
     let selector = this.lexer.value();
+    let intExpr = this.parseIntegerExpr();
+    if(intExpr) {
+      return this.createArrayIndexFilterExpr(intExpr);
+    }
+    
     let prop: Token | undefined;
     if (this.lexer.match('*') || this.lexer.matchID() || this.lexer.matchTokenType(TokenType.STR)) {
       prop = this.lexer.lex();
@@ -677,13 +692,23 @@ export class JsonTemplateParser {
     return expr;
   }
 
-  private parseLiteralExpr(): LiteralExpression {
-    const token = this.lexer.lex();
+  private createLiteralExpr(token: Token): LiteralExpression {
     return {
       type: SyntaxType.LITERAL,
       value: token.value,
       tokenType: token.type,
     };
+  }
+
+  private parseLiteralExpr(): LiteralExpression {
+    return this.createLiteralExpr(this.lexer.lex())
+  }
+
+  private parseIntegerExpr(): LiteralExpression | undefined {
+    const token = this.lexer.scanInteger();
+    if(token) {
+      return this.createLiteralExpr(token);
+    }
   }
 
   private parseIDPath(): string {

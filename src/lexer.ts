@@ -391,7 +391,7 @@ export class JsonTemplateLexer {
     this.throwUnexpectedToken();
   }
 
-  private scanInteger(): Token | undefined {
+  scanInteger(): Token | undefined {
     let start = this.idx;
     let ch = this.codeChars[this.idx];
     if(!JsonTemplateLexer.isDigit(ch)) {

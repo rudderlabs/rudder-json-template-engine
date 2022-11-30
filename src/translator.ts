@@ -93,7 +93,7 @@ export class JsonTemplateTranslator {
         return this.translateStatementsExpr(expr as StatementsExpression, dest, ctx);
 
       case SyntaxType.PATH:
-        return this.translatePath(expr as PathExpression, dest, ctx);
+        return this.translatePathExpr(expr as PathExpression, dest, ctx);
 
       case SyntaxType.IN_EXPR:
         return this.translateINExpr(expr as BinaryExpression, dest, ctx);
@@ -286,9 +286,22 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private translatePath(expr: PathExpression, dest: string, baseCtx: string): string {
+  private translateJSPathExpr(expr: PathExpression, dest: string, ctx: string): string {
     const code: string[] = [];
-    code.push(this.translatePathRoot(expr, dest, baseCtx));
+    const jspath = this.translateToJSPath(expr, code, ctx);
+    code.push(JsonTemplateTranslator.generateAssignmentCode(dest, jspath));
+    if (expr.returnAsArray) {
+      code.push(JsonTemplateTranslator.covertToArrayValue(dest));
+    }
+    return code.join('');
+  }
+
+  private translatePathExpr(expr: PathExpression, dest: string, ctx: string): string {
+    if (expr.jspath) {
+      return this.translateJSPathExpr(expr, dest, ctx);
+    }
+    const code: string[] = [];
+    code.push(this.translatePathRoot(expr, dest, ctx));
     code.push(this.translatePathParts(expr, dest));
     if (expr.returnAsArray && expr.parts.length === 0) {
       code.push(JsonTemplateTranslator.covertToArrayValue(dest));
@@ -467,62 +480,69 @@ export class JsonTemplateTranslator {
     return JsonTemplateTranslator.generateAssignmentCode(dest, literalCode);
   }
 
-  private getSelectorAssignmentPart(expr: SelectorExpression): string {
+  private getJSPathSelector(expr: SelectorExpression, isAssignment: boolean): string {
     if (!JsonTemplateTranslator.isValidSelectorForAssignment(expr)) {
-      throw new JsosTemplateTranslatorError('Invalid assignment path');
+      throw new JsosTemplateTranslatorError('Invalid jspath');
     }
     if (expr.prop?.type === TokenType.STR) {
-      return `[${CommonUtils.escapeStr(expr.prop?.value)}]`;
+      return `${isAssignment ? '' : '?.'}[${CommonUtils.escapeStr(expr.prop?.value)}]`;
     } else {
-      return `.${expr.prop?.value}`;
+      return `${isAssignment ? '' : '?'}.${expr.prop?.value}`;
     }
   }
-  private getArrayIndexAssignmentPart(
+  private getJSPathArrayIndex(
     expr: ArrayFilterExpression,
-    code: string[],
     ctx: string,
+    code: string[],
+    keyVars: string[],
+    isAssignment: boolean,
   ): string {
     const parts: string[] = [];
+    const prefix = isAssignment ? '' : '?.';
     for (const filter of expr.filters) {
       if (filter.type === SyntaxType.RANGE_FILTER_EXPR) {
-        throw new JsosTemplateTranslatorError('Invalid assignment path');
+        throw new JsosTemplateTranslatorError('Invalid jspath');
       }
       if (filter.indexes.elements.length > 1) {
-        throw new JsosTemplateTranslatorError('Invalid assignment path');
+        throw new JsosTemplateTranslatorError('Invalid jspath');
       }
       const keyVar = this.acquireVar();
       code.push(this.translateExpr(filter.indexes.elements[0], keyVar, ctx));
-      this.releaseVars(keyVar);
-      parts.push(`[${keyVar}]`);
+      parts.push(`${prefix}[${keyVar}]`);
+      keyVars.push(keyVar);
     }
     return parts.join('');
+  }
+
+  private translateToJSPath(expr: PathExpression, code: string[], ctx: string, isAssignment = false): string {
+    const jspath: string[] = [];
+    const root = expr.root || ctx;
+    if (typeof root === 'object') {
+      throw new JsosTemplateTranslatorError('Invalid jspath');
+    }
+    jspath.push(root);
+    const keyVars: string[] = [];
+    for (let part of expr.parts) {
+      switch (part.type) {
+        case SyntaxType.SELECTOR:
+          jspath.push(this.getJSPathSelector(part as SelectorExpression, isAssignment));
+          break;
+        case SyntaxType.ARRAY_FILTER_EXPR:
+          jspath.push(this.getJSPathArrayIndex(part as ArrayFilterExpression, ctx, code, keyVars, isAssignment));
+          break;
+        default:
+          throw new JsosTemplateTranslatorError('Invalid jspath');
+      }
+    }
+    this.releaseVars(...keyVars);
+    return jspath.join('');
   }
 
   private translateAssignmentExpr(expr: AssignmentExpression, dest: string, ctx: string): string {
     const code: string[] = [];
     const valueVar = this.acquireVar();
     code.push(this.translateExpr(expr.value, valueVar, ctx));
-    const assignmentPathParts: string[] = [];
-    const root = expr.path.root;
-    if (!root || root === DATA_PARAM_KEY || typeof root === 'object') {
-      throw new JsosTemplateTranslatorError('Invalid assignment path');
-    }
-    assignmentPathParts.push(root);
-    for (let part of expr.path.parts) {
-      switch (part.type) {
-        case SyntaxType.SELECTOR:
-          assignmentPathParts.push(this.getSelectorAssignmentPart(part as SelectorExpression));
-          break;
-        case SyntaxType.ARRAY_FILTER_EXPR:
-          assignmentPathParts.push(
-            this.getArrayIndexAssignmentPart(part as ArrayFilterExpression, code, ctx),
-          );
-          break;
-        default:
-          throw new JsosTemplateTranslatorError('Invalid assignment path');
-      }
-    }
-    const assignmentPath = assignmentPathParts.join('');
+    const assignmentPath = this.translateToJSPath(expr.path, code, ctx, true);
     code.push(JsonTemplateTranslator.generateAssignmentCode(assignmentPath, valueVar));
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, valueVar));
     this.releaseVars(valueVar);

@@ -26,6 +26,7 @@ import {
   BlockExpression,
   PathOptions,
   CompileTimeExpression,
+  Keyword,
 } from './types';
 import { JsonTemplateParserError } from './errors';
 import { DATA_PARAM_KEY } from './constants';
@@ -134,7 +135,6 @@ export class JsonTemplateParser {
   private parsePathPart(): Expression | Expression[] | undefined {
     if (this.lexer.match('.()')) {
       this.lexer.ignoreTokens(1);
-      return;
     } else if (this.lexer.match('.') && this.lexer.match('(', 1)) {
       this.lexer.ignoreTokens(1);
       return this.parseBlockExpr();
@@ -251,8 +251,31 @@ export class JsonTemplateParser {
     return this.updatePathExpr(expr);
   }
 
-  private parseSelector(): SelectorExpression | Expression {
+  private createArrayIndexFilterExpr(expr: Expression): IndexFilterExpression {
+    return {
+      type: SyntaxType.ARRAY_INDEX_FILTER_EXPR,
+      indexes: {
+        type: SyntaxType.ARRAY_EXPR,
+        elements: [expr],
+      },
+    };
+  }
+
+  private createArrayFilterExpr(
+    expr: RangeFilterExpression | IndexFilterExpression,
+  ): ArrayFilterExpression {
+    return {
+      type: SyntaxType.ARRAY_FILTER_EXPR,
+      filters: [expr],
+    };
+  }
+
+  private parseSelector(): SelectorExpression | IndexFilterExpression | Expression {
     let selector = this.lexer.value();
+    if (this.lexer.matchINT()) {
+      return this.createArrayFilterExpr(this.createArrayIndexFilterExpr(this.parseLiteralExpr()));
+    }
+
     let prop: Token | undefined;
     if (this.lexer.match('*') || this.lexer.matchID() || this.lexer.matchTokenType(TokenType.STR)) {
       prop = this.lexer.lex();
@@ -629,13 +652,16 @@ export class JsonTemplateParser {
     return expr;
   }
 
-  private parseLiteralExpr(): LiteralExpression {
-    const token = this.lexer.lex();
+  private createLiteralExpr(token: Token): LiteralExpression {
     return {
       type: SyntaxType.LITERAL,
       value: token.value,
       tokenType: token.type,
     };
+  }
+
+  private parseLiteralExpr(): LiteralExpression {
+    return this.createLiteralExpr(this.lexer.lex());
   }
 
   private parseIDPath(): string {
@@ -872,6 +898,51 @@ export class JsonTemplateParser {
     };
   }
 
+  private parseNumber(): LiteralExpression {
+    let val = this.lexer.value();
+    if (this.lexer.match('.')) {
+      val += this.lexer.value();
+      if (this.lexer.matchINT()) {
+        val += this.lexer.value();
+      }
+      return {
+        type: SyntaxType.LITERAL,
+        value: parseFloat(val),
+        tokenType: TokenType.FLOAT,
+      };
+    }
+    return {
+      type: SyntaxType.LITERAL,
+      value: parseInt(val, 10),
+      tokenType: TokenType.INT,
+    };
+  }
+
+  private parseFloatingNumber(): LiteralExpression {
+    const val = this.lexer.value() + this.lexer.value();
+    return {
+      type: SyntaxType.LITERAL,
+      value: parseFloat(val),
+      tokenType: TokenType.FLOAT,
+    };
+  }
+
+  private parseKeywordBasedExpr(): Expression {
+    const token = this.lexer.lookahead();
+    switch (token.value) {
+      case Keyword.NEW:
+        return this.parseFunctionCallExpr();
+      case Keyword.LAMBDA:
+        return this.parseLambdaExpr();
+      case Keyword.ASYNC:
+        return this.parseAsyncFunctionExpr();
+      case Keyword.FUNCTION:
+        return this.parseFunctionExpr();
+      default:
+        return this.parseDefinitionExpr();
+    }
+  }
+
   private parsePrimaryExpr(): Expression {
     if (this.lexer.match(';')) {
       return EMPTY_EXPR;
@@ -884,24 +955,16 @@ export class JsonTemplateParser {
       };
     }
 
-    if (this.lexer.matchNew()) {
-      return this.parseFunctionCallExpr();
+    if (this.lexer.matchKeyword()) {
+      return this.parseKeywordBasedExpr();
     }
 
-    if (this.lexer.matchDefinition()) {
-      return this.parseDefinitionExpr();
+    if (this.lexer.matchINT()) {
+      return this.parseNumber();
     }
 
-    if (this.lexer.matchLambda()) {
-      return this.parseLambdaExpr();
-    }
-
-    if (this.lexer.matchFunction()) {
-      return this.parseFunctionExpr();
-    }
-
-    if (this.lexer.matchAsync()) {
-      return this.parseAsyncFunctionExpr();
+    if (this.lexer.match('.') && this.lexer.matchINT(1) && !this.lexer.match('.', 2)) {
+      return this.parseFloatingNumber();
     }
 
     if (this.lexer.matchLiteral()) {

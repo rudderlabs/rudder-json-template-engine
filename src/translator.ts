@@ -681,6 +681,7 @@ export class JsonTemplateTranslator {
       } else {
         code.push(this.translateRangeFilterExpr(filter as RangeFilterExpression, dest, dest));
       }
+      code.push(`if(!${dest}){continue;}`);
     }
     return code.join('');
   }

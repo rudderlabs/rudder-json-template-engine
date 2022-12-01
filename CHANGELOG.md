@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.1...v0.2.2) (2022-11-30)
+
+
+### Features
+
+* add support for compile time expressions ([#12](https://github.com/rudderlabs/rudder-json-template-engine/issues/12)) ([4fc59c0](https://github.com/rudderlabs/rudder-json-template-engine/commit/4fc59c00289e1f10c0e22e4f80e7e72316e07091))
+* add support for index selectors ([#13](https://github.com/rudderlabs/rudder-json-template-engine/issues/13)) ([db8a661](https://github.com/rudderlabs/rudder-json-template-engine/commit/db8a661decada7c9d6b4d1aab4cda3d25f8fe748))
+* add support to use context variables any where in the path ([#11](https://github.com/rudderlabs/rudder-json-template-engine/issues/11)) ([5e8f75e](https://github.com/rudderlabs/rudder-json-template-engine/commit/5e8f75e2fe7d86f8b0409470f5a1385734a686af))
+
+
+### Bug Fixes
+
+* add missing semi-colon ([dcee815](https://github.com/rudderlabs/rudder-json-template-engine/commit/dcee8151379f86f98699683e92168f29fdbbfac7))
+* block expressions ([#10](https://github.com/rudderlabs/rudder-json-template-engine/issues/10)) ([509fccf](https://github.com/rudderlabs/rudder-json-template-engine/commit/509fccf90190da65b929c9c149fbdaed3e45a174))
+
 ## [0.2.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.0...v0.2.1) (2022-11-22)
 
 

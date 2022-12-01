@@ -559,7 +559,7 @@ export class JsonTemplateLexer {
       this.scanPunctuatorForDots() ||
       this.scanPunctuatorForQuestionMarks() ||
       this.scanPunctuatorForEquality() ||
-      this.scanPunctuatorForRepeatedTokens('=?', 3) ||
+      this.scanPunctuatorForRepeatedTokens('?', 3) ||
       this.scanPunctuatorForRepeatedTokens('|&*.=>?<', 2) ||
       this.scanSingleCharPunctuators()
     );

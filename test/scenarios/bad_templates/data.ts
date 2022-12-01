@@ -2,6 +2,10 @@ import { Sceanario } from '../../types';
 
 export const data: Sceanario[] = [
   {
+    templatePath: 'bad_array_coalese_expr.jt',
+    error: 'expected at least 1 expression',
+  },
+  {
     templatePath: 'bad_async_usage.jt',
     error: 'Unexpected token',
   },

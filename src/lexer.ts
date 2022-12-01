@@ -506,16 +506,25 @@ export class JsonTemplateLexer {
     }
   }
 
-  private scanPunctuatorForRepeatedTokens(): Token | undefined {
-    let start = this.idx,
-      ch1 = this.codeChars[this.idx],
-      ch2 = this.codeChars[this.idx + 1];
+  private scanPunctuatorForRepeatedTokens(
+    validSymbols: string,
+    numRepeations = 2,
+  ): Token | undefined {
+    let start = this.idx;
+    let ch = this.codeChars[this.idx];
+    let tokenVal = ch;
+    for (let i = 1; i < numRepeations; i++) {
+      if (this.codeChars[this.idx + i] !== ch) {
+        return;
+      }
+      tokenVal += ch;
+    }
 
-    if (ch1 === ch2 && '|&*.=>?<'.includes(ch1)) {
-      this.idx += 2;
+    if (validSymbols.includes(ch)) {
+      this.idx += numRepeations;
       return {
         type: TokenType.PUNCT,
-        value: ch1 + ch2,
+        value: tokenVal,
         range: [start, this.idx],
       };
     }
@@ -554,7 +563,8 @@ export class JsonTemplateLexer {
       this.scanPunctuatorForDots() ||
       this.scanPunctuatorForQuestionMarks() ||
       this.scanPunctuatorForEquality() ||
-      this.scanPunctuatorForRepeatedTokens() ||
+      this.scanPunctuatorForRepeatedTokens('?', 3) ||
+      this.scanPunctuatorForRepeatedTokens('|&*.=>?<', 2) ||
       this.scanSingleCharPunctuators()
     );
   }

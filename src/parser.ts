@@ -26,6 +26,8 @@ import {
   BlockExpression,
   PathOptions,
   Keyword,
+  EngineOptions,
+  PathType,
 } from './types';
 import { JsonTemplateParserError } from './errors';
 import { DATA_PARAM_KEY } from './constants';
@@ -36,11 +38,11 @@ import { JsonTemplateEngine } from './engine';
 const EMPTY_EXPR = { type: SyntaxType.EMPTY };
 export class JsonTemplateParser {
   private lexer: JsonTemplateLexer;
-  private compileTimeBindings?: any;
+  private options?: EngineOptions;
 
-  constructor(lexer: JsonTemplateLexer, compileTimeBindings?: any) {
+  constructor(lexer: JsonTemplateLexer, options?: EngineOptions) {
     this.lexer = lexer;
-    this.compileTimeBindings = compileTimeBindings;
+    this.options = options;
   }
 
   parse(): Expression {
@@ -91,7 +93,13 @@ export class JsonTemplateParser {
     if (expr.type === SyntaxType.PATH && this.lexer.match('=')) {
       this.lexer.ignoreTokens(1);
       const path = expr as PathExpression;
-      path.jspath = true;
+      if (!path.root || typeof path.root === 'object' || path.root === DATA_PARAM_KEY) {
+        throw new JsonTemplateParserError('Invalid assignment path');
+      }
+      if (JsonTemplateParser.isRichPath(expr as PathExpression)) {
+        throw new JsonTemplateParserError('Invalid assignment path');
+      }
+      path.pathType = PathType.SIMPLE;
       return {
         type: SyntaxType.ASSIGNMENT_EXPR,
         value: this.parseBaseExpr(),
@@ -191,7 +199,6 @@ export class JsonTemplateParser {
       if (this.lexer.matchToArray()) {
         this.lexer.ignoreTokens(2);
         context.toArray = true;
-        continue;
       }
     }
     return {
@@ -212,56 +219,29 @@ export class JsonTemplateParser {
     }
   }
 
-  private updatePathExpr(pathExpr: PathExpression): Expression {
-    if (pathExpr.parts.length > 1 && pathExpr.parts[0].type === SyntaxType.PATH_OPTIONS) {
-      pathExpr.options = pathExpr.parts[0].options;
-      pathExpr.parts.shift();
+  private parsePathType(): PathType {
+    if (this.lexer.matchSimplePath()) {
+      this.lexer.ignoreTokens(1);
+      return PathType.SIMPLE;
+    } else if (this.lexer.matchRichPath()) {
+      this.lexer.ignoreTokens(1);
+      return PathType.RICH;
     }
-
-    JsonTemplateParser.setSubpath(pathExpr.parts);
-    const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(pathExpr.parts);
-    let lastPart = CommonUtils.getLastElement(pathExpr.parts);
-    let fnExpr: FunctionCallExpression | undefined;
-    if (lastPart?.type === SyntaxType.FUNCTION_CALL_EXPR) {
-      fnExpr = pathExpr.parts.pop() as FunctionCallExpression;
-    }
-
-    lastPart = CommonUtils.getLastElement(pathExpr.parts);
-    if (lastPart?.type === SyntaxType.PATH_OPTIONS) {
-      pathExpr.parts.pop();
-      pathExpr.returnAsArray = lastPart.options?.toArray;
-    }
-    pathExpr.parts = JsonTemplateParser.combinePathOptionParts(pathExpr.parts);
-
-    let expr: Expression = pathExpr;
-    if (fnExpr) {
-      expr = JsonTemplateParser.convertToFunctionCallExpr(fnExpr, pathExpr);
-    }
-    if (shouldConvertAsBlock) {
-      expr = JsonTemplateParser.convertToBlockExpr(expr);
-    }
-    return expr;
+    return this.options?.defaultPathType ?? PathType.RICH;
   }
 
-  private parseJSPath(): Expression {
-    this.lexer.ignoreTokens(1);
-    return this.parsePath({ jspath: true });
-  }
-
-  private parsePath(options?: {
-    root?: Expression;
-    jspath?: boolean;
-  }): PathExpression | Expression {
+  private parsePath(options?: { root?: Expression }): PathExpression | Expression {
+    const pathType = this.parsePathType();
     let expr: PathExpression = {
       type: SyntaxType.PATH,
       root: this.parsePathRoot(options?.root),
       parts: this.parsePathParts(),
-      jspath: options?.jspath,
+      pathType,
     };
     if (!expr.parts.length) {
       return expr;
     }
-    return this.updatePathExpr(expr);
+    return JsonTemplateParser.updatePathExpr(expr);
   }
 
   private createArrayIndexFilterExpr(expr: Expression): IndexFilterExpression {
@@ -679,6 +659,7 @@ export class JsonTemplateParser {
       return expr;
     }
     while (
+      this.lexer.matchPathType() ||
       this.lexer.matchPathPartSelector() ||
       this.lexer.match('{') ||
       this.lexer.match('[') ||
@@ -939,7 +920,10 @@ export class JsonTemplateParser {
     const expr = skipJsonify ? this.parseCompileTimeBaseExpr() : this.parseBaseExpr();
     this.lexer.expect('}');
     this.lexer.expect('}');
-    const exprVal = JsonTemplateEngine.createAsSync(expr).evaluate({}, this.compileTimeBindings);
+    const exprVal = JsonTemplateEngine.createAsSync(expr).evaluate(
+      {},
+      this.options?.compileTimeBindings,
+    );
     const template = skipJsonify ? exprVal : JSON.stringify(exprVal);
     return JsonTemplateParser.parseBaseExprFromTemplate(template);
   }
@@ -984,8 +968,6 @@ export class JsonTemplateParser {
         return this.parseAsyncFunctionExpr();
       case Keyword.FUNCTION:
         return this.parseFunctionExpr();
-      case Keyword.JSPATH:
-        return this.parseJSPath();
       default:
         return this.parseDefinitionExpr();
     }
@@ -1044,23 +1026,6 @@ export class JsonTemplateParser {
     }
 
     return this.lexer.throwUnexpectedToken();
-  }
-
-  private static setSubpath(parts: any[]) {
-    let remainingParts = parts.slice();
-    while (remainingParts.length) {
-      const part = remainingParts.shift();
-      if (!part || typeof part !== 'object') {
-        continue;
-      }
-      if (part.type === SyntaxType.PATH && Array.isArray(part.parts)) {
-        part.subPath = !part.root;
-      } else {
-        for (let key in part) {
-          remainingParts = remainingParts.concat(CommonUtils.toArray(part[key]));
-        }
-      }
-    }
   }
 
   private static pathContainsVariables(parts: Expression[]): boolean {
@@ -1124,6 +1089,73 @@ export class JsonTemplateParser {
       fnExpr.object = pathExpr;
     }
     return fnExpr;
+  }
+
+  private static isArrayFilterExpressionSimple(expr: ArrayFilterExpression): boolean {
+    for (let filter of expr.filters) {
+      if (filter.type !== SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
+        return false;
+      }
+      const expr = filter as IndexFilterExpression;
+      if (expr.indexes.elements.length > 1) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private static isSimplePathPart(part: Expression): boolean {
+    if (part.type === SyntaxType.SELECTOR) {
+      const expr = part as SelectorExpression;
+      return expr.selector === '.' && !!expr.prop && expr.prop.type !== TokenType.PUNCT;
+    }
+    if (part.type === SyntaxType.ARRAY_FILTER_EXPR) {
+      return this.isArrayFilterExpressionSimple(part as ArrayFilterExpression);
+    }
+    return false;
+  }
+
+  private static isSimplePath(pathExpr: PathExpression): boolean {
+    return pathExpr.parts.every((part) => this.isSimplePathPart(part));
+  }
+
+  private static isRichPath(pathExpr: PathExpression): boolean {
+    if (!pathExpr.parts.length) {
+      return false;
+    }
+    return !this.isSimplePath(pathExpr);
+  }
+
+  private static updatePathExpr(pathExpr: PathExpression): Expression {
+    if (pathExpr.parts.length > 1 && pathExpr.parts[0].type === SyntaxType.PATH_OPTIONS) {
+      pathExpr.options = pathExpr.parts[0].options;
+      pathExpr.parts.shift();
+    }
+
+    const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(pathExpr.parts);
+    let lastPart = CommonUtils.getLastElement(pathExpr.parts);
+    let fnExpr: FunctionCallExpression | undefined;
+    if (lastPart?.type === SyntaxType.FUNCTION_CALL_EXPR) {
+      fnExpr = pathExpr.parts.pop() as FunctionCallExpression;
+    }
+
+    lastPart = CommonUtils.getLastElement(pathExpr.parts);
+    if (lastPart?.type === SyntaxType.PATH_OPTIONS) {
+      pathExpr.parts.pop();
+      pathExpr.returnAsArray = lastPart.options?.toArray;
+    }
+    pathExpr.parts = JsonTemplateParser.combinePathOptionParts(pathExpr.parts);
+    let expr: Expression = pathExpr;
+    if (fnExpr) {
+      expr = JsonTemplateParser.convertToFunctionCallExpr(fnExpr, pathExpr);
+    }
+    if (shouldConvertAsBlock) {
+      expr = JsonTemplateParser.convertToBlockExpr(expr);
+      pathExpr.pathType = PathType.RICH;
+    } else if (this.isRichPath(pathExpr)) {
+      pathExpr.pathType = PathType.RICH;
+    }
+    return expr;
   }
 
   private static parseBaseExprFromTemplate(template: string): Expression {

@@ -55,8 +55,20 @@ export class JsonTemplateLexer {
     return this.match('{') && this.match('{', 1);
   }
 
+  matchSimplePath(): boolean {
+    return this.match('~s');
+  }
+
+  matchRichPath(): boolean {
+    return this.match('~r');
+  }
+
+  matchPathType(): boolean {
+    return this.matchRichPath() || this.matchSimplePath();
+  }
+
   matchPath(): boolean {
-    return this.matchPathSelector() || this.matchID();
+    return this.matchPathType() || this.matchPathSelector() || this.matchID();
   }
 
   matchSpread(): boolean {
@@ -558,11 +570,27 @@ export class JsonTemplateLexer {
     }
   }
 
+  private scanPunctuatorForPaths(): Token | undefined {
+    let start = this.idx,
+      ch1 = this.codeChars[this.idx],
+      ch2 = this.codeChars[this.idx + 1];
+
+    if (ch1 === '~' && 'rs'.includes(ch2)) {
+      this.idx += 2;
+      return {
+        type: TokenType.PUNCT,
+        value: ch1 + ch2,
+        range: [start, this.idx],
+      };
+    }
+  }
+
   private scanPunctuator(): Token | undefined {
     return (
       this.scanPunctuatorForDots() ||
       this.scanPunctuatorForQuestionMarks() ||
       this.scanPunctuatorForEquality() ||
+      this.scanPunctuatorForPaths() ||
       this.scanPunctuatorForRepeatedTokens('?', 3) ||
       this.scanPunctuatorForRepeatedTokens('|&*.=>?<', 2) ||
       this.scanSingleCharPunctuators()

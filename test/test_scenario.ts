@@ -15,13 +15,16 @@ const opts = command.opts();
 const scenarioName = opts.scenario || 'assignments';
 const index = +(opts.index || 0);
 
-console.log(`Executing scenario: ${scenarioName} and test: ${index}`);
-
 async function createAndEvaluateTemplate() {
   try {
     const scenarioDir = join(__dirname, 'scenarios', scenarioName);
     const scenarios: Sceanario[] = SceanarioUtils.extractScenarios(scenarioDir);
     const scenario: Sceanario = scenarios[index] || scenarios[0];
+    console.log(
+      `Executing scenario: ${scenarioName}, test: ${index}, template: ${
+        scenario.templatePath || 'template.jt'
+      }`,
+    );
     const templateEngine = SceanarioUtils.createTemplateEngine(scenarioDir, scenario);
     const result = await SceanarioUtils.evaluateScenario(templateEngine, scenario);
     console.log('Actual result', JSON.stringify(result, null, 2));

@@ -1,4 +1,4 @@
-import { DATA_PARAM_KEY, FUNCTION_RESULT_KEY, RESULT_KEY, VARS_PREFIX } from './constants';
+import { BINDINGS_CONTEXT_KEY, BINDINGS_PARAM_KEY, DATA_PARAM_KEY, FUNCTION_RESULT_KEY, RESULT_KEY, VARS_PREFIX } from './constants';
 import { JsosTemplateTranslatorError } from './errors';
 import { binaryOperators } from './operators';
 import {
@@ -26,6 +26,7 @@ import {
   ArrayFilterExpression,
   BlockExpression,
   PathOptions,
+  PathType,
 } from './types';
 import { CommonUtils } from './utils';
 
@@ -187,13 +188,6 @@ export class JsonTemplateTranslator {
   private translatePathRoot(path: PathExpression, dest: string, ctx: string): string {
     if (typeof path.root === 'object') {
       return this.translateExpr(path.root, dest, ctx);
-    } else if (path.subPath && path.parts.length) {
-      if (JsonTemplateTranslator.isSinglePropSelection(path.parts[0])) {
-        const part = path.parts.shift() as SelectorExpression;
-        const propStr = CommonUtils.escapeStr(part.prop?.value);
-        path.options = Object.assign({}, path.options, part.options);
-        return `${dest} = ${ctx}[${propStr}];`;
-      }
     }
     return `${dest} = ${path.root || ctx};`;
   }
@@ -271,10 +265,17 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private translateJSPathExpr(expr: PathExpression, dest: string, ctx: string): string {
+  private translateSimplePathExpr(expr: PathExpression, dest: string, ctx: string): string {
     const code: string[] = [];
-    const jspath = this.translateToJSPath(expr, code, ctx);
-    code.push(JsonTemplateTranslator.generateAssignmentCode(dest, jspath));
+    let currCtx = ctx;
+    if (typeof expr.root === 'object') {
+      code.push(this.translateExpr(expr.root, dest, ctx));
+      currCtx = dest;
+    } else if (expr.root) {
+      currCtx = expr.root;
+    }
+    const simplePath = this.translateToSimplePath(expr, code, currCtx);
+    code.push(JsonTemplateTranslator.generateAssignmentCode(dest, simplePath));
     if (expr.returnAsArray) {
       code.push(JsonTemplateTranslator.covertToArrayValue(dest));
     }
@@ -282,8 +283,8 @@ export class JsonTemplateTranslator {
   }
 
   private translatePathExpr(expr: PathExpression, dest: string, ctx: string): string {
-    if (expr.jspath) {
-      return this.translateJSPathExpr(expr, dest, ctx);
+    if (expr.pathType === PathType.SIMPLE) {
+      return this.translateSimplePathExpr(expr, dest, ctx);
     }
     const code: string[] = [];
     code.push(this.translatePathRoot(expr, dest, ctx));
@@ -465,10 +466,7 @@ export class JsonTemplateTranslator {
     return JsonTemplateTranslator.generateAssignmentCode(dest, literalCode);
   }
 
-  private getJSPathSelector(expr: SelectorExpression, isAssignment: boolean): string {
-    if (!JsonTemplateTranslator.isValidSelectorForAssignment(expr)) {
-      throw new JsosTemplateTranslatorError('Invalid jspath');
-    }
+  private getSimplePathSelector(expr: SelectorExpression, isAssignment: boolean): string {
     if (expr.prop?.type === TokenType.STR) {
       return `${isAssignment ? '' : '?.'}[${CommonUtils.escapeStr(expr.prop?.value)}]`;
     } else {
@@ -484,13 +482,7 @@ export class JsonTemplateTranslator {
   ): string {
     const parts: string[] = [];
     const prefix = isAssignment ? '' : '?.';
-    for (const filter of expr.filters) {
-      if (filter.type === SyntaxType.RANGE_FILTER_EXPR) {
-        throw new JsosTemplateTranslatorError('Invalid jspath');
-      }
-      if (filter.indexes.elements.length > 1) {
-        throw new JsosTemplateTranslatorError('Invalid jspath');
-      }
+    for (const filter of expr.filters as IndexFilterExpression[]) {
       const keyVar = this.acquireVar();
       code.push(this.translateExpr(filter.indexes.elements[0], keyVar, ctx));
       parts.push(`${prefix}[${keyVar}]`);
@@ -499,35 +491,34 @@ export class JsonTemplateTranslator {
     return parts.join('');
   }
 
-  private translateToJSPath(expr: PathExpression, code: string[], ctx: string, isAssignment = false): string {
-    const jspath: string[] = [];
-    const root = expr.root || ctx;
-    if (typeof root === 'object') {
-      throw new JsosTemplateTranslatorError('Invalid jspath');
-    }
-    jspath.push(root);
+  private translateToSimplePath(
+    expr: PathExpression,
+    code: string[],
+    ctx: string,
+    isAssignment = false,
+  ): string {
+    const simplePath: string[] = [];
+    simplePath.push(ctx);
     const keyVars: string[] = [];
     for (let part of expr.parts) {
-      switch (part.type) {
-        case SyntaxType.SELECTOR:
-          jspath.push(this.getJSPathSelector(part as SelectorExpression, isAssignment));
-          break;
-        case SyntaxType.ARRAY_FILTER_EXPR:
-          jspath.push(this.getJSPathArrayIndex(part as ArrayFilterExpression, ctx, code, keyVars, isAssignment));
-          break;
-        default:
-          throw new JsosTemplateTranslatorError('Invalid jspath');
+      if (part.type === SyntaxType.SELECTOR) {
+        simplePath.push(this.getSimplePathSelector(part as SelectorExpression, isAssignment));
+      } else {
+        simplePath.push(
+          this.getJSPathArrayIndex(part as ArrayFilterExpression, ctx, code, keyVars, isAssignment),
+        );
       }
     }
     this.releaseVars(...keyVars);
-    return jspath.join('');
+    return simplePath.join('');
   }
 
   private translateAssignmentExpr(expr: AssignmentExpression, dest: string, ctx: string): string {
     const code: string[] = [];
     const valueVar = this.acquireVar();
     code.push(this.translateExpr(expr.value, valueVar, ctx));
-    const assignmentPath = this.translateToJSPath(expr.path, code, ctx, true);
+    const assignmentPath = this.translateToSimplePath(expr.path, code, expr.path.root as string, true);
+    JsonTemplateTranslator.ValidateAssignmentPath(assignmentPath);
     code.push(JsonTemplateTranslator.generateAssignmentCode(assignmentPath, valueVar));
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, valueVar));
     this.releaseVars(valueVar);
@@ -596,8 +587,12 @@ export class JsonTemplateTranslator {
     const resultVar = this.acquireVar();
     code.push(this.translateExpr(expr.args[0], val1, ctx));
     code.push(this.translateExpr(expr.args[1], val2, ctx));
+    code.push(`if(typeof ${val2} === 'object'){`);
     const inCode = `(Array.isArray(${val2}) ? ${val2}.includes(${val1}) : ${val1} in ${val2})`;
     code.push(JsonTemplateTranslator.generateAssignmentCode(resultVar, inCode));
+    code.push('} else {');
+    code.push(JsonTemplateTranslator.generateAssignmentCode(resultVar, 'false'));
+    code.push('}');
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, resultVar));
     return code.join('');
   }
@@ -616,65 +611,6 @@ export class JsonTemplateTranslator {
     code.push(`${dest} = ${expr.op} ${val};`);
     this.releaseVars(val);
     return code.join('');
-  }
-
-  private static getPathOptions(expr: PathExpression, partNum: number): PathOptions {
-    return (partNum === 0 ? expr.options : expr.parts[partNum - 1]?.options) || {};
-  }
-
-  private static isToArray(expr: PathExpression, partNum: number): boolean {
-    return this.getPathOptions(expr, partNum).toArray === true;
-  }
-
-  private static isArrayFilterExpr(expr: Expression): boolean {
-    return expr.type === SyntaxType.ARRAY_FILTER_EXPR;
-  }
-
-  private static isValidSelectorForAssignment(expr: SelectorExpression): boolean {
-    return expr.selector === '.' && !!expr.prop && expr.prop.type !== TokenType.PUNCT;
-  }
-
-  private static isSinglePropSelection(expr: Expression): boolean {
-    if (expr.type === SyntaxType.SELECTOR) {
-      const part = expr as SelectorExpression;
-      return (
-        part.selector === '.' &&
-        (part.prop?.type === TokenType.ID || part.prop?.type === TokenType.STR)
-      );
-    }
-    return false;
-  }
-
-  private static returnIsEmpty(varName: string): string {
-    return `${varName} === null || ${varName} === undefined`;
-  }
-
-  private static returnIsNotEmpty(varName: string): string {
-    return `${varName} !== null && ${varName} !== undefined`;
-  }
-
-  private static returnObjectValues(varName: string): string {
-    return `Object.values(${varName}).filter(v => v !== null && v !== undefined)`;
-  }
-
-  private static returnSingleValue(arg: Expression, varName: string): string {
-    if (arg.type === SyntaxType.LITERAL) {
-      return varName;
-    }
-
-    return `(Array.isArray(${varName}) ? ${varName}[0] : ${varName})`;
-  }
-
-  private static convertToSingleValueIfSafe(varName: string): string {
-    return `${varName} = ${varName}.length < 2 ? ${varName}[0] : ${varName};`;
-  }
-
-  private static covertToArrayValue(varName: string) {
-    return `${varName} = Array.isArray(${varName}) ? ${varName} : [${varName}];`;
-  }
-
-  private static generateAssignmentCode(key: string, val: string): string {
-    return `${key}=${val};`;
   }
 
   private translateArrayFilterExpr(expr: ArrayFilterExpression, dest: string, ctx: string): string {
@@ -802,5 +738,55 @@ export class JsonTemplateTranslator {
 
     this.releaseVars(val1, val2);
     return code.join('');
+  }
+
+  private static ValidateAssignmentPath(path: string) {
+    if(path.startsWith(BINDINGS_PARAM_KEY) && !path.startsWith(BINDINGS_CONTEXT_KEY)) {
+      throw new JsosTemplateTranslatorError('Invalid assignment path');
+    }
+  }
+
+  private static getPathOptions(expr: PathExpression, partNum: number): PathOptions {
+    return (partNum === 0 ? expr.options : expr.parts[partNum - 1]?.options) || {};
+  }
+
+  private static isToArray(expr: PathExpression, partNum: number): boolean {
+    return this.getPathOptions(expr, partNum).toArray === true;
+  }
+
+  private static isArrayFilterExpr(expr: Expression): boolean {
+    return expr.type === SyntaxType.ARRAY_FILTER_EXPR;
+  }
+
+  private static returnIsEmpty(varName: string): string {
+    return `${varName} === null || ${varName} === undefined`;
+  }
+
+  private static returnIsNotEmpty(varName: string): string {
+    return `${varName} !== null && ${varName} !== undefined`;
+  }
+
+  private static returnObjectValues(varName: string): string {
+    return `Object.values(${varName}).filter(v => v !== null && v !== undefined)`;
+  }
+
+  private static returnSingleValue(arg: Expression, varName: string): string {
+    if (arg.type === SyntaxType.LITERAL) {
+      return varName;
+    }
+
+    return `(Array.isArray(${varName}) ? ${varName}[0] : ${varName})`;
+  }
+
+  private static convertToSingleValueIfSafe(varName: string): string {
+    return `${varName} = ${varName}.length < 2 ? ${varName}[0] : ${varName};`;
+  }
+
+  private static covertToArrayValue(varName: string) {
+    return `${varName} = Array.isArray(${varName}) ? ${varName} : [${varName}];`;
+  }
+
+  private static generateAssignmentCode(key: string, val: string): string {
+    return `${key}=${val};`;
   }
 }

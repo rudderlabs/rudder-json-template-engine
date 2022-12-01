@@ -2,7 +2,7 @@ import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { JsonTemplateParser } from './parser';
 import { JsonTemplateTranslator } from './translator';
-import { Expression } from './types';
+import { Dictionary, EngineOptions, Expression } from './types';
 import { CommonUtils } from './utils';
 
 export class JsonTemplateEngine {
@@ -11,57 +11,50 @@ export class JsonTemplateEngine {
     this.fn = fn;
   }
 
-  static create(
-    templateOrExpr: string | Expression,
-    compileTimeBindings?: any,
-  ): JsonTemplateEngine {
-    return new JsonTemplateEngine(this.compileAsAsync(templateOrExpr, compileTimeBindings));
+  static create(templateOrExpr: string | Expression, options?: EngineOptions): JsonTemplateEngine {
+    return new JsonTemplateEngine(this.compileAsAsync(templateOrExpr, options));
   }
 
   static createAsSync(
     templateOrExpr: string | Expression,
-    compileTimeBindings?: any,
+    options?: EngineOptions,
   ): JsonTemplateEngine {
-    return new JsonTemplateEngine(this.compileAsSync(templateOrExpr, compileTimeBindings));
+    return new JsonTemplateEngine(this.compileAsSync(templateOrExpr, options));
   }
 
   private static compileAsSync(
     templateOrExpr: string | Expression,
-    compileTimeBindings?: any,
+    options?: EngineOptions,
   ): Function {
-    return Function(
-      DATA_PARAM_KEY,
-      BINDINGS_PARAM_KEY,
-      this.translate(templateOrExpr, compileTimeBindings),
-    );
+    return Function(DATA_PARAM_KEY, BINDINGS_PARAM_KEY, this.translate(templateOrExpr, options));
   }
 
   private static compileAsAsync(
     templateOrExpr: string | Expression,
-    compileTimeBindings?: any,
+    options?: EngineOptions,
   ): Function {
     return CommonUtils.CreateAsyncFunction(
       DATA_PARAM_KEY,
       BINDINGS_PARAM_KEY,
-      this.translate(templateOrExpr, compileTimeBindings),
+      this.translate(templateOrExpr, options),
     );
   }
 
-  static parse(template: string, compileTimeBindings?: any): Expression {
+  static parse(template: string, options?: EngineOptions): Expression {
     const lexer = new JsonTemplateLexer(template);
-    const parser = new JsonTemplateParser(lexer, compileTimeBindings);
+    const parser = new JsonTemplateParser(lexer, options);
     return parser.parse();
   }
 
-  static translate(templateOrExpr: string | Expression, compileTimeBindings?: any): string {
+  static translate(templateOrExpr: string | Expression, options?: EngineOptions): string {
     if (typeof templateOrExpr === 'string') {
-      return this.translateTemplate(templateOrExpr, compileTimeBindings);
+      return this.translateTemplate(templateOrExpr, options);
     }
     return this.translateExpression(templateOrExpr);
   }
 
-  private static translateTemplate(template: string, compileTimeBindings?: any): string {
-    return this.translateExpression(this.parse(template, compileTimeBindings));
+  private static translateTemplate(template: string, options?: EngineOptions): string {
+    return this.translateExpression(this.parse(template, options));
   }
 
   private static translateExpression(expr: Expression): string {
@@ -69,7 +62,7 @@ export class JsonTemplateEngine {
     return translator.translate();
   }
 
-  evaluate(data: any, bindings: any = {}): any {
+  evaluate(data: any, bindings: Dictionary<any> = {}): any {
     return this.fn(data || {}, bindings);
   }
 }

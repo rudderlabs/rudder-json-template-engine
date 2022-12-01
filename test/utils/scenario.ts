@@ -7,7 +7,7 @@ export class SceanarioUtils {
   static createTemplateEngine(scenarioDir: string, sceanario: Sceanario): JsonTemplateEngine {
     const templatePath = join(scenarioDir, sceanario.templatePath || 'template.jt');
     const template = readFileSync(templatePath, 'utf-8');
-    return JsonTemplateEngine.create(template, sceanario.compileTimeBindings);
+    return JsonTemplateEngine.create(template, sceanario.options);
   }
 
   static evaluateScenario(templateEngine: JsonTemplateEngine, sceanario: Sceanario): any {

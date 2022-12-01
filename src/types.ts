@@ -10,7 +10,6 @@ export enum Keyword {
   AWAIT = 'await',
   ASYNC = 'async',
   IN = 'in',
-  JSPATH = 'jsp',
 }
 
 export enum TokenType {
@@ -77,6 +76,16 @@ export enum SyntaxType {
   FUNCTION_CALL_ARG,
   FUNCTION_CALL_EXPR,
   STATEMENTS_EXPR,
+}
+
+export enum PathType {
+  SIMPLE,
+  RICH,
+}
+
+export interface EngineOptions {
+  compileTimeBindings?: Dictionary<any>;
+  defaultPathType?: PathType;
 }
 
 export type Token = {
@@ -180,9 +189,7 @@ export interface PathExpression extends Expression {
   parts: Expression[];
   root?: Expression | string;
   returnAsArray?: boolean;
-  // Used in a part of another Path
-  subPath?: boolean;
-  jspath?: boolean;
+  pathType: PathType;
 }
 
 export interface SelectorExpression extends Expression {

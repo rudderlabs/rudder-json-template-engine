@@ -20,7 +20,7 @@ describe('Scenarios tests', () => {
       const scenarioDir = join(__dirname, rootDirName, scenarioName);
       const sceanarios = SceanarioUtils.extractScenarios(scenarioDir);
       sceanarios.forEach((scenario, index) => {
-        it(`Scenario ${index}`, async () => {
+        it(`Scenario ${index}: ${scenario.templatePath || 'template.jt'}`, async () => {
           try {
             const templateEngine = SceanarioUtils.createTemplateEngine(scenarioDir, scenario);
             const result = await SceanarioUtils.evaluateScenario(templateEngine, scenario);

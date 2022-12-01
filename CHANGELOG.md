@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.2...v0.2.3) (2022-12-01)
+
+
+### Features
+
+* add support for array coalescing ([#15](https://github.com/rudderlabs/rudder-json-template-engine/issues/15)) ([2f3bf0f](https://github.com/rudderlabs/rudder-json-template-engine/commit/2f3bf0fba589edc403b76e5b1da9437fbe91524c))
+
 ## [0.2.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.1...v0.2.2) (2022-11-30)
 
 

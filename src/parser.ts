@@ -106,7 +106,7 @@ export class JsonTemplateParser {
       case OperatorType.CONDITIONAL:
         return this.parseAssignmentExpr();
       case OperatorType.ASSIGNMENT:
-        return this.parseCoalescingExpr();
+        return this.parseCoalesceExpr();
       case OperatorType.COALESCING:
         return this.parseLogicalORExpr();
       case OperatorType.OR:
@@ -366,26 +366,8 @@ export class JsonTemplateParser {
     };
   }
 
-  private combineObjectFilters(objectFilters: ObjectFilterExpression[]): ObjectFilterExpression[] {
-    if (objectFilters.length <= 1) {
-      return objectFilters;
-    }
-    const expr1 = objectFilters.shift() as ObjectFilterExpression;
-    const expr2 = this.combineObjectFilters(objectFilters);
-    return [
-      {
-        type: SyntaxType.OBJECT_FILTER_EXPR,
-        filter: {
-          type: SyntaxType.LOGICAL_AND_EXPR,
-          op: '&&',
-          args: [expr1.filter, expr2[0].filter],
-        },
-      },
-    ];
-  }
-
   private parseObjectFiltersExpr(): (ObjectFilterExpression | IndexFilterExpression)[] {
-    const objectFilters: ObjectFilterExpression[] = [];
+    const objectFilters: Expression[] = [];
     const indexFilters: IndexFilterExpression[] = [];
 
     while (this.lexer.match('{')) {
@@ -394,7 +376,7 @@ export class JsonTemplateParser {
       if (expr.type === SyntaxType.OBJECT_INDEX_FILTER_EXPR) {
         indexFilters.push(expr as IndexFilterExpression);
       } else {
-        objectFilters.push(expr as ObjectFilterExpression);
+        objectFilters.push(expr.filter);
       }
       this.lexer.expect('}');
       if (this.lexer.match('.') && this.lexer.match('{', 1)) {
@@ -402,7 +384,16 @@ export class JsonTemplateParser {
       }
     }
 
-    return [...this.combineObjectFilters(objectFilters), ...indexFilters];
+    if (!objectFilters.length) {
+      return indexFilters;
+    }
+
+    const objectFilter: ObjectFilterExpression = {
+      type: SyntaxType.OBJECT_FILTER_EXPR,
+      filter: this.combineExpressionsAsBinaryExpr(objectFilters, SyntaxType.LOGICAL_AND_EXPR, '&&'),
+    };
+
+    return [objectFilter, ...indexFilters];
   }
 
   private parseConditionalExpr(): ConditionalExpression | Expression {
@@ -451,14 +442,42 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseCoalescingExpr(): BinaryExpression | Expression {
+  private combineExpressionsAsBinaryExpr(
+    values: Expression[],
+    type: SyntaxType,
+    op: string,
+  ): BinaryExpression | Expression {
+    if (!values?.length) {
+      throw new JsonTemplateParserError('expected at least 1 expression');
+    }
+    if (values.length === 1) {
+      return values[0];
+    }
+    return {
+      type,
+      op,
+      args: [values.shift(), this.combineExpressionsAsBinaryExpr(values, type, op)],
+    };
+  }
+
+  private parseArrayCoalesceExpr(): BinaryExpression | Expression {
+    this.lexer.ignoreTokens(1);
+    const expr = this.parseArrayExpr();
+    return this.combineExpressionsAsBinaryExpr(
+      expr.elements,
+      SyntaxType.LOGICAL_COALESCE_EXPR,
+      '??',
+    );
+  }
+
+  private parseCoalesceExpr(): BinaryExpression | Expression {
     let expr = this.parseNextExpr(OperatorType.COALESCING);
 
     if (this.lexer.match('??')) {
       return {
         type: SyntaxType.LOGICAL_COALESCE_EXPR,
         op: this.lexer.value(),
-        args: [expr, this.parseCoalescingExpr()],
+        args: [expr, this.parseCoalesceExpr()],
       };
     }
 
@@ -961,6 +980,10 @@ export class JsonTemplateParser {
 
     if (this.lexer.matchINT()) {
       return this.parseNumber();
+    }
+
+    if (this.lexer.match('???')) {
+      return this.parseArrayCoalesceExpr();
     }
 
     if (this.lexer.match('.') && this.lexer.matchINT(1) && !this.lexer.match('.', 2)) {

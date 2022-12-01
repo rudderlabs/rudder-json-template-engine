@@ -90,11 +90,13 @@ export class JsonTemplateParser {
     const expr = this.parseNextExpr(OperatorType.ASSIGNMENT);
     if (expr.type === SyntaxType.PATH && this.lexer.match('=')) {
       this.lexer.ignoreTokens(1);
+      const path = expr as PathExpression;
+      path.jspath = true;
       return {
         type: SyntaxType.ASSIGNMENT_EXPR,
         value: this.parseBaseExpr(),
-        path: expr as PathExpression,
-      };
+        path,
+      } as AssignmentExpression;
     }
     return expr;
   }
@@ -241,11 +243,20 @@ export class JsonTemplateParser {
     return expr;
   }
 
-  private parsePath(root?: Expression): Expression {
+  private parseJSPath(): Expression {
+    this.lexer.ignoreTokens(1);
+    return this.parsePath({ jspath: true });
+  }
+
+  private parsePath(options?: {
+    root?: Expression;
+    jspath?: boolean;
+  }): PathExpression | Expression {
     let expr: PathExpression = {
       type: SyntaxType.PATH,
-      root: this.parsePathRoot(root),
+      root: this.parsePathRoot(options?.root),
       parts: this.parsePathParts(),
+      jspath: options?.jspath,
     };
     if (!expr.parts.length) {
       return expr;
@@ -667,8 +678,13 @@ export class JsonTemplateParser {
     if (this.shouldSkipPathParsing(expr)) {
       return expr;
     }
-    while (this.lexer.matchPathPartSelector() || this.lexer.match('[') || this.lexer.match('(')) {
-      expr = this.parsePath(expr);
+    while (
+      this.lexer.matchPathPartSelector() ||
+      this.lexer.match('{') ||
+      this.lexer.match('[') ||
+      this.lexer.match('(')
+    ) {
+      expr = this.parsePath({ root: expr });
     }
     return expr;
   }
@@ -968,6 +984,8 @@ export class JsonTemplateParser {
         return this.parseAsyncFunctionExpr();
       case Keyword.FUNCTION:
         return this.parseFunctionExpr();
+      case Keyword.JSPATH:
+        return this.parseJSPath();
       default:
         return this.parseDefinitionExpr();
     }

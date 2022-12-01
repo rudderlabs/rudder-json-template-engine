@@ -25,20 +25,22 @@ import {
   ArrayFilterExpression,
   BlockExpression,
   PathOptions,
-  CompileTimeExpression,
   Keyword,
 } from './types';
 import { JsonTemplateParserError } from './errors';
 import { DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { CommonUtils } from './utils';
+import { JsonTemplateEngine } from './engine';
 
 const EMPTY_EXPR = { type: SyntaxType.EMPTY };
 export class JsonTemplateParser {
   private lexer: JsonTemplateLexer;
+  private compileTimeBindings?: any;
 
-  constructor(lexer: JsonTemplateLexer) {
+  constructor(lexer: JsonTemplateLexer, compileTimeBindings?: any) {
     this.lexer = lexer;
+    this.compileTimeBindings = compileTimeBindings;
   }
 
   parse(): Expression {
@@ -886,16 +888,25 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseCompileTimeExpr(): CompileTimeExpression {
+  private parseCompileTimeBaseExpr(): Expression {
     this.lexer.expect('{');
     this.lexer.expect('{');
     const expr = this.parseBaseExpr();
     this.lexer.expect('}');
     this.lexer.expect('}');
-    return {
-      type: SyntaxType.COMPILE_TIME_EXPR,
-      value: expr,
-    };
+    return expr;
+  }
+
+  private parseCompileTimeExpr(): Expression {
+    this.lexer.expect('{');
+    this.lexer.expect('{');
+    const skipJsonify = this.lexer.matchCompileTimeExpr();
+    const expr = skipJsonify ? this.parseCompileTimeBaseExpr() : this.parseBaseExpr();
+    this.lexer.expect('}');
+    this.lexer.expect('}');
+    const exprVal = JsonTemplateEngine.createAsSync(expr).evaluate({}, this.compileTimeBindings);
+    const template = skipJsonify ? exprVal : JSON.stringify(exprVal);
+    return JsonTemplateParser.parseBaseExprFromTemplate(template);
   }
 
   private parseNumber(): LiteralExpression {
@@ -971,7 +982,7 @@ export class JsonTemplateParser {
       return this.parseLiteralExpr();
     }
 
-    if (this.lexer.match('{') && this.lexer.match('{', 1)) {
+    if (this.lexer.matchCompileTimeExpr()) {
       return this.parseCompileTimeExpr();
     }
 
@@ -1072,5 +1083,11 @@ export class JsonTemplateParser {
       fnExpr.object = pathExpr;
     }
     return fnExpr;
+  }
+
+  private static parseBaseExprFromTemplate(template: string): Expression {
+    const lexer = new JsonTemplateLexer(template);
+    const parser = new JsonTemplateParser(lexer);
+    return parser.parseBaseExpr();
   }
 }

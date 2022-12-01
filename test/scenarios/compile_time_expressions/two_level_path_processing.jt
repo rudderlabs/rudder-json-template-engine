@@ -1,0 +1,4 @@
+// Here we are generating a coalescing expression and recompiling it
+// We are generating a string inside and that needs to be recompiled so
+// we need to use {{ {{ }} }}
+{{ {{ $.paths.map(lambda '.' + ?0).join(' ?? ') }} }}

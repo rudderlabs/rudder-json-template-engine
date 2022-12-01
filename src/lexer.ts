@@ -51,6 +51,10 @@ export class JsonTemplateLexer {
     return this.match('[') && this.match(']', 1);
   }
 
+  matchCompileTimeExpr(): boolean {
+    return this.match('{') && this.match('{', 1);
+  }
+
   matchPath(): boolean {
     return this.matchPathSelector() || this.matchID();
   }

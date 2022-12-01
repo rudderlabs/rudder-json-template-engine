@@ -1,5 +1,4 @@
 import { DATA_PARAM_KEY, FUNCTION_RESULT_KEY, RESULT_KEY, VARS_PREFIX } from './constants';
-import { JsonTemplateEngine } from './engine';
 import { JsosTemplateTranslatorError } from './errors';
 import { binaryOperators } from './operators';
 import {
@@ -27,7 +26,6 @@ import {
   ArrayFilterExpression,
   BlockExpression,
   PathOptions,
-  CompileTimeExpression,
 } from './types';
 import { CommonUtils } from './utils';
 
@@ -36,11 +34,9 @@ export class JsonTemplateTranslator {
   private lastVarId = 0;
   private unusedVars: string[] = [];
   private readonly expr: Expression;
-  private readonly compileTimeBindings?: any;
 
-  constructor(expr: Expression, compileTimeBindings?: any) {
+  constructor(expr: Expression) {
     this.expr = expr;
-    this.compileTimeBindings = compileTimeBindings;
   }
 
   private init() {
@@ -155,20 +151,9 @@ export class JsonTemplateTranslator {
       case SyntaxType.CONDITIONAL_EXPR:
         return this.translateConditionalExpr(expr as ConditionalExpression, dest, ctx);
 
-      case SyntaxType.COMPILE_TIME_EXPR:
-        return this.translateCompileTimeExpr(expr as CompileTimeExpression, dest, ctx);
       default:
         return '';
     }
-  }
-
-  private translateCompileTimeExpr(
-    expr: CompileTimeExpression,
-    dest: string,
-    _ctx: string,
-  ): string {
-    const value = JsonTemplateEngine.createSync(expr.value).evaluate({}, this.compileTimeBindings);
-    return JsonTemplateTranslator.generateAssignmentCode(dest, JSON.stringify(value));
   }
 
   private translateConditionalExpr(expr: ConditionalExpression, dest: string, ctx: string): string {

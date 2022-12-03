@@ -13,6 +13,8 @@ export class JsonTemplateLexer {
   private readonly codeChars: string[];
   private buf: Token[];
   private idx = 0;
+  private lastParsedToken?: Token;
+
   constructor(template: string) {
     this.buf = [];
     this.codeChars = template.split('');
@@ -27,8 +29,8 @@ export class JsonTemplateLexer {
     return this.idx;
   }
 
-  getCodeChars(start: number, end: number): string[] {
-    return this.codeChars.slice(start, end);
+  getCode(start: number, end: number): string {
+    return this.codeChars.slice(start, end).join('');
   }
 
   match(value?: string, steps = 0): boolean {
@@ -250,16 +252,14 @@ export class JsonTemplateLexer {
   }
 
   lex(): Token {
-    let token;
-
     if (this.buf[0]) {
       this.idx = this.buf[0].range[1];
-      token = this.buf[0];
+      this.lastParsedToken = this.buf[0];
       this.buf = this.buf.slice(1);
-      return token;
+      return this.lastParsedToken;
     }
-
-    return this.advance();
+    this.lastParsedToken = this.advance();
+    return this.lastParsedToken;
   }
 
   static isLiteralToken(token: Token) {
@@ -282,15 +282,11 @@ export class JsonTemplateLexer {
     this.throwError(MESSAGES.UNEXP_TOKEN, token.value);
   }
 
-  getContext(length = 10): string {
-    return this.codeChars.slice(this.idx - length, this.idx + length).join('');
-  }
-
   private throwError(messageFormat: string, ...args): never {
     const msg = messageFormat.replace(/%(\d)/g, (_, idx) => {
       return args[idx];
     });
-    throw new JsonTemplateLexerError(msg + ' at ' + this.getContext(15));
+    throw new JsonTemplateLexerError(msg);
   }
 
   private static isDigit(ch: string) {

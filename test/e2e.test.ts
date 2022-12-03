@@ -1,7 +1,7 @@
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import { Command } from 'commander';
-import { SceanarioUtils } from './utils';
+import { ScenarioUtils } from './utils';
 
 const rootDirName = 'scenarios';
 const command = new Command();
@@ -18,12 +18,12 @@ describe('Scenarios tests', () => {
   scenarios.forEach((scenarioName) => {
     describe(`${scenarioName}`, () => {
       const scenarioDir = join(__dirname, rootDirName, scenarioName);
-      const sceanarios = SceanarioUtils.extractScenarios(scenarioDir);
-      sceanarios.forEach((scenario, index) => {
+      const scenarios = ScenarioUtils.extractScenarios(scenarioDir);
+      scenarios.forEach((scenario, index) => {
         it(`Scenario ${index}: ${scenario.templatePath || 'template.jt'}`, async () => {
           try {
-            const templateEngine = SceanarioUtils.createTemplateEngine(scenarioDir, scenario);
-            const result = await SceanarioUtils.evaluateScenario(templateEngine, scenario);
+            const templateEngine = ScenarioUtils.createTemplateEngine(scenarioDir, scenario);
+            const result = await ScenarioUtils.evaluateScenario(templateEngine, scenario);
             expect(result).toEqual(scenario.output);
           } catch (error: any) {
             expect(error.message).toContain(scenario.error);

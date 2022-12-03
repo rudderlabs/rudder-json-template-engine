@@ -1,6 +1,6 @@
-import { Sceanario } from '../../types';
+import { Scenario } from '../../types';
 
-export const data: Sceanario[] = [
+export const data: Scenario[] = [
   {
     templatePath: 'bad_array_coalese_expr.jt',
     error: 'expected at least 1 expression',

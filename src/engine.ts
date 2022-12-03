@@ -2,7 +2,7 @@ import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { JsonTemplateParser } from './parser';
 import { JsonTemplateTranslator } from './translator';
-import { Dictionary, EngineOptions, Expression } from './types';
+import { EngineOptions, Expression } from './types';
 import { CommonUtils } from './utils';
 
 export class JsonTemplateEngine {
@@ -62,7 +62,7 @@ export class JsonTemplateEngine {
     return translator.translate();
   }
 
-  evaluate(data: any, bindings: Dictionary<any> = {}): any {
+  evaluate(data: any, bindings: Record<string, any> = {}): any {
     return this.fn(data || {}, bindings);
   }
 }

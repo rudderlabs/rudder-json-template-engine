@@ -1,5 +1,3 @@
-export type Dictionary<T> = Record<string, T>;
-
 export enum Keyword {
   FUNCTION = 'function',
   NEW = 'new',
@@ -66,7 +64,7 @@ export enum SyntaxType {
   RANGE_FILTER_EXPR,
   OBJECT_FILTER_EXPR,
   ARRAY_FILTER_EXPR,
-  DEFINTION_EXPR,
+  DEFINITION_EXPR,
   ASSIGNMENT_EXPR,
   OBJECT_PROP_EXPR,
   OBJECT_EXPR,
@@ -84,7 +82,7 @@ export enum PathType {
 }
 
 export interface EngineOptions {
-  compileTimeBindings?: Dictionary<any>;
+  compileTimeBindings?: Record<string, any>;
   defaultPathType?: PathType;
 }
 
@@ -179,7 +177,7 @@ export interface ObjectFilterExpression extends Expression {
 }
 
 export interface ArrayFilterExpression extends Expression {
-  filters: (RangeFilterExpression | IndexFilterExpression)[];
+  filter: RangeFilterExpression | IndexFilterExpression;
 }
 export interface LiteralExpression extends Expression {
   value: string | number | boolean | null | undefined;

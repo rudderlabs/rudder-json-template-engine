@@ -1,5 +1,12 @@
-import { BINDINGS_CONTEXT_KEY, BINDINGS_PARAM_KEY, DATA_PARAM_KEY, FUNCTION_RESULT_KEY, RESULT_KEY, VARS_PREFIX } from './constants';
-import { JsosTemplateTranslatorError } from './errors';
+import {
+  BINDINGS_CONTEXT_KEY,
+  BINDINGS_PARAM_KEY,
+  DATA_PARAM_KEY,
+  FUNCTION_RESULT_KEY,
+  RESULT_KEY,
+  VARS_PREFIX,
+} from './constants';
+import { JsonTemplateTranslatorError } from './errors';
 import { binaryOperators } from './operators';
 import {
   ArrayExpression,
@@ -131,7 +138,7 @@ export class JsonTemplateTranslator {
       case SyntaxType.FUNCTION_CALL_EXPR:
         return this.translateFunctionCallExpr(expr as FunctionCallExpression, dest, ctx);
 
-      case SyntaxType.DEFINTION_EXPR:
+      case SyntaxType.DEFINITION_EXPR:
         return this.translateDefinitionExpr(expr as DefinitionExpression, dest, ctx);
 
       case SyntaxType.ASSIGNMENT_EXPR:
@@ -473,7 +480,7 @@ export class JsonTemplateTranslator {
       return `${isAssignment ? '' : '?'}.${expr.prop?.value}`;
     }
   }
-  private getJSPathArrayIndex(
+  private getSimplePathArrayIndex(
     expr: ArrayFilterExpression,
     ctx: string,
     code: string[],
@@ -482,12 +489,11 @@ export class JsonTemplateTranslator {
   ): string {
     const parts: string[] = [];
     const prefix = isAssignment ? '' : '?.';
-    for (const filter of expr.filters as IndexFilterExpression[]) {
-      const keyVar = this.acquireVar();
-      code.push(this.translateExpr(filter.indexes.elements[0], keyVar, ctx));
-      parts.push(`${prefix}[${keyVar}]`);
-      keyVars.push(keyVar);
-    }
+    const filter = expr.filter as IndexFilterExpression;
+    const keyVar = this.acquireVar();
+    code.push(this.translateExpr(filter.indexes.elements[0], keyVar, ctx));
+    parts.push(`${prefix}[${keyVar}]`);
+    keyVars.push(keyVar);
     return parts.join('');
   }
 
@@ -505,7 +511,13 @@ export class JsonTemplateTranslator {
         simplePath.push(this.getSimplePathSelector(part as SelectorExpression, isAssignment));
       } else {
         simplePath.push(
-          this.getJSPathArrayIndex(part as ArrayFilterExpression, ctx, code, keyVars, isAssignment),
+          this.getSimplePathArrayIndex(
+            part as ArrayFilterExpression,
+            ctx,
+            code,
+            keyVars,
+            isAssignment,
+          ),
         );
       }
     }
@@ -517,7 +529,12 @@ export class JsonTemplateTranslator {
     const code: string[] = [];
     const valueVar = this.acquireVar();
     code.push(this.translateExpr(expr.value, valueVar, ctx));
-    const assignmentPath = this.translateToSimplePath(expr.path, code, expr.path.root as string, true);
+    const assignmentPath = this.translateToSimplePath(
+      expr.path,
+      code,
+      expr.path.root as string,
+      true,
+    );
     JsonTemplateTranslator.ValidateAssignmentPath(assignmentPath);
     code.push(JsonTemplateTranslator.generateAssignmentCode(assignmentPath, valueVar));
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, valueVar));
@@ -615,14 +632,10 @@ export class JsonTemplateTranslator {
 
   private translateArrayFilterExpr(expr: ArrayFilterExpression, dest: string, ctx: string): string {
     const code: string[] = [];
-    code.push(JsonTemplateTranslator.generateAssignmentCode(dest, ctx));
-    for (const filter of expr.filters) {
-      if (filter.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
-        code.push(this.translateIndexFilterExpr(filter as IndexFilterExpression, dest, dest));
-      } else {
-        code.push(this.translateRangeFilterExpr(filter as RangeFilterExpression, dest, dest));
-      }
-      code.push(`if(!${dest}){continue;}`);
+    if (expr.filter.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
+      code.push(this.translateIndexFilterExpr(expr.filter as IndexFilterExpression, dest, ctx));
+    } else {
+      code.push(this.translateRangeFilterExpr(expr.filter as RangeFilterExpression, dest, ctx));
     }
     return code.join('');
   }
@@ -741,8 +754,8 @@ export class JsonTemplateTranslator {
   }
 
   private static ValidateAssignmentPath(path: string) {
-    if(path.startsWith(BINDINGS_PARAM_KEY) && !path.startsWith(BINDINGS_CONTEXT_KEY)) {
-      throw new JsosTemplateTranslatorError('Invalid assignment path');
+    if (path.startsWith(BINDINGS_PARAM_KEY) && !path.startsWith(BINDINGS_CONTEXT_KEY)) {
+      throw new JsonTemplateTranslatorError('Invalid assignment path at' + path);
     }
   }
 
@@ -782,8 +795,12 @@ export class JsonTemplateTranslator {
     return `${varName} = ${varName}.length < 2 ? ${varName}[0] : ${varName};`;
   }
 
-  private static covertToArrayValue(varName: string) {
-    return `${varName} = Array.isArray(${varName}) ? ${varName} : [${varName}];`;
+  private static covertToArrayValue(varName: string): string {
+    const code: string[] = [];
+    code.push(`if(${JsonTemplateTranslator.returnIsNotEmpty(varName)}){`);
+    code.push(`${varName} = Array.isArray(${varName}) ? ${varName} : [${varName}];`);
+    code.push('}');
+    return code.join('');
   }
 
   private static generateAssignmentCode(key: string, val: string): string {

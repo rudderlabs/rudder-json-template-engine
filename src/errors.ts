@@ -10,7 +10,7 @@ export class JsonTemplateParserError extends Error {
   }
 }
 
-export class JsosTemplateTranslatorError extends Error {
+export class JsonTemplateTranslatorError extends Error {
   constructor(message: string) {
     super(message);
   }

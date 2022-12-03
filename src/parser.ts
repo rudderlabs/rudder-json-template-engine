@@ -62,7 +62,7 @@ export class JsonTemplateParser {
 
     const currIdx = this.lexer.currentIndex();
     const nextTokenStart = this.lexer.lookahead().range[0];
-    const code = this.lexer.getCodeChars(currIdx, nextTokenStart);
+    const code = this.lexer.getCode(currIdx, nextTokenStart);
     if (!code.includes('\n')) {
       this.lexer.throwUnexpectedToken();
     }
@@ -110,7 +110,17 @@ export class JsonTemplateParser {
   }
 
   private parseBaseExpr(): Expression {
-    return this.parseNextExpr(OperatorType.BASE);
+    const startIdx = this.lexer.currentIndex();
+    try {
+      const expr = this.parseNextExpr(OperatorType.BASE);
+      return expr;
+    } catch (error: any) {
+      const code = this.lexer.getCode(startIdx, this.lexer.currentIndex());
+      if (error.message.includes('at')) {
+        throw error;
+      }
+      throw new JsonTemplateParserError(error.message + ' at ' + code);
+    }
   }
 
   private parseNextExpr(currentOperation: OperatorType): Expression {
@@ -157,7 +167,7 @@ export class JsonTemplateParser {
     } else if (this.lexer.matchToArray()) {
       return this.parsePathOptions();
     } else if (this.lexer.match('[')) {
-      return this.parseArrayFiltersExpr();
+      return this.parseArrayFilterExpr();
     } else if (this.lexer.match('{')) {
       return this.parseObjectFiltersExpr();
     } else if (this.lexer.match('@') || this.lexer.match('#')) {
@@ -259,7 +269,7 @@ export class JsonTemplateParser {
   ): ArrayFilterExpression {
     return {
       type: SyntaxType.ARRAY_FILTER_EXPR,
-      filters: [expr],
+      filter: expr,
     };
   }
 
@@ -328,7 +338,7 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseArrayFilterExpr(): Expression {
+  private parseArrayFilter(): Expression {
     if (this.lexer.matchSpread()) {
       return this.parseArrayIndexFilterExpr();
     }
@@ -345,7 +355,7 @@ export class JsonTemplateParser {
       this.lexer.ignoreTokens(1);
       exclude = true;
     }
-    // excluding is applicaple only for index filters
+    // excluding is applicable only for index filters
     if (exclude || this.lexer.match('[')) {
       return {
         type: SyntaxType.OBJECT_INDEX_FILTER_EXPR,
@@ -419,19 +429,14 @@ export class JsonTemplateParser {
     return ifExpr;
   }
 
-  private parseArrayFiltersExpr(): ArrayFilterExpression {
-    const filters: Expression[] = [];
-    while (this.lexer.match('[') && !this.lexer.match(']', 1)) {
-      this.lexer.ignoreTokens(1);
-      filters.push(this.parseArrayFilterExpr());
-      this.lexer.expect(']');
-      if (this.lexer.match('.') && this.lexer.match('[', 1)) {
-        this.lexer.ignoreTokens(1);
-      }
-    }
+  private parseArrayFilterExpr(): ArrayFilterExpression {
+    this.lexer.expect('[');
+    const filter = this.parseArrayFilter();
+    this.lexer.expect(']');
+
     return {
       type: SyntaxType.ARRAY_FILTER_EXPR,
-      filters,
+      filter,
     };
   }
 
@@ -631,7 +636,7 @@ export class JsonTemplateParser {
 
   private shouldSkipPathParsing(expr: Expression): boolean {
     switch (expr.type) {
-      case SyntaxType.DEFINTION_EXPR:
+      case SyntaxType.DEFINITION_EXPR:
       case SyntaxType.ASSIGNMENT_EXPR:
       case SyntaxType.SPREAD_EXPR:
         return true;
@@ -701,7 +706,7 @@ export class JsonTemplateParser {
     this.lexer.expect('{');
     while (!this.lexer.match('}')) {
       if (!this.lexer.matchID()) {
-        throw new JsonTemplateParserError('Invalid object vars at ' + this.lexer.getContext());
+        throw new JsonTemplateParserError('Invalid object vars');
       }
       vars.push(this.lexer.value());
       if (!this.lexer.match('}')) {
@@ -710,7 +715,7 @@ export class JsonTemplateParser {
     }
     this.lexer.expect('}');
     if (vars.length === 0) {
-      throw new JsonTemplateParserError('Empty object vars at ' + this.lexer.getContext());
+      throw new JsonTemplateParserError('Empty object vars');
     }
     return vars;
   }
@@ -718,7 +723,7 @@ export class JsonTemplateParser {
   private parseNormalDefVars(): string[] {
     const vars: string[] = [];
     if (!this.lexer.matchID()) {
-      throw new JsonTemplateParserError('Invalid normal vars at ' + this.lexer.getContext());
+      throw new JsonTemplateParserError('Invalid normal vars');
     }
     vars.push(this.lexer.value());
     return vars;
@@ -731,7 +736,7 @@ export class JsonTemplateParser {
     this.lexer.expect('=');
 
     return {
-      type: SyntaxType.DEFINTION_EXPR,
+      type: SyntaxType.DEFINITION_EXPR,
       value: this.parseBaseExpr(),
       vars,
       definition,
@@ -1092,14 +1097,12 @@ export class JsonTemplateParser {
   }
 
   private static isArrayFilterExpressionSimple(expr: ArrayFilterExpression): boolean {
-    for (let filter of expr.filters) {
-      if (filter.type !== SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
-        return false;
-      }
-      const expr = filter as IndexFilterExpression;
-      if (expr.indexes.elements.length > 1) {
-        return false;
-      }
+    if (expr.filter.type !== SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
+      return false;
+    }
+    const filter = expr.filter as IndexFilterExpression;
+    if (filter.indexes.elements.length > 1) {
+      return false;
     }
     return true;
   }

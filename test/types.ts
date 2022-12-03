@@ -1,6 +1,6 @@
-import { Dictionary, EngineOptions } from '../src';
+import { EngineOptions } from '../src';
 
-export type Sceanario = {
+export type Scenario = {
   description?: string;
   input?: any;
   templatePath?: string;

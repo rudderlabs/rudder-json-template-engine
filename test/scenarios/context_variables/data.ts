@@ -1,6 +1,6 @@
-import { Sceanario } from '../../types';
+import { Scenario } from '../../types';
 
-export const data: Sceanario[] = [
+export const data: Scenario[] = [
   {
     templatePath: 'filter.jt',
     input: [[{ a: 1 }], [{ a: 2 }, { a: 3 }], [{ a: 4 }, { a: 5 }, { a: 6 }]],
@@ -90,20 +90,60 @@ export const data: Sceanario[] = [
     ],
   },
   {
-    input: [[{ a: 1 }], [{ a: 2 }, { a: 3 }], [{ a: 4 }, { a: 5 }, { a: 6 }]],
+    input: {
+      orders: [
+        {
+          id: 1,
+          products: [
+            {
+              name: 'A',
+              price: 10,
+            },
+            {
+              name: 'B',
+              price: 5,
+            },
+          ],
+        },
+        {
+          id: 2,
+          products: [
+            {
+              name: 'A',
+              price: 10,
+            },
+            {
+              name: 'C',
+              price: 15,
+            },
+          ],
+        },
+      ],
+    },
     output: [
       {
-        a: 1,
-        idx: 0,
+        name: 'A',
+        price: 10,
+        orderNum: 0,
+        orderId: 1,
       },
       {
-        a: [2, 3],
-        idx: 1,
+        name: 'B',
+        price: 5,
+        orderNum: 0,
+        orderId: 1,
       },
       {
-        a: [4, 5, 6],
-        idx: 2,
-        b: [5, 6],
+        name: 'A',
+        price: 10,
+        orderNum: 1,
+        orderId: 2,
+      },
+      {
+        name: 'C',
+        price: 15,
+        orderNum: 1,
+        orderId: 2,
       },
     ],
   },

@@ -1,6 +1,6 @@
-import { Sceanario } from '../../types';
+import { Scenario } from '../../types';
 
-export const data: Sceanario[] = [
+export const data: Scenario[] = [
   {
     output: 15,
   },

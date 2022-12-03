@@ -1,6 +1,6 @@
-import { Sceanario } from '../../types';
+import { Scenario } from '../../types';
 
-export const data: Sceanario[] = [
+export const data: Scenario[] = [
   {
     options: { compileTimeBindings: { a: 1, b: 'string', c: { c: 1.02 }, d: [null, true, false] } },
     output: [1, 'string', { c: 1.02 }, [null, true, false]],

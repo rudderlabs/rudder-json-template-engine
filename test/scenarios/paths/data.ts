@@ -1,6 +1,116 @@
-import { Sceanario } from '../../types';
+import { PathType } from '../../../src';
+import { Scenario } from '../../types';
 
-export const data: Sceanario[] = [
+export const data: Scenario[] = [
+  {
+    templatePath: 'block.jt',
+    input: {
+      a: 1,
+      b: 1,
+    },
+    output: [{ a: 2, b: 3 }, [2, 3]],
+  },
+  {
+    templatePath: 'options.jt',
+    options: {
+      defaultPathType: PathType.RICH,
+    },
+    input: {
+      a: {
+        b: [{ c: [{ d: 1 }, { d: 2 }] }],
+      },
+    },
+    output: [
+      [
+        {
+          d: 1,
+        },
+        {
+          d: 2,
+        },
+      ],
+      [
+        {
+          d: 1,
+        },
+        {
+          d: 2,
+        },
+      ],
+      undefined,
+      {
+        d: 2,
+      },
+    ],
+  },
+  {
+    templatePath: 'options.jt',
+    options: {
+      defaultPathType: PathType.SIMPLE,
+    },
+    input: {
+      a: {
+        b: [{ c: [{ d: 1 }, { d: 2 }] }],
+      },
+    },
+    output: [
+      undefined,
+      [
+        {
+          d: 1,
+        },
+        {
+          d: 2,
+        },
+      ],
+      undefined,
+      {
+        d: 2,
+      },
+    ],
+  },
+  {
+    templatePath: 'options.jt',
+    options: {
+      defaultPathType: PathType.SIMPLE,
+    },
+    input: {
+      a: {
+        b: {
+          c: [{ d: 1 }, { d: 2 }],
+        },
+      },
+    },
+    output: [
+      [
+        {
+          d: 1,
+        },
+        {
+          d: 2,
+        },
+      ],
+      [
+        {
+          d: 1,
+        },
+        {
+          d: 2,
+        },
+      ],
+      [
+        {
+          d: 1,
+        },
+        {
+          d: 2,
+        },
+      ],
+      {
+        d: 2,
+      },
+    ],
+  },
   {
     templatePath: 'rich_path.jt',
     input: [

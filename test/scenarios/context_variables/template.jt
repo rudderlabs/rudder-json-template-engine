@@ -1,5 +1,6 @@
-.@item#idx.({
-    a: item.a,
-    idx: idx,
-    b: .{.a > 4}.a
+.orders@order#idx.products.({
+    name: .name,
+    price: .price,
+    orderNum: idx,
+    orderId: order.id
 })

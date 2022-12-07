@@ -1,6 +1,6 @@
-import { Sceanario } from '../../types';
+import { Scenario } from '../../types';
 
-export const data: Sceanario[] = [
+export const data: Scenario[] = [
   {
     templatePath: 'bad_array_coalese_expr.jt',
     error: 'expected at least 1 expression',
@@ -71,6 +71,18 @@ export const data: Sceanario[] = [
   },
   {
     templatePath: 'invalid_variable_assignment6.jt',
+    error: 'Invalid assignment path',
+  },
+  {
+    templatePath: 'invalid_variable_assignment7.jt',
+    error: 'Invalid assignment path',
+  },
+  {
+    templatePath: 'invalid_variable_assignment8.jt',
+    error: 'Invalid assignment path',
+  },
+  {
+    templatePath: 'invalid_variable_assignment9.jt',
     error: 'Invalid assignment path',
   },
   {

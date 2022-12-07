@@ -1,9 +1,9 @@
-import { Sceanario } from '../../types';
+import { Scenario } from '../../types';
 
-export const data: Sceanario[] = [
+export const data: Scenario[] = [
   {
     templatePath: 'function_calls.jt',
-    output: ['abc', null, undefined],
+    output: ['abc', undefined, undefined],
   },
   {
     templatePath: 'js_date_function.jt',

@@ -5,12 +5,32 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Test Current File",
+      "name": "Test Current TS File",
       "program": "${relativeFile}",
       "request": "launch",
       "runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
       "skipFiles": ["<node_internals>/**"],
       "type": "node"
+    },
+    {
+      "name": "Run Current JS File",
+      "program": "${relativeFile}",
+      "request": "launch",
+      "skipFiles": ["<node_internals>/**"],
+      "type": "node"
+    },
+    {
+      "runtimeExecutable": "/usr/local/bin/node",
+      "type": "node",
+      "request": "launch",
+      "name": "Jest Current File",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": ["${fileBasenameNoExtension}", "--config", "jest.config.ts"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "windows": {
+        "program": "${workspaceFolder}/node_modules/jest/bin/jest"
+      }
     },
     {
       "name": "Test Scenario",
@@ -41,19 +61,6 @@
       "runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
       "skipFiles": ["<node_internals>/**"],
       "type": "node"
-    },
-    {
-      "runtimeExecutable": "/usr/local/bin/node",
-      "type": "node",
-      "request": "launch",
-      "name": "Jest Current File",
-      "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "args": ["${fileBasenameNoExtension}", "--config", "jest.config.ts"],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "windows": {
-        "program": "${workspaceFolder}/node_modules/jest/bin/jest"
-      }
     }
   ],
   "inputs": [

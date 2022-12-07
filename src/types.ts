@@ -1,5 +1,3 @@
-export type Dictionary<T> = Record<string, T>;
-
 export enum Keyword {
   FUNCTION = 'function',
   NEW = 'new',
@@ -66,7 +64,7 @@ export enum SyntaxType {
   RANGE_FILTER_EXPR,
   OBJECT_FILTER_EXPR,
   ARRAY_FILTER_EXPR,
-  DEFINTION_EXPR,
+  DEFINITION_EXPR,
   ASSIGNMENT_EXPR,
   OBJECT_PROP_EXPR,
   OBJECT_EXPR,
@@ -75,8 +73,17 @@ export enum SyntaxType {
   FUNCTION_EXPR,
   FUNCTION_CALL_ARG,
   FUNCTION_CALL_EXPR,
-  COMPILE_TIME_EXPR,
   STATEMENTS_EXPR,
+}
+
+export enum PathType {
+  SIMPLE,
+  RICH,
+}
+
+export interface EngineOptions {
+  compileTimeBindings?: Record<string, any>;
+  defaultPathType?: PathType;
 }
 
 export type Token = {
@@ -119,10 +126,6 @@ export interface ObjectPropExpression extends Expression {
 
 export interface ObjectExpression extends Expression {
   props: ObjectPropExpression[];
-}
-
-export interface CompileTimeExpression extends Expression {
-  value: Expression;
 }
 
 export interface ArrayExpression extends Expression {
@@ -174,7 +177,7 @@ export interface ObjectFilterExpression extends Expression {
 }
 
 export interface ArrayFilterExpression extends Expression {
-  filters: (RangeFilterExpression | IndexFilterExpression)[];
+  filter: RangeFilterExpression | IndexFilterExpression;
 }
 export interface LiteralExpression extends Expression {
   value: string | number | boolean | null | undefined;
@@ -184,8 +187,7 @@ export interface PathExpression extends Expression {
   parts: Expression[];
   root?: Expression | string;
   returnAsArray?: boolean;
-  // Used in a part of another Path
-  subPath?: boolean;
+  pathType: PathType;
 }
 
 export interface SelectorExpression extends Expression {

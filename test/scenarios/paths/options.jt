@@ -1,0 +1,10 @@
+[
+  // Based path options it will be treat as either simple or rich path
+  .a.b.c,
+  // this is always treated as rich path
+  ~r .a.b.c,
+  // this is always treated as simple path
+  ~s .a.b.c,
+  // this is always treated as rich path as it uses rich features like 
+  .a.b.c{.d > 1}
+]

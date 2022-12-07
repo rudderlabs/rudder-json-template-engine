@@ -3,8 +3,10 @@ let b = -a + 30
 let cKey = "c key";
 let c = { a: { b: [a, b], [cKey]: 2 } }
 let {d, e, f} = {d: 2, e: 2, f: 1}
+// updating binding value
+$.context.f = 1
 c.a.b[0] = c.a.b[0] + d
 c.a.b[1] = c.a.b[1] + e
 c.a."c key" = c.a."c key" + f
-c.a[cKey] = c.a[cKey] + f
+c.a[cKey] = c.a[cKey] + ~s $.context.f
 c

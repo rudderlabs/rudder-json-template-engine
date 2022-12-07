@@ -1,7 +1,10 @@
-import { Sceanario } from '../../types';
+import { Scenario } from '../../types';
 
-export const data: Sceanario[] = [
+export const data: Scenario[] = [
   {
+    bindings: {
+      context: {},
+    },
     output: {
       a: {
         b: [12, 22],

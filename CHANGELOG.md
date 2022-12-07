@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.4...v0.3.0) (2022-12-07)
+
+
+### Miscellaneous
+
+* release 0.3.0 ([e7b2fef](https://github.com/rudderlabs/rudder-json-template-engine/commit/e7b2fefca4516faa49d59e44a17dd9257cb037b5))
+
 ## [0.2.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.3...v0.2.4) (2022-12-07)
 
 

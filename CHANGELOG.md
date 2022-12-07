@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.3...v0.2.4) (2022-12-07)
+
+
+### Features
+
+* refactor compile time expressions ([#16](https://github.com/rudderlabs/rudder-json-template-engine/issues/16)) ([cae81bf](https://github.com/rudderlabs/rudder-json-template-engine/commit/cae81bfec874c5ba097b2b5f972b5c7bf684874b))
+
 ## [0.2.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.2...v0.2.3) (2022-12-01)
 
 

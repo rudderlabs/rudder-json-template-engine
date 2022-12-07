@@ -2,6 +2,7 @@ import { readdirSync } from 'fs';
 import { join } from 'path';
 import { Command } from 'commander';
 import { ScenarioUtils } from './utils';
+import { Scenario } from './types';
 
 const rootDirName = 'scenarios';
 const command = new Command();
@@ -20,7 +21,7 @@ describe('Scenarios tests', () => {
       const scenarioDir = join(__dirname, rootDirName, scenarioName);
       const scenarios = ScenarioUtils.extractScenarios(scenarioDir);
       scenarios.forEach((scenario, index) => {
-        it(`Scenario ${index}: ${scenario.templatePath || 'template.jt'}`, async () => {
+        it(`Scenario ${index}: ${Scenario.getTemplatePath(scenario)}`, async () => {
           try {
             const templateEngine = ScenarioUtils.createTemplateEngine(scenarioDir, scenario);
             const result = await ScenarioUtils.evaluateScenario(templateEngine, scenario);

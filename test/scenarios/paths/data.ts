@@ -139,7 +139,7 @@ export const data: Scenario[] = [
         ],
       },
     ],
-    output: [1, [4], 2],
+    output: [1, [4], 2, 1],
   },
   {
     input: [

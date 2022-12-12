@@ -27,6 +27,15 @@ This library generates a javascript function code from the template and then use
 1. [Parsing](src/parser.ts) (AST Creation)
 1. [Translation](src/translator.ts) (Code generation)
 
+```mermaid
+  flowchart TD;
+      A[Code] --> B[Convert code to tokens];
+      B --> C[Parse tokens to create Expressions];
+      C --> D[Combine expressions to create statements];
+      D --> E[Combine statements to create AST];
+      E --> F[Translate AST to JS code]
+```
+
 [Engine](src/engine.ts) class abstracts the above steps and provides a convenient way to use the json templates to evaluate the inputs.
 
 ## Features

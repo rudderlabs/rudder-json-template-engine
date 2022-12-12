@@ -1,4 +1,4 @@
-import { EngineOptions } from '../src';
+import { EngineOptions, PathType } from '../src';
 
 export type Scenario = {
   description?: string;
@@ -9,3 +9,9 @@ export type Scenario = {
   output?: any;
   error?: string;
 };
+
+export namespace Scenario {
+  export function getTemplatePath(scenario: Scenario): string {
+    return scenario.templatePath || 'template.jt';
+  }
+}

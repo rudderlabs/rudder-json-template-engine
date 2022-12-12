@@ -240,6 +240,15 @@ export class JsonTemplateParser {
     return this.options?.defaultPathType ?? PathType.RICH;
   }
 
+  private parsePathTypeExpr(): Expression {
+    const pathType = this.parsePathType();
+    const expr = this.parseBaseExpr();
+    if (expr.type === SyntaxType.PATH) {
+      expr.pathType = pathType;
+    }
+    return expr;
+  }
+
   private parsePath(options?: { root?: Expression }): PathExpression | Expression {
     const pathType = this.parsePathType();
     let expr: PathExpression = {
@@ -1020,6 +1029,10 @@ export class JsonTemplateParser {
 
     if (this.lexer.match('[')) {
       return this.parseArrayExpr();
+    }
+
+    if (this.lexer.matchPathType()) {
+      return this.parsePathTypeExpr();
     }
 
     if (this.lexer.matchPath()) {

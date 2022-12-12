@@ -1,6 +1,6 @@
 {
   "name": "rudder-json-template-engine",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "homepage": "https://github.com/rudderlabs/rudder-workflow-engine",
   "description": "A library for evaluating JSON template expressions.",
   "main": "build/index.js",

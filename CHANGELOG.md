@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.3.0...v0.4.0) (2022-12-12)
+
+
+### Features
+
+* add support for using path type in complex paths ([#20](https://github.com/rudderlabs/rudder-json-template-engine/issues/20)) ([b086207](https://github.com/rudderlabs/rudder-json-template-engine/commit/b086207750c41c854b6792377dc31a5c30ecc79a))
+
+
+### Miscellaneous
+
+* release 0.4.0 ([20abcff](https://github.com/rudderlabs/rudder-json-template-engine/commit/20abcffd117f01d538d9395099f6fde4c278a307))
+
 ## [0.3.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.2.4...v0.3.0) (2022-12-07)
 
 

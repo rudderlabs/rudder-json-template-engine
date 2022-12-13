@@ -19,9 +19,12 @@
 ---
 
 # rudder-json-template-engine
-A library to process JSON data using a custom syntax based on javascript and [jspath](https://github.com/dfilatov/jspath). We thank the jspath authors for their excellent work, as our library is an extension of the original library. We also want to thank [IBM](https://www.ibm.com/) team for their work on [jsonata](https://github.com/jsonata-js/jsonata), as we have taken several ideas from the library. You can also consider our library as an alternative to [jsonata](https://github.com/jsonata-js/jsonata).
+## Motivation
+We are an integration platform and support 200+ integrations. We implemented these integrations using native Javascript code to transform incoming events to destination payload, so in summary, it is JSON data manipulation. Maintaining all these integrations is challenging, so we explored [jsonata](https://github.com/jsonata-js/jsonata) to write less code to transform JSON data. While this library is excellent, we still need to meet our performance needs. For example, JSONata parses the given template, creates an Abstract Syntax Tree (AST), and interprets the AST for the given input. Since we need to traverse the AST every time, it is slow, so we wanted to build a template engine that generates Javascript code so there will be less overhead during the runtime.
 
 ## Overview
+A library to process JSON data using a custom syntax based on javascript and [jspath](https://github.com/dfilatov/jspath). We thank the jspath authors for their excellent work, as our library is an extension of the original library. We also want to thank [IBM](https://www.ibm.com/) team for their work on [jsonata](https://github.com/jsonata-js/jsonata), as we have taken several ideas from the library. You can also consider our library as an alternative to [jsonata](https://github.com/jsonata-js/jsonata).
+
 This library generates a javascript function code from the template and then uses the function to evaluate the JSON data. It outputs the javascript code in the following stages:
 1. [Lexing](src/lexer.ts) (Tokenization)
 1. [Parsing](src/parser.ts) (AST Creation)

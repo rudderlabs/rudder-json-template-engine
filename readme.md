@@ -10,7 +10,7 @@
   <b>
     <a href="https://rudderstack.com">Website</a>
     ·
-    <a href="">Documentation</a>
+    <a href="https://github.com/rudderlabs/rudder-json-template-engine/blob/main/docs/syntax.md">Documentation</a>
     ·
     <a href="https://rudderstack.com/join-rudderstack-slack-community">Community Slack</a>
   </b>

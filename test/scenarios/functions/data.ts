@@ -27,6 +27,16 @@ export const data: Scenario[] = [
     output: 90,
   },
   {
+    templatePath: 'promise.jt',
+    input: [1, 2],
+    output: [1, 2],
+  },
+  {
+    templatePath: 'promise.jt',
+    input: { a: 1 },
+    output: { a: 1 },
+  },
+  {
     output: 80,
   },
 ];

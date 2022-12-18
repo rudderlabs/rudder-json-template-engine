@@ -1,0 +1,3 @@
+await new Promise(function(resolve) {
+    setTimeout(lambda resolve(^), 100)
+});

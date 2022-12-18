@@ -407,11 +407,13 @@ export class JsonTemplateTranslator {
     code.push(JsonTemplateTranslator.generateAssignmentCode(result, ctx));
     if (expr.object) {
       code.push(this.translateExpr(expr.object, result, ctx));
+      code.push(`if(${JsonTemplateTranslator.returnIsNotEmpty(result)}){`);
     }
-    code.push(`if(${JsonTemplateTranslator.returnIsNotEmpty(result)}){`);
     const functionArgsStr = this.translateSpreadableExpressions(expr.args, result, code);
     code.push(result, '=', this.getFunctionName(expr, result), '(', functionArgsStr, ');');
-    code.push('}');
+    if (expr.object) {
+      code.push('}');
+    }
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, result));
     this.releaseVars(result);
     return code.join('');

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.4.0...v0.4.1) (2022-12-19)
+
+
+### Bug Fixes
+
+* incorrect condition in function call expression ([#24](https://github.com/rudderlabs/rudder-json-template-engine/issues/24)) ([03d503b](https://github.com/rudderlabs/rudder-json-template-engine/commit/03d503b1bd5f08fa1df77229989415bc5bbc0f0e))
+
+
+### Miscellaneous
+
+* **ci:** remove the option to bump patch for features pre-major ([#22](https://github.com/rudderlabs/rudder-json-template-engine/issues/22)) ([e7b4ed6](https://github.com/rudderlabs/rudder-json-template-engine/commit/e7b4ed62f7951cac162bb330b920c05531b6c7da))
+
 ## [0.4.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.3.0...v0.4.0) (2022-12-12)
 
 

@@ -23,6 +23,7 @@
     "@babel/eslint-parser": "^7.19.1",
     "@commitlint/cli": "^17.2.0",
     "@commitlint/config-conventional": "^17.2.0",
+    "@stryker-mutator/core": "^6.3.1",
     "@types/jest": "^29.2.2",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.11.9",
@@ -52,7 +53,8 @@
     "format": "prettier --write '**/*.ts' '**/*.js' '**/*.json'",
     "prepare": "husky install",
     "jest:scenarios": "jest e2e.test.ts --verbose",
-    "test:scenario": "ts-node test/test_scenario.ts"
+    "test:scenario": "ts-node test/test_scenario.ts",
+    "test:stryker": "stryker run"
   },
   "engines": {
     "node": ">=14.15.0 <15",

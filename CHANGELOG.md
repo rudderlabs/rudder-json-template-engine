@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.4.1...v0.5.0) (2023-01-19)
+
+
+### Features
+
+* add stryker mutation testing integration ([#25](https://github.com/rudderlabs/rudder-json-template-engine/issues/25)) ([55f8c22](https://github.com/rudderlabs/rudder-json-template-engine/commit/55f8c22783b35311ea56e6daab41773fa0bfab0b))
+
 ## [0.4.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.4.0...v0.4.1) (2022-12-19)
 
 

@@ -1,5 +1,5 @@
 # https://github.com/marketplace/actions/jest-coverage-report
-name: 'coverage'
+name: 'Code Coverage'
 on:
   pull_request:
     branches:

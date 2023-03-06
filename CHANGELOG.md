@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.0...v0.5.1) (2023-03-06)
+
+
+### Miscellaneous
+
+* upgrade to node v18 ([#27](https://github.com/rudderlabs/rudder-json-template-engine/issues/27)) ([f654d34](https://github.com/rudderlabs/rudder-json-template-engine/commit/f654d34efad5cf5ef91b17ff4be77d07462a6da3))
+
 ## [0.5.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.4.1...v0.5.0) (2023-01-19)
 
 

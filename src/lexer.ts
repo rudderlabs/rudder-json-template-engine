@@ -57,20 +57,20 @@ export class JsonTemplateLexer {
     return this.match('{') && this.match('{', 1);
   }
 
-  matchSimplePath(): boolean {
-    return this.match('~s');
+  matchSimplePath(steps: number = 0): boolean {
+    return this.match('~s', steps);
   }
 
-  matchRichPath(): boolean {
-    return this.match('~r');
+  matchRichPath(steps: number = 0): boolean {
+    return this.match('~r', steps);
   }
 
-  matchPathType(): boolean {
-    return this.matchRichPath() || this.matchSimplePath();
+  matchPathType(steps: number = 0): boolean {
+    return this.matchRichPath(steps) || this.matchSimplePath(steps);
   }
 
-  matchPath(): boolean {
-    return this.matchPathSelector() || this.matchID();
+  matchPath(steps: number = 0): boolean {
+    return this.matchPathSelector(steps) || this.matchID(steps) || this.matchPathType(steps);
   }
 
   matchSpread(): boolean {
@@ -85,14 +85,15 @@ export class JsonTemplateLexer {
     return false;
   }
 
-  matchPathSelector(): boolean {
-    let token = this.lookahead();
+  isPathSelector(token: Token): boolean {
     if (token.type === TokenType.PUNCT) {
-      let value = token.value;
-      return value === '.' || value === '..' || value === '^';
+      return token.value === '.' || token.value === '..' || token.value === '^';
     }
-
     return false;
+  }
+
+  matchPathSelector(steps: number = 0): boolean {
+    return this.isPathSelector(this.lookahead(steps));
   }
 
   matchTokenType(tokenType: TokenType, steps: number = 0): boolean {

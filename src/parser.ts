@@ -257,9 +257,7 @@ export class JsonTemplateParser {
       parts: this.parsePathParts(),
       pathType,
     };
-    if (!expr.parts.length) {
-      return expr;
-    }
+   
     return JsonTemplateParser.updatePathExpr(expr);
   }
 
@@ -1031,7 +1029,7 @@ export class JsonTemplateParser {
       return this.parseArrayExpr();
     }
 
-    if (this.lexer.matchPathType()) {
+    if (this.lexer.matchPathType() && !this.lexer.matchPath(1)) {
       return this.parsePathTypeExpr();
     }
 
@@ -1143,6 +1141,9 @@ export class JsonTemplateParser {
   }
 
   private static updatePathExpr(pathExpr: PathExpression): Expression {
+    if (!pathExpr.parts.length) {
+      return pathExpr;
+    }
     if (pathExpr.parts.length > 1 && pathExpr.parts[0].type === SyntaxType.PATH_OPTIONS) {
       pathExpr.options = pathExpr.parts[0].options;
       pathExpr.parts.shift();
@@ -1168,7 +1169,7 @@ export class JsonTemplateParser {
     if (shouldConvertAsBlock) {
       expr = JsonTemplateParser.convertToBlockExpr(expr);
       pathExpr.pathType = PathType.RICH;
-    } else if (this.isRichPath(pathExpr)) {
+    } else if (pathExpr.pathType !== PathType.RICH && this.isRichPath(pathExpr)) {
       pathExpr.pathType = PathType.RICH;
     }
     return expr;

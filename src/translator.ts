@@ -720,14 +720,14 @@ export class JsonTemplateTranslator {
       if (expr.toIdx) {
         code.push(this.translateExpr(expr.fromIdx, fromIdx, ctx));
         code.push(this.translateExpr(expr.toIdx, toIdx, ctx));
-        code.push(dest, '=', ctx, '.slice(', fromIdx, ',', toIdx, ');');
+        code.push(dest, '=', ctx, '?.slice(', fromIdx, ',', toIdx, ');');
       } else {
         code.push(this.translateExpr(expr.fromIdx, fromIdx, ctx));
-        code.push(dest, '=', ctx, '.slice(', fromIdx, ');');
+        code.push(dest, '=', ctx, '?.slice(', fromIdx, ');');
       }
     } else if (expr.toIdx) {
       code.push(this.translateExpr(expr.toIdx, toIdx, ctx));
-      code.push(dest, '=', ctx, '.slice(0,', toIdx, ');');
+      code.push(dest, '=', ctx, '?.slice(0,', toIdx, ');');
     }
     this.releaseVars(fromIdx, toIdx);
     return code.join('');

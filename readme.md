@@ -51,7 +51,7 @@ This library generates a javascript function code from the template and then use
 1. [Paths](test/scenarios/paths/template.jt)
     * [Filters](test/scenarios/filters)
     * [Selectors](test/scenarios/selectors/template.jt)
-    * [Context variables](test/scenarios/selectors/context_variables.jt)
+    * [Context variables](test/scenarios/context_variables/template.jt)
     * [Simple paths](test/scenarios/paths/simple_path.jt)
     * [Rich paths](test/scenarios/paths/rich_path.jt)
     * [Paths options](test/scenarios/paths/options.jt)

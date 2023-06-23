@@ -49,7 +49,7 @@ This library generates a javascript function code from the template and then use
 1. [Bindings](test/scenarios/bindings/template.jt)
 1. [Comments](test/scenarios/comments/template.jt)
 1. [Paths](test/scenarios/paths/template.jt)
-    * [Filters](test/scenarios/filters/template.jt)
+    * [Filters](test/scenarios/filters)
     * [Selectors](test/scenarios/selectors/template.jt)
     * [Context variables](test/scenarios/selectors/context_variables.jt)
     * [Simple paths](test/scenarios/paths/simple_path.jt)

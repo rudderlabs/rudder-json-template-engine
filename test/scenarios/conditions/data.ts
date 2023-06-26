@@ -39,4 +39,25 @@ export const data: Scenario[] = [
     },
     output: 15,
   },
+  {
+    templatePath: 'undefined-arr-cond.jt',
+    input: {
+      products: [{ a: 1 }, { a: 2 }],
+    },
+    output: 'no',
+  },
+  {
+    templatePath: 'undefined-arr-cond.jt',
+    input: {
+      products: [{ objectID: 1 }, { objectID: 2 }],
+    },
+    output: 'yes',
+  },
+  {
+    templatePath: 'undefined-arr-cond.jt',
+    input: {
+      otherProperty: [{ objectID: 1 }, { objectID: 2 }],
+    },
+    output: 'no',
+  },
 ];

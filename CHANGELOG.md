@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.1...v0.5.2) (2023-06-26)
+
+
+### Miscellaneous
+
+* add test-cases for array extraction ([#30](https://github.com/rudderlabs/rudder-json-template-engine/issues/30)) ([7c1ee4b](https://github.com/rudderlabs/rudder-json-template-engine/commit/7c1ee4b8827930db0eaf5869135f46153e4ea5a1))
+
 ## [0.5.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.0...v0.5.1) (2023-03-06)
 
 

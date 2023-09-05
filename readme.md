@@ -18,13 +18,28 @@
 
 ---
 
-# rudder-json-template-engine
-## Motivation
-We are an integration platform and support 200+ integrations. We implemented these integrations using native Javascript code to transform incoming events to destination payload, so in summary, it is JSON data manipulation. Maintaining all these integrations is challenging, so we explored [jsonata](https://github.com/jsonata-js/jsonata) to write less code to transform JSON data. While this library is excellent, we still need to meet our performance needs. For example, JSONata parses the given template, creates an Abstract Syntax Tree (AST), and interprets the AST for the given input. Since we need to traverse the AST every time, it is slow, so we wanted to build a template engine that generates Javascript code so there will be less overhead during the runtime.
-
+# JSON Template Engine
 ## Overview
-A library to process JSON data using a custom syntax based on javascript and [jspath](https://github.com/dfilatov/jspath). We thank the jspath authors for their excellent work, as our library is an extension of the original library. We also want to thank [IBM](https://www.ibm.com/) team for their work on [jsonata](https://github.com/jsonata-js/jsonata), as we have taken several ideas from the library. You can also consider our library as an alternative to [jsonata](https://github.com/jsonata-js/jsonata).
 
+Welcome to our JSON Template Engine! This powerful tool simplifies transforming JSON data from one format to another, making it easier to manage and maintain complex integrations. 
+
+### Why JSON Template Engine?
+
+As an integration platform supporting over 200 integrations, we understand the challenges of maintaining and optimizing these connections. Traditionally, we used native JavaScript code for data transformation, which required significant effort and maintenance. While JSONata offered a more efficient way to manipulate JSON data, we still encountered performance bottlenecks due to its parsing and interpretation overhead.
+
+### Our Solution
+
+To address these challenges, we've developed our own JSON Transformation Engine. This engine generates optimized JavaScript code from transformation templates, reducing runtime overhead and significantly improving performance.
+
+## Key Features
+
+- **Efficiency**: Our engine generates JavaScript code that minimizes parsing and interpretation overhead, ensuring faster execution.
+
+- **Extensibility**: Easily add new transformation templates to meet your specific integration needs.
+
+- **Simplicity**: Write concise transformation templates that are easy to understand and maintain.
+  
+## Implementation
 This library generates a javascript function code from the template and then uses the function to evaluate the JSON data. It outputs the javascript code in the following stages:
 1. [Lexing](src/lexer.ts) (Tokenization)
 1. [Parsing](src/parser.ts) (AST Creation)
@@ -69,6 +84,7 @@ For more examples, refer [Scenarios](test/scenarios)
 `npm install rudder-json-template-engine`
 
 ```ts
+const { JsonTemplateEngine } = require('rudder-json-template-engine');
 const engine = JsonTemplateEngine.create(`'Hello ' + .name`);
 engine.evaluate({name: 'World'}); // => 'Hello World'
 ```

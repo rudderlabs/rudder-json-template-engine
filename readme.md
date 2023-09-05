@@ -69,8 +69,8 @@ For more examples, refer [Scenarios](test/scenarios)
 `npm install rudder-json-template-engine`
 
 ```ts
-const engine = new JsonTemplateEngine(`'Hello ' + .name`);
-engine.evaluate({name: 'World'});
+const engine = JsonTemplateEngine.create(`'Hello ' + .name`);
+engine.evaluate({name: 'World'}); // => 'Hello World'
 ```
 
 ## Testing

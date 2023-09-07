@@ -8,6 +8,7 @@ export enum Keyword {
   AWAIT = 'await',
   ASYNC = 'async',
   IN = 'in',
+  NOT = 'not',
 }
 
 export enum TokenType {

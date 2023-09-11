@@ -1,8 +1,5 @@
 import {
-  JsonTemplateParser,
-  JsonTemplateTranslator,
   JsonTemplateEngine,
-  JsonTemplateLexer,
 } from '../src/';
 
 const data = [
@@ -222,7 +219,7 @@ JsonTemplateEngine.create(
 `,
 )
   .evaluate({ a: 1 })
-  .then((a) => console.log(JSON.stringify(a)));
+  .then((a: any) => console.log(JSON.stringify(a)));
 
 console.log(
   JsonTemplateEngine.translate(`

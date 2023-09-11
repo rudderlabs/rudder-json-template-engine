@@ -10,14 +10,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
 
       - name: Install Dependencies
-        run: npm ci
+        run: bun install
 
       - name: Run Tests
-        run: npm run test
+        run: bun test

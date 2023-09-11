@@ -22,7 +22,7 @@ export class CommonUtils {
     };
   }
 
-  static CreateAsyncFunction(...args) {
+  static CreateAsyncFunction(...args: any[]) {
     return async function () {}.constructor(...args);
   }
 

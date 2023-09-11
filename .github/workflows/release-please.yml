@@ -33,19 +33,16 @@ jobs:
         # a new release is created:
         if: ${{ steps.release.outputs.release_created }}
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         if: ${{ steps.release.outputs.release_created }}
 
       - name: Install Dependencies
-        run: npm ci
+        run: bun install
         if: ${{ steps.release.outputs.release_created }}
 
       - name: Build Package
-        run: npm run build
+        run: bun build ./src/index.ts --outdir=build
         if: ${{ steps.release.outputs.release_created }}
 
       - name: Configure NPM

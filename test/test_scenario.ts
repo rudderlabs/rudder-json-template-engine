@@ -17,7 +17,7 @@ const index = +(opts.index || 0);
 
 async function createAndEvaluateTemplate() {
   try {
-    const scenarioDir = join(__dirname, 'scenarios', scenarioName);
+    const scenarioDir = join(import.meta.dir, 'scenarios', scenarioName);
     const scenarios: Scenario[] = ScenarioUtils.extractScenarios(scenarioDir);
     const scenario: Scenario = scenarios[index] || scenarios[0];
     console.log(

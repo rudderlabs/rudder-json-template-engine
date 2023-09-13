@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.4...v0.5.5) (2023-09-13)
+
+
+### Miscellaneous
+
+* make package public ([#38](https://github.com/rudderlabs/rudder-json-template-engine/issues/38)) ([5be5ea9](https://github.com/rudderlabs/rudder-json-template-engine/commit/5be5ea9a24448245b6e8f99a3dfd684df9b21f87))
+
 ## [0.5.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.3...v0.5.4) (2023-09-13)
 
 

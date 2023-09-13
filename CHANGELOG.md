@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.3...v0.5.4) (2023-09-13)
+
+
+### Miscellaneous
+
+* update npm package name ([#35](https://github.com/rudderlabs/rudder-json-template-engine/issues/35)) ([a503c61](https://github.com/rudderlabs/rudder-json-template-engine/commit/a503c6124f88a42bf33da3669c293e260cd67ad2))
+
 ## [0.5.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.2...v0.5.3) (2023-09-07)
 
 

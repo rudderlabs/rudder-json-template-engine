@@ -19,6 +19,9 @@
     "type": "git",
     "url": "https://github.com/rudderlabs/rudder-json-template-engine.git"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
     "@babel/eslint-parser": "^7.19.1",
     "@commitlint/cli": "^17.4.4",

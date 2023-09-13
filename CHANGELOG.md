@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.4.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.4...v0.4.0) (2023-09-13)
+
+
+### Features
+
+* add several features and tests ([#5](https://github.com/rudderlabs/rudder-json-template-engine/issues/5)) ([26d5fd8](https://github.com/rudderlabs/rudder-json-template-engine/commit/26d5fd814810a4972c503221d5bf9bca07720127))
+* add stryker mutation testing integration ([#25](https://github.com/rudderlabs/rudder-json-template-engine/issues/25)) ([55f8c22](https://github.com/rudderlabs/rudder-json-template-engine/commit/55f8c22783b35311ea56e6daab41773fa0bfab0b))
+* add support for array coalescing ([#15](https://github.com/rudderlabs/rudder-json-template-engine/issues/15)) ([2f3bf0f](https://github.com/rudderlabs/rudder-json-template-engine/commit/2f3bf0fba589edc403b76e5b1da9437fbe91524c))
+* add support for compile time expressions ([#12](https://github.com/rudderlabs/rudder-json-template-engine/issues/12)) ([4fc59c0](https://github.com/rudderlabs/rudder-json-template-engine/commit/4fc59c00289e1f10c0e22e4f80e7e72316e07091))
+* add support for index selectors ([#13](https://github.com/rudderlabs/rudder-json-template-engine/issues/13)) ([db8a661](https://github.com/rudderlabs/rudder-json-template-engine/commit/db8a661decada7c9d6b4d1aab4cda3d25f8fe748))
+* add support for using path type in complex paths ([#20](https://github.com/rudderlabs/rudder-json-template-engine/issues/20)) ([b086207](https://github.com/rudderlabs/rudder-json-template-engine/commit/b086207750c41c854b6792377dc31a5c30ecc79a))
+* add support to use context variables any where in the path ([#11](https://github.com/rudderlabs/rudder-json-template-engine/issues/11)) ([5e8f75e](https://github.com/rudderlabs/rudder-json-template-engine/commit/5e8f75e2fe7d86f8b0409470f5a1385734a686af))
+* refactor compile time expressions ([#16](https://github.com/rudderlabs/rudder-json-template-engine/issues/16)) ([cae81bf](https://github.com/rudderlabs/rudder-json-template-engine/commit/cae81bfec874c5ba097b2b5f972b5c7bf684874b))
+
+
+### Bug Fixes
+
+* add missing semi-colon ([dcee815](https://github.com/rudderlabs/rudder-json-template-engine/commit/dcee8151379f86f98699683e92168f29fdbbfac7))
+* block expressions ([#10](https://github.com/rudderlabs/rudder-json-template-engine/issues/10)) ([509fccf](https://github.com/rudderlabs/rudder-json-template-engine/commit/509fccf90190da65b929c9c149fbdaed3e45a174))
+* incorrect condition in function call expression ([#24](https://github.com/rudderlabs/rudder-json-template-engine/issues/24)) ([03d503b](https://github.com/rudderlabs/rudder-json-template-engine/commit/03d503b1bd5f08fa1df77229989415bc5bbc0f0e))
+
+
+### Miscellaneous
+
+* add test-cases for array extraction ([#30](https://github.com/rudderlabs/rudder-json-template-engine/issues/30)) ([7c1ee4b](https://github.com/rudderlabs/rudder-json-template-engine/commit/7c1ee4b8827930db0eaf5869135f46153e4ea5a1))
+* **ci:** remove the option to bump patch for features pre-major ([#22](https://github.com/rudderlabs/rudder-json-template-engine/issues/22)) ([e7b4ed6](https://github.com/rudderlabs/rudder-json-template-engine/commit/e7b4ed62f7951cac162bb330b920c05531b6c7da))
+* improve path processing ([#6](https://github.com/rudderlabs/rudder-json-template-engine/issues/6)) ([5adf623](https://github.com/rudderlabs/rudder-json-template-engine/commit/5adf623c4b34b34c90c7530bc93368156dffe797))
+* **parser:** create lexer to hold lexing logic ([#2](https://github.com/rudderlabs/rudder-json-template-engine/issues/2)) ([01b0c1a](https://github.com/rudderlabs/rudder-json-template-engine/commit/01b0c1a9d44ba18178de7948e9ede12e28557dd1))
+* readme docs ([140f6a2](https://github.com/rudderlabs/rudder-json-template-engine/commit/140f6a2d7566ac77e0c918e70289b899ab54de24))
+* release 0.1.0 ([2bcb2b4](https://github.com/rudderlabs/rudder-json-template-engine/commit/2bcb2b40f6c5b88169023a1e572f188ebd4b6240))
+* release 0.1.0 ([#1](https://github.com/rudderlabs/rudder-json-template-engine/issues/1)) ([51b2ca3](https://github.com/rudderlabs/rudder-json-template-engine/commit/51b2ca39688f84a9c1fdcd876cb0781dfda8d177))
+* release 0.2.0 ([b45e6d9](https://github.com/rudderlabs/rudder-json-template-engine/commit/b45e6d95f380de8dbf0617fe2fee8919e16d9f8d))
+* release 0.2.0 ([#3](https://github.com/rudderlabs/rudder-json-template-engine/issues/3)) ([40f824d](https://github.com/rudderlabs/rudder-json-template-engine/commit/40f824dfdc10159371a7cb6fabd6866e49e0e6b5))
+* release 0.2.1 ([#8](https://github.com/rudderlabs/rudder-json-template-engine/issues/8)) ([c6a3437](https://github.com/rudderlabs/rudder-json-template-engine/commit/c6a34375d897fbedd8c9d7532dff4ddedbb27453))
+* release 0.2.2 ([#9](https://github.com/rudderlabs/rudder-json-template-engine/issues/9)) ([02ffb67](https://github.com/rudderlabs/rudder-json-template-engine/commit/02ffb6726b92573c7366ddd5dc649c2619064243))
+* release 0.2.3 ([#17](https://github.com/rudderlabs/rudder-json-template-engine/issues/17)) ([693c391](https://github.com/rudderlabs/rudder-json-template-engine/commit/693c3911a0915f3590b7ce6bac8189919cd1c936))
+* release 0.2.4 ([#18](https://github.com/rudderlabs/rudder-json-template-engine/issues/18)) ([36b7e36](https://github.com/rudderlabs/rudder-json-template-engine/commit/36b7e36a140e6085ecef735edc24e0e188f0469a))
+* release 0.3.0 ([e7b2fef](https://github.com/rudderlabs/rudder-json-template-engine/commit/e7b2fefca4516faa49d59e44a17dd9257cb037b5))
+* release 0.3.0 ([#19](https://github.com/rudderlabs/rudder-json-template-engine/issues/19)) ([0c4c2fc](https://github.com/rudderlabs/rudder-json-template-engine/commit/0c4c2fcd1f30ebe81cfc54dbe85630c3ca6da78e))
+* release 0.4.0 ([20abcff](https://github.com/rudderlabs/rudder-json-template-engine/commit/20abcffd117f01d538d9395099f6fde4c278a307))
+* release 0.4.0 ([#21](https://github.com/rudderlabs/rudder-json-template-engine/issues/21)) ([1b4d08f](https://github.com/rudderlabs/rudder-json-template-engine/commit/1b4d08f0d0682c5449d81f33738e66e807516a8d))
+* release 0.4.1 ([#23](https://github.com/rudderlabs/rudder-json-template-engine/issues/23)) ([4e40b3c](https://github.com/rudderlabs/rudder-json-template-engine/commit/4e40b3cc2d247cfc2f6f3ee6ebd76ec65f0426a7))
+* release 0.5.0 ([#26](https://github.com/rudderlabs/rudder-json-template-engine/issues/26)) ([f3aea8e](https://github.com/rudderlabs/rudder-json-template-engine/commit/f3aea8e5efe8205c72f03fdac49b1656055348ab))
+* release 0.5.1 ([#28](https://github.com/rudderlabs/rudder-json-template-engine/issues/28)) ([19d94c2](https://github.com/rudderlabs/rudder-json-template-engine/commit/19d94c2254cdc33468decc8805b3dacb2c263325))
+* release 0.5.2 ([#31](https://github.com/rudderlabs/rudder-json-template-engine/issues/31)) ([2403e69](https://github.com/rudderlabs/rudder-json-template-engine/commit/2403e69ce15752dc3850910d96d4898167abe731))
+* release 0.5.3 ([#33](https://github.com/rudderlabs/rudder-json-template-engine/issues/33)) ([edbaed2](https://github.com/rudderlabs/rudder-json-template-engine/commit/edbaed2e89a494b8a13d9141168fcd7c8e661471))
+* release 0.5.4 ([#36](https://github.com/rudderlabs/rudder-json-template-engine/issues/36)) ([3f54778](https://github.com/rudderlabs/rudder-json-template-engine/commit/3f54778409e3f4b33ef712651e23586d89159740))
+* set up initial version ([29e351e](https://github.com/rudderlabs/rudder-json-template-engine/commit/29e351ea77ca89b2e0f945b17b1ab8fb9cbce86a))
+* update npm package name ([#35](https://github.com/rudderlabs/rudder-json-template-engine/issues/35)) ([a503c61](https://github.com/rudderlabs/rudder-json-template-engine/commit/a503c6124f88a42bf33da3669c293e260cd67ad2))
+* upgrade to node v18 ([#27](https://github.com/rudderlabs/rudder-json-template-engine/issues/27)) ([f654d34](https://github.com/rudderlabs/rudder-json-template-engine/commit/f654d34efad5cf5ef91b17ff4be77d07462a6da3))
+
 ## [0.5.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.3...v0.5.4) (2023-09-13)
 
 

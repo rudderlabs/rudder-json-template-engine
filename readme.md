@@ -288,10 +288,10 @@ For more examples, refer [Scenarios](test/scenarios)
 ## [Syntax](docs/syntax.md)
 
 ## Getting started
-`npm install rudder-json-template-engine`
+`npm install @rudderstack/json-template-engine`
 
 ```ts
-const { JsonTemplateEngine } = require('rudder-json-template-engine');
+const { JsonTemplateEngine } = require('@rudderstack/json-template-engine');
 const engine = JsonTemplateEngine.create(`'Hello ' + .name`);
 engine.evaluate({name: 'World'}); // => 'Hello World'
 ```

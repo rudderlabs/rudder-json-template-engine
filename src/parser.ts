@@ -828,18 +828,44 @@ export class JsonTemplateParser {
     return key;
   }
 
-  private parseObjectPropExpr(): ObjectPropExpression {
-    let key: Expression | string | undefined;
-    if (!this.lexer.matchSpread()) {
-      key = this.parseObjectKeyExpr();
-      this.lexer.expect(':');
+  private parseShortKeyValueObjectPropExpr(): ObjectPropExpression | undefined {
+    if (this.lexer.matchID() && (this.lexer.match(',', 1) || this.lexer.match('}', 1))) {
+      const key = this.lexer.lookahead().value;
+      const value = this.parseBaseExpr();
+      return {
+        type: SyntaxType.OBJECT_PROP_EXPR,
+        key,
+        value,
+      };
     }
-    const value = this.parseSpreadExpr();
+  }
+
+  private parseSpreadObjectPropExpr(): ObjectPropExpression | undefined {
+    if (this.lexer.matchSpread()) {
+      return {
+        type: SyntaxType.OBJECT_PROP_EXPR,
+        value: this.parseSpreadExpr(),
+      };
+    }
+  }
+
+  private parseNormalObjectPropExpr(): ObjectPropExpression {
+    const key = this.parseObjectKeyExpr();
+    this.lexer.expect(':');
+    const value = this.parseBaseExpr();
     return {
       type: SyntaxType.OBJECT_PROP_EXPR,
       key,
       value,
     };
+  }
+
+  private parseObjectPropExpr(): ObjectPropExpression {
+    return (
+      this.parseSpreadObjectPropExpr() ??
+      this.parseShortKeyValueObjectPropExpr() ??
+      this.parseNormalObjectPropExpr()
+    );
   }
 
   private parseObjectExpr(): ObjectExpression {

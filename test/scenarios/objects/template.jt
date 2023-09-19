@@ -1,14 +1,14 @@
 let c = "c key";
 let d = 3;
+let b = 2;
 let a = {
-    // short form for "a"
-    a: 1,
-    "b": 2,
+    "a": 1,
+    b,
     // [c] coverts to "c key"
     [c]: {
         // this coverts to d: 3
-        d: d
-    }
+        d
+    },
 };
 a.({
     a: .a,

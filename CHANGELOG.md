@@ -6,7 +6,6 @@
 ### Features
 
 * add support for short key value in object expr ([0f1e5ea](https://github.com/rudderlabs/rudder-json-template-engine/commit/0f1e5ea720118edd4e9bed8414164f23b3aa64fe))
-* **INT-667:** add support for short key value in object expr ([#40](https://github.com/rudderlabs/rudder-json-template-engine/issues/40)) ([0f1e5ea](https://github.com/rudderlabs/rudder-json-template-engine/commit/0f1e5ea720118edd4e9bed8414164f23b3aa64fe))
 
 ## [0.5.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.4...v0.5.5) (2023-09-13)
 

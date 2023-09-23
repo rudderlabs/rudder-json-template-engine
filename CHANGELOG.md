@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.5...v0.6.0) (2023-09-20)
+
+
+### Features
+
+* add support for short key value in object expr ([0f1e5ea](https://github.com/rudderlabs/rudder-json-template-engine/commit/0f1e5ea720118edd4e9bed8414164f23b3aa64fe))
+
 ## [0.5.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.4...v0.5.5) (2023-09-13)
 
 

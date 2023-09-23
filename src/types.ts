@@ -9,6 +9,8 @@ export enum Keyword {
   ASYNC = 'async',
   IN = 'in',
   NOT = 'not',
+  RETURN = 'return',
+  THROW = 'throw',
 }
 
 export enum TokenType {
@@ -74,6 +76,8 @@ export enum SyntaxType {
   FUNCTION_EXPR,
   FUNCTION_CALL_ARG,
   FUNCTION_CALL_EXPR,
+  RETURN_EXPR,
+  THROW_EXPR,
   STATEMENTS_EXPR,
 }
 
@@ -210,4 +214,12 @@ export interface ConditionalExpression extends Expression {
   if: Expression;
   then: Expression;
   else: Expression;
+}
+
+export interface ReturnExpression extends Expression {
+  value: Expression;
+}
+
+export interface ThrowExpression extends Expression {
+  value: Expression;
 }

@@ -28,6 +28,8 @@ import {
   Keyword,
   EngineOptions,
   PathType,
+  ReturnExpression,
+  ThrowExpression,
 } from './types';
 import { JsonTemplateParserError } from './errors';
 import { DATA_PARAM_KEY } from './constants';
@@ -997,6 +999,22 @@ export class JsonTemplateParser {
     };
   }
 
+  private parseReturnExpr(): ReturnExpression {
+    this.lexer.ignoreTokens(1);
+    return {
+      type: SyntaxType.RETURN_EXPR,
+      value: this.parseBaseExpr(),
+    };
+  }
+
+  private parseThrowExpr(): ThrowExpression {
+    this.lexer.ignoreTokens(1);
+    return {
+      type: SyntaxType.THROW_EXPR,
+      value: this.parseBaseExpr(),
+    };
+  }
+
   private parseKeywordBasedExpr(): Expression {
     const token = this.lexer.lookahead();
     switch (token.value) {
@@ -1006,6 +1024,10 @@ export class JsonTemplateParser {
         return this.parseLambdaExpr();
       case Keyword.ASYNC:
         return this.parseAsyncFunctionExpr();
+      case Keyword.RETURN:
+        return this.parseReturnExpr();
+      case Keyword.THROW:
+        return this.parseThrowExpr();
       case Keyword.FUNCTION:
         return this.parseFunctionExpr();
       default:

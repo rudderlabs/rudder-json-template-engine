@@ -34,6 +34,8 @@ import {
   BlockExpression,
   PathOptions,
   PathType,
+  ReturnExpression,
+  ThrowExpression,
 } from './types';
 import { CommonUtils } from './utils';
 
@@ -82,7 +84,6 @@ export class JsonTemplateTranslator {
     this.init();
     let code: string[] = [];
     const exprCode = this.translateExpr(this.expr, dest, ctx);
-
     code.push(`let ${dest};`);
     code.push(this.vars.map((elm) => `let ${elm};`).join(''));
     code.push(exprCode);
@@ -159,9 +160,32 @@ export class JsonTemplateTranslator {
       case SyntaxType.CONDITIONAL_EXPR:
         return this.translateConditionalExpr(expr as ConditionalExpression, dest, ctx);
 
+      case SyntaxType.RETURN_EXPR:
+        return this.translateReturnExpr(expr as ReturnExpression, dest, ctx);
+
+      case SyntaxType.THROW_EXPR:
+        return this.translateThrowExpr(expr as ThrowExpression, dest, ctx);
       default:
         return '';
     }
+  }
+
+  private translateThrowExpr(expr: ThrowExpression, _dest: string, ctx: string): string {
+    const code: string[] = [];
+    const value = this.acquireVar();
+    code.push(this.translateExpr(expr.value, value, ctx));
+    code.push(`throw ${value};`);
+    this.releaseVars(value);
+    return code.join('');
+  }
+
+  private translateReturnExpr(expr: ReturnExpression, _dest: string, ctx: string): string {
+    const code: string[] = [];
+    const value = this.acquireVar();
+    code.push(this.translateExpr(expr.value, value, ctx));
+    code.push(`return ${value};`);
+    this.releaseVars(value);
+    return code.join('');
   }
 
   private translateConditionalExpr(expr: ConditionalExpression, dest: string, ctx: string): string {

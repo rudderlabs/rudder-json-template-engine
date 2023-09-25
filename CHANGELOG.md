@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.6.0...v0.7.0) (2023-09-25)
+
+
+### Features
+
+* **INT-701:** add support for return and throw ([#42](https://github.com/rudderlabs/rudder-json-template-engine/issues/42)) ([ef15065](https://github.com/rudderlabs/rudder-json-template-engine/commit/ef15065376aa5cdfb6cb613f85e63b26cec9a5f0))
+
 ## [0.6.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.5.5...v0.6.0) (2023-09-20)
 
 

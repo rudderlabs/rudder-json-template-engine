@@ -463,22 +463,6 @@ export class JsonTemplateParser {
     };
   }
 
-  private containsLoopControlExpr(expr: Expression | undefined): boolean {
-    if (!expr) {
-      return false;
-    }
-    if (expr.type === SyntaxType.LOOP_CONTROL_EXPR) {
-      return true;
-    }
-    if (expr.type === SyntaxType.CONDITIONAL_EXPR) {
-      return (expr as ConditionalExpression).containsLoopControls;
-    }
-    if (expr.type === SyntaxType.STATEMENTS_EXPR) {
-      return (expr as StatementsExpression).statements.some((s) => this.containsLoopControlExpr(s));
-    }
-    return false;
-  }
-
   private parseCurlyBlockExpr(options?: BlockExpressionOptions): StatementsExpression {
     this.lexer.expect('{');
     const expr = this.parseStatementsExpr(options);
@@ -509,8 +493,6 @@ export class JsonTemplateParser {
         if: ifExpr,
         then: thenExpr,
         else: elseExpr,
-        containsLoopControls:
-          this.containsLoopControlExpr(thenExpr) || this.containsLoopControlExpr(elseExpr),
       };
     }
 

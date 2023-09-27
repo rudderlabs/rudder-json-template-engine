@@ -230,7 +230,6 @@ export interface ConditionalExpression extends Expression {
   if: Expression;
   then: Expression;
   else?: Expression;
-  containsLoopControls: boolean;
 }
 
 export type BlockExpressionOptions = {

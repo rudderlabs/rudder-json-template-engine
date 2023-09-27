@@ -36,6 +36,9 @@ import {
   PathType,
   ReturnExpression,
   ThrowExpression,
+  LoopExpression,
+  IncrementExpression,
+  LoopControlExpression,
 } from './types';
 import { CommonUtils } from './utils';
 
@@ -121,6 +124,9 @@ export class JsonTemplateTranslator {
       case SyntaxType.SPREAD_EXPR:
         return this.translateSpreadExpr(expr as SpreadExpression, dest, ctx);
 
+      case SyntaxType.INCREMENT:
+        return this.translateIncrementExpr(expr as IncrementExpression, dest, ctx);
+
       case SyntaxType.LITERAL:
         return this.translateLiteralExpr(expr as LiteralExpression, dest, ctx);
 
@@ -132,6 +138,12 @@ export class JsonTemplateTranslator {
 
       case SyntaxType.BLOCK_EXPR:
         return this.translateBlockExpr(expr as BlockExpression, dest, ctx);
+
+      case SyntaxType.LOOP_EXPR:
+        return this.translateLoopExpr(expr as LoopExpression, dest, ctx);
+
+      case SyntaxType.LOOP_CONTROL_EXPR:
+        return this.translateLoopControlExpr(expr as LoopControlExpression, dest, ctx);
 
       case SyntaxType.FUNCTION_EXPR:
         return this.translateFunctionExpr(expr as FunctionExpression, dest, ctx);
@@ -169,6 +181,46 @@ export class JsonTemplateTranslator {
         return '';
     }
   }
+  translateLoopControlExpr(expr: LoopControlExpression, _dest: string, _ctx: string): string {
+    return `${expr.control};`;
+  }
+
+  translateIncrementExpr(expr: IncrementExpression, dest: string, _ctx: string): string {
+    const code: string[] = [];
+    let incrementCode = `${expr.op}${expr.id};`;
+    if (expr.postfix) {
+      incrementCode = `${expr.id}${expr.op};`;
+    }
+    code.push(JsonTemplateTranslator.generateAssignmentCode(dest, incrementCode));
+    return code.join('');
+  }
+
+  private translateLoopExpr(expr: LoopExpression, dest: string, ctx: string): string {
+    const code: string[] = [];
+    const init = this.acquireVar();
+    const test = this.acquireVar();
+    const update = this.acquireVar();
+    const body = this.acquireVar();
+    const iterator = this.acquireVar();
+    if (expr.init) {
+      code.push(this.translateExpr(expr.init, init, ctx));
+    }
+    code.push(`for(let ${iterator}=0;;${iterator}++){`);
+    if (expr.update) {
+      code.push(`if(${iterator} > 0) {`);
+      code.push(this.translateExpr(expr.update, update, ctx));
+      code.push('}');
+    }
+    if (expr.test) {
+      code.push(this.translateExpr(expr.test, test, ctx));
+      code.push(`if(!${test}){break;}`);
+    }
+    code.push(this.translateExpr(expr.body, body, ctx));
+    code.push(`}`);
+    JsonTemplateTranslator.generateAssignmentCode(dest, body);
+    this.releaseVars(iterator, body, update, test, init);
+    return code.join('');
+  }
 
   private translateThrowExpr(expr: ThrowExpression, _dest: string, ctx: string): string {
     const code: string[] = [];
@@ -181,29 +233,29 @@ export class JsonTemplateTranslator {
 
   private translateReturnExpr(expr: ReturnExpression, _dest: string, ctx: string): string {
     const code: string[] = [];
-    const value = this.acquireVar();
-    code.push(this.translateExpr(expr.value, value, ctx));
-    code.push(`return ${value};`);
-    this.releaseVars(value);
+    if (expr.value) {
+      const value = this.acquireVar();
+      code.push(this.translateExpr(expr.value, value, ctx));
+      code.push(`return ${value};`);
+      this.releaseVars(value);
+    }
+    code.push(`return ${ctx};`);
     return code.join('');
   }
 
   private translateConditionalExpr(expr: ConditionalExpression, dest: string, ctx: string): string {
     const code: string[] = [];
     const ifVar = this.acquireVar();
-    const thenVar = this.acquireVar();
-    const elseVar = this.acquireVar();
     code.push(this.translateExpr(expr.if, ifVar, ctx));
     code.push(`if(${ifVar}){`);
-    code.push(this.translateExpr(expr.then, thenVar, ctx));
-
-    code.push(`${dest} = ${thenVar};`);
+    code.push(this.translateExpr(expr.then, dest, ctx));
     code.push('} else {');
-    code.push(this.translateExpr(expr.else, elseVar, ctx));
-    code.push(`${dest} = ${elseVar};`);
+    if (expr.else) {
+      code.push(this.translateExpr(expr.else, dest, ctx));
+    } else {
+      code.push(`${dest} = undefined;`);
+    }
     code.push('}');
-    this.releaseVars(elseVar);
-    this.releaseVars(thenVar);
     this.releaseVars(ifVar);
     return code.join('');
   }
@@ -551,7 +603,7 @@ export class JsonTemplateTranslator {
     return simplePath.join('');
   }
 
-  private translateAssignmentExpr(expr: AssignmentExpression, dest: string, ctx: string): string {
+  private translateAssignmentExpr(expr: AssignmentExpression, _dest: string, ctx: string): string {
     const code: string[] = [];
     const valueVar = this.acquireVar();
     code.push(this.translateExpr(expr.value, valueVar, ctx));
@@ -562,8 +614,7 @@ export class JsonTemplateTranslator {
       true,
     );
     JsonTemplateTranslator.ValidateAssignmentPath(assignmentPath);
-    code.push(JsonTemplateTranslator.generateAssignmentCode(assignmentPath, valueVar));
-    code.push(JsonTemplateTranslator.generateAssignmentCode(dest, valueVar));
+    code.push(JsonTemplateTranslator.generateAssignmentCode(assignmentPath, valueVar, expr.op));
     this.releaseVars(valueVar);
     return code.join('');
   }
@@ -765,15 +816,7 @@ export class JsonTemplateTranslator {
     code.push(this.translateExpr(args[0], val1, ctx));
     code.push(this.translateExpr(args[1], val2, ctx));
 
-    code.push(
-      dest,
-      '=',
-      binaryOperators[expr.op](
-        JsonTemplateTranslator.returnSingleValue(args[0], val1),
-        JsonTemplateTranslator.returnSingleValue(args[1], val2),
-      ),
-      ';',
-    );
+    code.push(dest, '=', binaryOperators[expr.op](val1, val2), ';');
 
     this.releaseVars(val1, val2);
     return code.join('');
@@ -809,14 +852,6 @@ export class JsonTemplateTranslator {
     return `Object.values(${varName}).filter(v => v !== null && v !== undefined)`;
   }
 
-  private static returnSingleValue(arg: Expression, varName: string): string {
-    if (arg.type === SyntaxType.LITERAL) {
-      return varName;
-    }
-
-    return `(Array.isArray(${varName}) ? ${varName}[0] : ${varName})`;
-  }
-
   private static convertToSingleValueIfSafe(varName: string): string {
     return `${varName} = ${varName}.length < 2 ? ${varName}[0] : ${varName};`;
   }
@@ -829,7 +864,7 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private static generateAssignmentCode(key: string, val: string): string {
-    return `${key}=${val};`;
+  private static generateAssignmentCode(key: string, val: string, op: string = '='): string {
+    return `${key}${op}${val};`;
   }
 }

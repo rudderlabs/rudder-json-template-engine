@@ -2,5 +2,5 @@ let a = [
     "string1", `string2`, 'string3', "aa\"a", true, false, 
     undefined, null, 20.02, .22, [1., 2, 3], {"b": [1, 2]}
 ];
-[...a[-2], a[0,8], a[1:6], a[-1].b[1]]
+[...~r a[-2], a[0,8], a[1:6],~r a[-1].b[1]]
 

@@ -2,14 +2,57 @@ import { Scenario } from '../../types';
 
 export const data: Scenario[] = [
   {
-    templatePath: 'if-then.jt',
+    templatePath: 'empty_if.jt',
+    error: 'Empty statements are not allowed in loop and condtional expressions',
+  },
+  {
+    templatePath: 'empty_then.jt',
+    error: 'Empty statements are not allowed in loop and condtional expressions',
+  },
+  {
+    templatePath: 'if_block.jt',
+    input: {
+      a: -5,
+    },
+    output: 'a <= 1',
+  },
+  {
+    templatePath: 'if_block.jt',
+    input: {
+      a: 1,
+    },
+    output: 'a <= 1',
+  },
+  {
+    templatePath: 'if_block.jt',
+    input: {
+      a: 2,
+    },
+    output: 'a > 1',
+  },
+  {
+    templatePath: 'if_block.jt',
+    input: {
+      a: 3,
+    },
+    output: 'a > 2',
+  },
+  {
+    templatePath: 'if_block.jt',
+    input: {
+      a: 10,
+    },
+    output: 'a > 3',
+  },
+  {
+    templatePath: 'if_then.jt',
     input: {
       a: -5,
     },
     output: 0,
   },
   {
-    templatePath: 'if-then.jt',
+    templatePath: 'if_then.jt',
     input: {
       a: 5,
     },
@@ -40,21 +83,21 @@ export const data: Scenario[] = [
     output: 15,
   },
   {
-    templatePath: 'undefined-arr-cond.jt',
+    templatePath: 'undefined_arr_cond.jt',
     input: {
       products: [{ a: 1 }, { a: 2 }],
     },
     output: 'no',
   },
   {
-    templatePath: 'undefined-arr-cond.jt',
+    templatePath: 'undefined_arr_cond.jt',
     input: {
       products: [{ objectID: 1 }, { objectID: 2 }],
     },
     output: 'yes',
   },
   {
-    templatePath: 'undefined-arr-cond.jt',
+    templatePath: 'undefined_arr_cond.jt',
     input: {
       otherProperty: [{ objectID: 1 }, { objectID: 2 }],
     },

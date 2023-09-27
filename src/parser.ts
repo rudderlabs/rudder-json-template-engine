@@ -30,9 +30,13 @@ import {
   PathType,
   ReturnExpression,
   ThrowExpression,
+  LoopControlExpression,
+  BlockExpressionOptions,
+  LoopExpression,
+  IncrementExpression,
 } from './types';
 import { JsonTemplateParserError } from './errors';
-import { DATA_PARAM_KEY } from './constants';
+import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { CommonUtils } from './utils';
 import { JsonTemplateEngine } from './engine';
@@ -79,10 +83,40 @@ export class JsonTemplateParser {
     return statements;
   }
 
-  private parseStatementsExpr(blockEnd?: string): StatementsExpression {
+  private validateStatements(statements: Expression[], options?: BlockExpressionOptions): void {
+    if (!statements.length) {
+      if (
+        options?.parentType === SyntaxType.CONDITIONAL_EXPR ||
+        options?.parentType === SyntaxType.LOOP_EXPR
+      ) {
+        throw new JsonTemplateParserError(
+          'Empty statements are not allowed in loop and condtional expressions',
+        );
+      }
+      return;
+    }
+    for (let i = 0; i < statements.length; i++) {
+      const currStatement = statements[i];
+      if (
+        currStatement.type === SyntaxType.RETURN_EXPR ||
+        currStatement.type === SyntaxType.THROW_EXPR ||
+        currStatement.type === SyntaxType.LOOP_CONTROL_EXPR
+      ) {
+        if (options?.parentType !== SyntaxType.CONDITIONAL_EXPR || i !== statements.length - 1) {
+          throw new JsonTemplateParserError(
+            'return, throw, continue and break statements are only allowed as last statements in conditional expressions',
+          );
+        }
+      }
+    }
+  }
+
+  private parseStatementsExpr(options?: BlockExpressionOptions): StatementsExpression {
+    const statements = this.parseStatements(options?.blockEnd);
+    this.validateStatements(statements, options);
     return {
       type: SyntaxType.STATEMENTS_EXPR,
-      statements: this.parseStatements(blockEnd),
+      statements,
     };
   }
 
@@ -92,8 +126,8 @@ export class JsonTemplateParser {
 
   private parseAssignmentExpr(): AssignmentExpression | Expression {
     const expr = this.parseNextExpr(OperatorType.ASSIGNMENT);
-    if (expr.type === SyntaxType.PATH && this.lexer.match('=')) {
-      this.lexer.ignoreTokens(1);
+    if (expr.type === SyntaxType.PATH && this.lexer.matchAssignment()) {
+      const op = this.lexer.value();
       const path = expr as PathExpression;
       if (!path.root || typeof path.root === 'object' || path.root === DATA_PARAM_KEY) {
         throw new JsonTemplateParserError('Invalid assignment path');
@@ -105,6 +139,7 @@ export class JsonTemplateParser {
       return {
         type: SyntaxType.ASSIGNMENT_EXPR,
         value: this.parseBaseExpr(),
+        op,
         path,
       } as AssignmentExpression;
     }
@@ -150,6 +185,10 @@ export class JsonTemplateParser {
       case OperatorType.POWER:
         return this.parseUnaryExpr();
       case OperatorType.UNARY:
+        return this.parsePrefixIncreamentExpr();
+      case OperatorType.PREFIX_INCREMENT:
+        return this.parsePostfixIncreamentExpr();
+      case OperatorType.POSTFIX_INCREMENT:
         return this.parsePathAfterExpr();
       default:
         return this.parseConditionalExpr();
@@ -260,6 +299,7 @@ export class JsonTemplateParser {
       pathType,
     };
     if (!expr.parts.length) {
+      expr.pathType = PathType.SIMPLE;
       return expr;
     }
     return JsonTemplateParser.updatePathExpr(expr);
@@ -410,34 +450,94 @@ export class JsonTemplateParser {
     return [objectFilter, ...indexFilters];
   }
 
+  private parseLoopControlExpr(): LoopControlExpression {
+    return {
+      type: SyntaxType.LOOP_CONTROL_EXPR,
+      control: this.lexer.value(),
+    };
+  }
+
+  private containsLoopControlExpr(expr: Expression | undefined): boolean {
+    if (!expr) {
+      return false;
+    }
+    if (expr.type === SyntaxType.LOOP_CONTROL_EXPR) {
+      return true;
+    }
+    if (expr.type === SyntaxType.CONDITIONAL_EXPR) {
+      return (expr as ConditionalExpression).containsLoopControls;
+    }
+    if (expr.type === SyntaxType.STATEMENTS_EXPR) {
+      return (expr as StatementsExpression).statements.some((s) => this.containsLoopControlExpr(s));
+    }
+    return false;
+  }
+
+  private parseCurlyBlockExpr(options?: BlockExpressionOptions): StatementsExpression {
+    this.lexer.expect('{');
+    const expr = this.parseStatementsExpr(options);
+    this.lexer.expect('}');
+    return expr;
+  }
+
+  private parseConditionalBodyExpr(): Expression {
+    if (this.lexer.match('{')) {
+      return this.parseCurlyBlockExpr({ blockEnd: '}', parentType: SyntaxType.CONDITIONAL_EXPR });
+    }
+    return this.parseBaseExpr();
+  }
+
   private parseConditionalExpr(): ConditionalExpression | Expression {
     const ifExpr = this.parseNextExpr(OperatorType.CONDITIONAL);
 
     if (this.lexer.match('?')) {
       this.lexer.ignoreTokens(1);
-      const thenExpr = this.parseConditionalExpr();
+      const thenExpr = this.parseConditionalBodyExpr();
+      let elseExpr: Expression | undefined;
       if (this.lexer.match(':')) {
         this.lexer.ignoreTokens(1);
-        const elseExpr = this.parseConditionalExpr();
-        return {
-          type: SyntaxType.CONDITIONAL_EXPR,
-          if: ifExpr,
-          then: thenExpr,
-          else: elseExpr,
-        };
+        elseExpr = this.parseConditionalBodyExpr();
       }
       return {
         type: SyntaxType.CONDITIONAL_EXPR,
         if: ifExpr,
         then: thenExpr,
-        else: {
-          type: SyntaxType.LITERAL,
-          tokenType: TokenType.UNDEFINED,
-        },
+        else: elseExpr,
+        containsLoopControls:
+          this.containsLoopControlExpr(thenExpr) || this.containsLoopControlExpr(elseExpr),
       };
     }
 
     return ifExpr;
+  }
+
+  private parseLoopExpr(): LoopExpression {
+    this.lexer.ignoreTokens(1);
+    let init: Expression | undefined;
+    let test: Expression | undefined;
+    let update: Expression | undefined;
+    if (!this.lexer.match('{')) {
+      this.lexer.expect('(');
+      if (!this.lexer.match(';')) {
+        init = this.parseAssignmentExpr();
+      }
+      this.lexer.expect(';');
+      if (!this.lexer.match(';')) {
+        test = this.parseLogicalORExpr();
+      }
+      this.lexer.expect(';');
+      if (!this.lexer.match(')')) {
+        update = this.parseAssignmentExpr();
+      }
+      this.lexer.expect(')');
+    }
+    return {
+      type: SyntaxType.LOOP_EXPR,
+      init,
+      test,
+      update,
+      body: this.parseCurlyBlockExpr({ blockEnd: '}', parentType: SyntaxType.LOOP_EXPR }),
+    };
   }
 
   private parseArrayFilterExpr(): ArrayFilterExpression {
@@ -537,9 +637,7 @@ export class JsonTemplateParser {
       this.lexer.match('==$') ||
       this.lexer.match('$=') ||
       this.lexer.match('=$') ||
-      this.lexer.match('*==') ||
       this.lexer.match('==*') ||
-      this.lexer.match('*=') ||
       this.lexer.match('=*')
     ) {
       return {
@@ -628,9 +726,59 @@ export class JsonTemplateParser {
     return expr;
   }
 
+  private parsePrefixIncreamentExpr(): IncrementExpression | Expression {
+    if (this.lexer.matchIncrement() || this.lexer.matchDecrement()) {
+      const op = this.lexer.value() as string;
+      if (!this.lexer.matchID()) {
+        throw new JsonTemplateParserError('Invalid prefix increment expression');
+      }
+      const id = this.lexer.value();
+      return {
+        type: SyntaxType.INCREMENT,
+        op,
+        id,
+      };
+    }
+
+    return this.parseNextExpr(OperatorType.PREFIX_INCREMENT);
+  }
+
+  private convertToID(expr: Expression): string {
+    if (expr.type === SyntaxType.PATH) {
+      const path = expr as PathExpression;
+      if (
+        !path.root ||
+        typeof path.root !== 'string' ||
+        path.parts.length !== 0 ||
+        path.root === DATA_PARAM_KEY ||
+        path.root === BINDINGS_PARAM_KEY
+      ) {
+        throw new JsonTemplateParserError('Invalid postfix increment expression');
+      }
+      return path.root;
+    }
+    throw new JsonTemplateParserError('Invalid postfix increment expression');
+  }
+
+  private parsePostfixIncreamentExpr(): IncrementExpression | Expression {
+    let expr = this.parseNextExpr(OperatorType.POSTFIX_INCREMENT);
+
+    if (this.lexer.matchIncrement() || this.lexer.matchDecrement()) {
+      return {
+        type: SyntaxType.INCREMENT,
+        op: this.lexer.value() as string,
+        id: this.convertToID(expr),
+        postfix: true,
+      };
+    }
+
+    return expr;
+  }
+
   private parseUnaryExpr(): UnaryExpression | Expression {
     if (
       this.lexer.match('!') ||
+      this.lexer.match('+') ||
       this.lexer.match('-') ||
       this.lexer.matchTypeOf() ||
       this.lexer.matchAwait()
@@ -647,6 +795,7 @@ export class JsonTemplateParser {
 
   private shouldSkipPathParsing(expr: Expression): boolean {
     switch (expr.type) {
+      case SyntaxType.EMPTY:
       case SyntaxType.DEFINITION_EXPR:
       case SyntaxType.ASSIGNMENT_EXPR:
       case SyntaxType.SPREAD_EXPR:
@@ -803,13 +952,10 @@ export class JsonTemplateParser {
   private parseFunctionExpr(asyncFn = false): FunctionExpression {
     this.lexer.ignoreTokens(1);
     const params = this.parseFunctionDefinitionParams();
-    this.lexer.expect('{');
-    const statements = this.parseStatementsExpr('}');
-    this.lexer.expect('}');
     return {
       type: SyntaxType.FUNCTION_EXPR,
       params,
-      body: statements,
+      body: this.parseCurlyBlockExpr({ blockEnd: '}' }),
       async: asyncFn,
     };
   }
@@ -1001,9 +1147,13 @@ export class JsonTemplateParser {
 
   private parseReturnExpr(): ReturnExpression {
     this.lexer.ignoreTokens(1);
+    let value: Expression | undefined;
+    if (!this.lexer.match(';')) {
+      value = this.parseBaseExpr();
+    }
     return {
       type: SyntaxType.RETURN_EXPR,
-      value: this.parseBaseExpr(),
+      value,
     };
   }
 
@@ -1030,6 +1180,11 @@ export class JsonTemplateParser {
         return this.parseThrowExpr();
       case Keyword.FUNCTION:
         return this.parseFunctionExpr();
+      case Keyword.FOR:
+        return this.parseLoopExpr();
+      case Keyword.CONTINUE:
+      case Keyword.BREAK:
+        return this.parseLoopControlExpr();
       default:
         return this.parseDefinitionExpr();
     }

@@ -97,8 +97,6 @@ export const binaryOperators = {
     return endsWith(val2, val1);
   },
 
-  '*==': containsStrict,
-
   '==*': function (val1, val2): string {
     return containsStrict(val2, val1);
   },
@@ -106,8 +104,6 @@ export const binaryOperators = {
   '=*': function (val1, val2): string {
     return contains(val2, val1);
   },
-
-  '*=': contains,
 
   '+': function (val1, val2): string {
     return `${val1}+${val2}`;

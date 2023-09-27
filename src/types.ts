@@ -11,6 +11,9 @@ export enum Keyword {
   NOT = 'not',
   RETURN = 'return',
   THROW = 'throw',
+  CONTINUE = 'continue',
+  BREAK = 'break',
+  FOR = 'for',
 }
 
 export enum TokenType {
@@ -30,6 +33,7 @@ export enum TokenType {
 }
 
 // In the order of precedence
+
 export enum OperatorType {
   BASE,
   CONDITIONAL,
@@ -44,6 +48,8 @@ export enum OperatorType {
   MULTIPLICATION,
   POWER,
   UNARY,
+  PREFIX_INCREMENT,
+  POSTFIX_INCREMENT,
 }
 
 export enum SyntaxType {
@@ -52,6 +58,7 @@ export enum SyntaxType {
   PATH_OPTIONS,
   SELECTOR,
   LAMBDA_ARG,
+  INCREMENT,
   LITERAL,
   LOGICAL_COALESCE_EXPR,
   LOGICAL_OR_EXPR,
@@ -79,6 +86,8 @@ export enum SyntaxType {
   RETURN_EXPR,
   THROW_EXPR,
   STATEMENTS_EXPR,
+  LOOP_CONTROL_EXPR,
+  LOOP_EXPR,
 }
 
 export enum PathType {
@@ -158,6 +167,7 @@ export interface ConcatExpression extends Expression {
 export interface AssignmentExpression extends Expression {
   path: PathExpression;
   value: Expression;
+  op: string;
 }
 
 export interface DefinitionExpression extends Expression {
@@ -195,6 +205,12 @@ export interface PathExpression extends Expression {
   pathType: PathType;
 }
 
+export interface IncrementExpression extends Expression {
+  id: string;
+  op: string;
+  postfix?: boolean;
+}
+
 export interface SelectorExpression extends Expression {
   selector: string;
   prop?: Token;
@@ -213,11 +229,27 @@ export interface FunctionCallExpression extends Expression {
 export interface ConditionalExpression extends Expression {
   if: Expression;
   then: Expression;
-  else: Expression;
+  else?: Expression;
+  containsLoopControls: boolean;
 }
 
+export type BlockExpressionOptions = {
+  blockEnd?: string;
+  parentType?: SyntaxType;
+};
+
 export interface ReturnExpression extends Expression {
-  value: Expression;
+  value?: Expression;
+}
+
+export interface LoopControlExpression extends Expression {
+  control: string;
+}
+export interface LoopExpression extends Expression {
+  init?: Expression;
+  test?: Expression;
+  update?: Expression;
+  body: StatementsExpression;
 }
 
 export interface ThrowExpression extends Expression {

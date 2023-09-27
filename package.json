@@ -1,6 +1,6 @@
 {
   "name": "@rudderstack/json-template-engine",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "homepage": "https://github.com/rudderlabs/rudder-json-template-engine",
   "description": "A library for evaluating JSON template expressions.",
   "main": "build/index.js",
@@ -56,7 +56,7 @@
     "format": "prettier --write '**/*.ts' '**/*.js' '**/*.json'",
     "prepare": "husky install",
     "jest:scenarios": "jest e2e.test.ts --verbose",
-    "test:scenario": "ts-node test/test_scenario.ts",
+    "test:scenario": "jest test/scenario.test.ts --verbose",
     "test:stryker": "stryker run"
   },
   "lint-staged": {

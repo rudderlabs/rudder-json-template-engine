@@ -45,6 +45,8 @@ const EMPTY_EXPR = { type: SyntaxType.EMPTY };
 export class JsonTemplateParser {
   private lexer: JsonTemplateLexer;
   private options?: EngineOptions;
+  // indicates currently how many loops being parsed
+  private loopCount = 0;
 
   constructor(lexer: JsonTemplateLexer, options?: EngineOptions) {
     this.lexer = lexer;
@@ -451,9 +453,13 @@ export class JsonTemplateParser {
   }
 
   private parseLoopControlExpr(): LoopControlExpression {
+    const control = this.lexer.value();
+    if (!this.loopCount) {
+      throw new JsonTemplateParserError(`encounted loop control outside loop: ${control}`);
+    }
     return {
       type: SyntaxType.LOOP_CONTROL_EXPR,
-      control: this.lexer.value(),
+      control,
     };
   }
 
@@ -512,6 +518,7 @@ export class JsonTemplateParser {
   }
 
   private parseLoopExpr(): LoopExpression {
+    this.loopCount++;
     this.lexer.ignoreTokens(1);
     let init: Expression | undefined;
     let test: Expression | undefined;
@@ -531,12 +538,14 @@ export class JsonTemplateParser {
       }
       this.lexer.expect(')');
     }
+    const body = this.parseCurlyBlockExpr({ blockEnd: '}', parentType: SyntaxType.LOOP_EXPR });
+    this.loopCount--;
     return {
       type: SyntaxType.LOOP_EXPR,
       init,
       test,
       update,
-      body: this.parseCurlyBlockExpr({ blockEnd: '}', parentType: SyntaxType.LOOP_EXPR }),
+      body,
     };
   }
 

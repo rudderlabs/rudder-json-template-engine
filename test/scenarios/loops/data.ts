@@ -7,6 +7,10 @@ export const data: Scenario[] = [
       'return, throw, continue and break statements are only allowed as last statements in conditional expressions',
   },
   {
+    templatePath: 'break_without_loop.jt',
+    error: 'encounted loop control outside loop',
+  },
+  {
     templatePath: 'complex_loop.jt',
     output: 10,
   },
@@ -14,6 +18,10 @@ export const data: Scenario[] = [
     templatePath: 'continue_without_condition.jt',
     error:
       'return, throw, continue and break statements are only allowed as last statements in conditional expressions',
+  },
+  {
+    templatePath: 'continue_without_loop.jt',
+    error: 'encounted loop control outside loop',
   },
   {
     templatePath: 'continue.jt',

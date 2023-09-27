@@ -1,4 +1,6 @@
-.num > 1 ? {
-    continue;
-    let count = 0;
+for {
+    .num > 1 ? {
+        break;
+        let count = 0;
+    }
 }

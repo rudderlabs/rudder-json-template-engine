@@ -1,0 +1,8 @@
+let count = 0;
+let i = 0;
+for {
+    i > ^.num ? break;
+    count+=i;
+    i++;
+}
+count

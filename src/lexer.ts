@@ -41,6 +41,16 @@ export class JsonTemplateLexer {
     return token.type === TokenType.PUNCT && token.value === value;
   }
 
+  matchAssignment(): boolean {
+    return (
+      this.match('=') ||
+      this.match('+=') ||
+      this.match('-=') ||
+      this.match('*=') ||
+      this.match('/=')
+    );
+  }
+
   matchLiteral(): boolean {
     return JsonTemplateLexer.isLiteralToken(this.lookahead());
   }
@@ -75,6 +85,14 @@ export class JsonTemplateLexer {
 
   matchSpread(): boolean {
     return this.match('...');
+  }
+
+  matchIncrement(): boolean {
+    return this.match('++');
+  }
+
+  matchDecrement(): boolean {
+    return this.match('--');
   }
 
   matchPathPartSelector(): boolean {
@@ -488,7 +506,7 @@ export class JsonTemplateLexer {
             range: [start, this.idx],
           };
         }
-      } else if ('=!^$*><'.indexOf(ch1) >= 0) {
+      } else if ('=!^$><'.indexOf(ch1) >= 0) {
         this.idx += 2;
         return {
           type: TokenType.PUNCT,
@@ -581,14 +599,29 @@ export class JsonTemplateLexer {
     }
   }
 
+  private scanPunctuatorForArithmeticAssignment(): Token | undefined {
+    let start = this.idx,
+      ch1 = this.codeChars[this.idx],
+      ch2 = this.codeChars[this.idx + 1];
+    if ('+-/*'.includes(ch1) && ch2 === '=') {
+      this.idx += 2;
+      return {
+        type: TokenType.PUNCT,
+        value: ch1 + ch2,
+        range: [start, this.idx],
+      };
+    }
+  }
+
   private scanPunctuator(): Token | undefined {
     return (
       this.scanPunctuatorForDots() ||
       this.scanPunctuatorForQuestionMarks() ||
+      this.scanPunctuatorForArithmeticAssignment() ||
       this.scanPunctuatorForEquality() ||
       this.scanPunctuatorForPaths() ||
       this.scanPunctuatorForRepeatedTokens('?', 3) ||
-      this.scanPunctuatorForRepeatedTokens('|&*.=>?<', 2) ||
+      this.scanPunctuatorForRepeatedTokens('|&*.=>?<+-', 2) ||
       this.scanSingleCharPunctuators()
     );
   }

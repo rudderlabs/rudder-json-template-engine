@@ -1,5 +1,5 @@
-import { readdirSync } from 'fs';
-import { join } from 'path';
+import { glob } from 'glob';
+import path, { join } from 'path';
 import { Command } from 'commander';
 import { ScenarioUtils } from './utils';
 import { Scenario } from './types';
@@ -12,13 +12,14 @@ const opts = command.opts();
 let scenarios = opts.scenarios.split(/[, ]/);
 
 if (scenarios[0] === 'all') {
-  scenarios = readdirSync(join(__dirname, rootDirName));
+  scenarios = glob.sync(join(__dirname, rootDirName, '**/data.ts'));
 }
 
 describe('Scenarios tests', () => {
-  scenarios.forEach((scenarioName) => {
+  scenarios.forEach((scenarioFileName) => {
+    const scenarioDir = path.dirname(scenarioFileName);
+    const scenarioName = path.basename(scenarioDir);
     describe(`${scenarioName}`, () => {
-      const scenarioDir = join(__dirname, rootDirName, scenarioName);
       const scenarios = ScenarioUtils.extractScenarios(scenarioDir);
       scenarios.forEach((scenario, index) => {
         it(`Scenario ${index}: ${Scenario.getTemplatePath(scenario)}`, async () => {

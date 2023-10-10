@@ -1,5 +1,13 @@
-let a = 10
-let b = -a + 30
+let a = 3;
+a*=3;
+--a;
+++a;
+let b = -a + 30;
+b-=1
+b/=2
+b+=1;
+b--;
+b++;
 let cKey = "c key";
 let c = { a: { b: [a, b], [cKey]: 2 } }
 let {d, e, f} = {d: 2, e: 2, f: 1}

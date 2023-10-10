@@ -1,12 +1,14 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { JsonTemplateEngine } from '../../src';
+import { JsonTemplateEngine, PathType } from '../../src';
 import { Scenario } from '../types';
 
 export class ScenarioUtils {
   static createTemplateEngine(scenarioDir: string, scenario: Scenario): JsonTemplateEngine {
     const templatePath = join(scenarioDir, Scenario.getTemplatePath(scenario));
     const template = readFileSync(templatePath, 'utf-8');
+    scenario.options = scenario.options || {};
+    scenario.options.defaultPathType = scenario.options.defaultPathType || PathType.SIMPLE;
     return JsonTemplateEngine.create(template, scenario.options);
   }
 

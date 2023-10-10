@@ -7,7 +7,7 @@ export const data: Scenario[] = [
     },
     output: {
       a: {
-        b: [12, 22],
+        b: [11, 13],
         'c key': 4,
       },
     },

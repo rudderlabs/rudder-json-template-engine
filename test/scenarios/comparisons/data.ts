@@ -23,9 +23,6 @@ export const data: Scenario[] = [
       true,
       true,
       true,
-      true,
-      true,
-      true,
     ],
   },
 ];

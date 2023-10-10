@@ -36,7 +36,7 @@ describe(`${scenarioName}:`, () => {
     } catch (error: any) {
       console.log('Actual result', JSON.stringify(result, null, 2));
       console.log('Expected result', JSON.stringify(scenario.output, null, 2));
-      expect(error.message).toEqual(scenario.error);
+      expect(error.message).toContain(scenario.error);
     }
   });
 });

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.7.0...v0.8.0) (2023-10-10)
+
+
+### Features
+
+* **INT-723:** add support for loops ([#44](https://github.com/rudderlabs/rudder-json-template-engine/issues/44)) ([d238392](https://github.com/rudderlabs/rudder-json-template-engine/commit/d238392a6cd2674b9bac3e22b8ee5a3f9eca40f3))
+
 ## [0.7.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.6.0...v0.7.0) (2023-09-25)
 
 

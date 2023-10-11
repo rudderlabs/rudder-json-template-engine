@@ -1,0 +1,4 @@
+.num % 2 !== 0 ? {
+    throw new Error("num must be even");
+    let count = 0;
+}

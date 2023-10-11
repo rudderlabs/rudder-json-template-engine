@@ -3,7 +3,7 @@ import { Scenario } from '../../types';
 export const data: Scenario[] = [
   {
     templatePath: 'function_calls.jt',
-    output: ['abc', undefined, undefined],
+    output: ['abc', null, undefined],
   },
   {
     templatePath: 'js_date_function.jt',

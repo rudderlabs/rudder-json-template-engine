@@ -1,0 +1,6 @@
+for {
+    .num > 1 ? {
+        continue;
+        let count = 0;
+    }
+}

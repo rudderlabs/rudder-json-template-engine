@@ -135,3 +135,6 @@ build/
 
 # stryker temp files
 .stryker-tmp
+
+Mac
+.DS_Store

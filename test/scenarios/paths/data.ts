@@ -164,5 +164,8 @@ export const data: Scenario[] = [
       4,
       1,
     ],
+    options: {
+      defaultPathType: PathType.RICH,
+    },
   },
 ];

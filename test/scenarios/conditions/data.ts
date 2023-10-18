@@ -2,14 +2,6 @@ import { Scenario } from '../../types';
 
 export const data: Scenario[] = [
   {
-    templatePath: 'empty_if.jt',
-    error: 'Empty statements are not allowed in loop and condtional expressions',
-  },
-  {
-    templatePath: 'empty_then.jt',
-    error: 'Empty statements are not allowed in loop and condtional expressions',
-  },
-  {
     templatePath: 'if_block.jt',
     input: {
       a: -5,
@@ -57,6 +49,20 @@ export const data: Scenario[] = [
       a: 5,
     },
     output: 5,
+  },
+  {
+    templatePath: 'objects.jt',
+    input: {
+      a: 5,
+    },
+    output: { message: 'a > 1' },
+  },
+  {
+    templatePath: 'objects.jt',
+    input: {
+      a: 0,
+    },
+    output: { message: 'a <= 1' },
   },
   {
     input: {

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.0...v0.8.1) (2023-10-18)
+
+
+### Bug Fixes
+
+* **INT-833:** conditional expression parsing is failing parse objects ([#46](https://github.com/rudderlabs/rudder-json-template-engine/issues/46)) ([bf27bae](https://github.com/rudderlabs/rudder-json-template-engine/commit/bf27baec9011d54d449adf8c1b4f5ce72d7f3444))
+
 ## [0.8.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.7.0...v0.8.0) (2023-10-10)
 
 

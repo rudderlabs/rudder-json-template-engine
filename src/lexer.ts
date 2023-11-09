@@ -13,7 +13,6 @@ export class JsonTemplateLexer {
   private readonly codeChars: string[];
   private buf: Token[];
   private idx = 0;
-  private lastParsedToken?: Token;
 
   constructor(template: string) {
     this.buf = [];
@@ -27,6 +26,11 @@ export class JsonTemplateLexer {
 
   currentIndex(): number {
     return this.idx;
+  }
+
+  reset(idx: number) {
+    this.idx = idx;
+    this.buf = [];
   }
 
   getCode(start: number, end: number): string {
@@ -272,12 +276,11 @@ export class JsonTemplateLexer {
   lex(): Token {
     if (this.buf[0]) {
       this.idx = this.buf[0].range[1];
-      this.lastParsedToken = this.buf[0];
+      let token = this.buf[0];
       this.buf = this.buf.slice(1);
-      return this.lastParsedToken;
+      return token;
     }
-    this.lastParsedToken = this.advance();
-    return this.lastParsedToken;
+    return this.advance();
   }
 
   static isLiteralToken(token: Token) {

@@ -33,13 +33,24 @@
       }
     },
     {
-      "name": "Test Scenario",
-      "program": "${workspaceFolder}/test/test_scenario.ts",
+      "runtimeExecutable": "/usr/local/bin/node",
+      "name": "Jest Scenario",
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
       "request": "launch",
-      "runtimeArgs": ["--nolazy", "-r", "ts-node/register/transpile-only"],
       "skipFiles": ["<node_internals>/**"],
-      "args": ["--scenario=${input:scenario}", "--index=${input:index}"],
-      "type": "node"
+      "args": [
+        "scenario.test",
+        "--config",
+        "jest.config.ts",
+        "--scenario=${input:scenario}",
+        "--index=${input:index}"
+      ],
+      "type": "node",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "windows": {
+        "program": "${workspaceFolder}/node_modules/jest/bin/jest"
+      }
     },
     {
       "runtimeExecutable": "/usr/local/bin/node",

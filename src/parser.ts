@@ -35,7 +35,7 @@ import {
   LoopExpression,
   IncrementExpression,
 } from './types';
-import { JsonTemplateParserError } from './errors';
+import { JsonTemplateLexerError, JsonTemplateParserError } from './errors';
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { CommonUtils } from './utils';
@@ -471,8 +471,16 @@ export class JsonTemplateParser {
   }
 
   private parseConditionalBodyExpr(): Expression {
+    const currentIndex = this.lexer.currentIndex();
     if (this.lexer.match('{')) {
-      return this.parseCurlyBlockExpr({ blockEnd: '}', parentType: SyntaxType.CONDITIONAL_EXPR });
+      try {
+        return this.parseObjectExpr();
+      } catch (error: any) {
+        if (error instanceof JsonTemplateLexerError) {
+          this.lexer.reset(currentIndex);
+        }
+        return this.parseCurlyBlockExpr({ blockEnd: '}', parentType: SyntaxType.CONDITIONAL_EXPR });
+      }
     }
     return this.parseBaseExpr();
   }

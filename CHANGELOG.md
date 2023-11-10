@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.1...v0.8.2) (2023-11-10)
+
+
+### Miscellaneous
+
+* add enum names ([8973af0](https://github.com/rudderlabs/rudder-json-template-engine/commit/8973af021ad17485ad0d38fc4377ae770ed50f65))
+* upgrade deps ([9e79f5a](https://github.com/rudderlabs/rudder-json-template-engine/commit/9e79f5ad883561222967b77e4b39080f96105ddb))
+
 ## [0.8.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.0...v0.8.1) (2023-10-18)
 
 

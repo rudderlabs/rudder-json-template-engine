@@ -23,6 +23,7 @@ export class CommonUtils {
   }
 
   static CreateAsyncFunction(...args) {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     return async function () {}.constructor(...args);
   }
 

@@ -3,14 +3,34 @@
     "browser": true,
     "es2021": true
   },
-  "plugins": ["prettier", "unused-imports"],
-  "extends": ["airbnb-base", "plugin:prettier/recommended"],
-  "parser": "@babel/eslint-parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": ["airbnb-base", "airbnb-typescript/base", "plugin:sonarjs/recommended", "prettier"],
+  "parser": "@typescript-eslint/parser",
   "overrides": [],
   "parserOptions": {
     "requireConfigFile": false,
-    "ecmaVersion": 11,
-    "sourceType": "module"
+    "ecmaVersion": 12,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
   },
-  "rules": {}
+  "rules": {
+    "max-classes-per-file": "off",
+    "import/prefer-default-export": "off",
+    "@typescript-eslint/no-implied-eval": "warn",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "args": "all",
+        "argsIgnorePattern": "^_"
+      }
+    ],
+    "no-plusplus": "warn",
+    "consistent-return": "off", // https://eslint.org/docs/latest/rules/consistent-return#when-not-to-use-it
+    "class-methods-use-this": "warn",
+    "no-param-reassign": "warn",
+    "no-restricted-syntax": "warn",
+    "no-cond-assign": "warn",
+    "no-useless-constructor": "warn",
+    "@typescript-eslint/no-useless-constructor": "warn"
+  }
 }

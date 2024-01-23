@@ -44,8 +44,11 @@ import { CommonUtils } from './utils';
 
 export class JsonTemplateTranslator {
   private vars: string[] = [];
+
   private lastVarId = 0;
+
   private unusedVars: string[] = [];
+
   private readonly expr: Expression;
 
   constructor(expr: Expression) {
@@ -85,7 +88,7 @@ export class JsonTemplateTranslator {
 
   translate(dest = RESULT_KEY, ctx = DATA_PARAM_KEY): string {
     this.init();
-    let code: string[] = [];
+    const code: string[] = [];
     const exprCode = this.translateExpr(this.expr, dest, ctx);
     code.push(`let ${dest};`);
     code.push(this.vars.map((elm) => `let ${elm};`).join(''));
@@ -181,6 +184,7 @@ export class JsonTemplateTranslator {
         return '';
     }
   }
+
   translateLoopControlExpr(expr: LoopControlExpression, _dest: string, _ctx: string): string {
     return `${expr.control};`;
   }
@@ -260,7 +264,7 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private translateLambdaArgExpr(expr: LambdaArgExpression, dest: string, ctx: string): string {
+  private translateLambdaArgExpr(expr: LambdaArgExpression, dest: string, _ctx: string): string {
     return `${dest} = args[${expr.index}];`;
   }
 
@@ -281,7 +285,7 @@ export class JsonTemplateTranslator {
     item: string,
     idx: string,
   ): string {
-    let options = JsonTemplateTranslator.getPathOptions(expr, partNum);
+    const options = JsonTemplateTranslator.getPathOptions(expr, partNum);
     const code: string[] = [];
     if (options.item) {
       code.push(`let ${options.item} = ${item};`);
@@ -308,7 +312,7 @@ export class JsonTemplateTranslator {
     if (!expr.parts.length) {
       return '';
     }
-    const parts = expr.parts;
+    const { parts } = expr;
     const code: string[] = [];
     const numParts = parts.length;
     const dataVars = this.acquireVars(numParts);
@@ -318,7 +322,7 @@ export class JsonTemplateTranslator {
     code.push(JsonTemplateTranslator.generateAssignmentCode(result, '[]'));
     code.push(JsonTemplateTranslator.generateAssignmentCode(dataVars[0], dest));
     for (let i = 0; i < numParts; i++) {
-      let part = parts[i];
+      const part = parts[i];
       const idx = indexVars[i];
       const item = itemVars[i];
       const data = dataVars[i];
@@ -407,7 +411,7 @@ export class JsonTemplateTranslator {
     dest: string,
     baseCtx: string,
   ): string {
-    let code: string[] = [];
+    const code: string[] = [];
     const ctxs = this.acquireVar();
     const currCtx = this.acquireVar();
     const result = this.acquireVar();
@@ -456,7 +460,7 @@ export class JsonTemplateTranslator {
   }
 
   private translateFunctionExpr(expr: FunctionExpression, dest: string, ctx: string): string {
-    let code: string[] = [];
+    const code: string[] = [];
     const fnHead = expr.async ? 'async function' : 'function';
     code.push(dest, '=', fnHead, '(', (expr.params || []).join(','), '){');
     const fnTranslator = new JsonTemplateTranslator(expr.body);
@@ -478,7 +482,7 @@ export class JsonTemplateTranslator {
     dest: string,
     ctx: string,
   ): string {
-    let code: string[] = [];
+    const code: string[] = [];
     const result = this.acquireVar();
     code.push(JsonTemplateTranslator.generateAssignmentCode(result, ctx));
     if (expr.object) {
@@ -496,10 +500,10 @@ export class JsonTemplateTranslator {
   }
 
   private translateObjectExpr(expr: ObjectExpression, dest: string, ctx: string): string {
-    let code: string[] = [];
+    const code: string[] = [];
     const propExprs: string[] = [];
     const vars: string[] = [];
-    for (let prop of expr.props) {
+    for (const prop of expr.props) {
       const propParts: string[] = [];
       if (prop.key) {
         if (typeof prop.key !== 'string') {
@@ -529,7 +533,7 @@ export class JsonTemplateTranslator {
   private translateSpreadableExpressions(items: Expression[], ctx: string, code: string[]): string {
     const vars: string[] = [];
     const itemParts: string[] = [];
-    for (let item of items) {
+    for (const item of items) {
       const varName = this.acquireVar();
       code.push(this.translateExpr(item, varName, ctx));
       itemParts.push(item.type === SyntaxType.SPREAD_EXPR ? `...${varName}` : varName);
@@ -554,10 +558,10 @@ export class JsonTemplateTranslator {
   private getSimplePathSelector(expr: SelectorExpression, isAssignment: boolean): string {
     if (expr.prop?.type === TokenType.STR) {
       return `${isAssignment ? '' : '?.'}[${CommonUtils.escapeStr(expr.prop?.value)}]`;
-    } else {
-      return `${isAssignment ? '' : '?'}.${expr.prop?.value}`;
     }
+    return `${isAssignment ? '' : '?'}.${expr.prop?.value}`;
   }
+
   private getSimplePathArrayIndex(
     expr: ArrayFilterExpression,
     ctx: string,
@@ -584,7 +588,7 @@ export class JsonTemplateTranslator {
     const simplePath: string[] = [];
     simplePath.push(ctx);
     const keyVars: string[] = [];
-    for (let part of expr.parts) {
+    for (const part of expr.parts) {
       if (part.type === SyntaxType.SELECTOR) {
         simplePath.push(this.getSimplePathSelector(part as SelectorExpression, isAssignment));
       } else {
@@ -620,7 +624,7 @@ export class JsonTemplateTranslator {
   }
 
   private translateDefinitionVars(expr: DefinitionExpression): string {
-    let vars: string[] = [expr.vars.join(',')];
+    const vars: string[] = [expr.vars.join(',')];
     if (expr.fromObject) {
       vars.unshift('{');
       vars.push('}');
@@ -789,8 +793,8 @@ export class JsonTemplateTranslator {
 
   private translateRangeFilterExpr(expr: RangeFilterExpression, dest: string, ctx: string): string {
     const code: string[] = [];
-    let fromIdx = this.acquireVar();
-    let toIdx = this.acquireVar();
+    const fromIdx = this.acquireVar();
+    const toIdx = this.acquireVar();
     if (expr.fromIdx) {
       if (expr.toIdx) {
         code.push(this.translateExpr(expr.fromIdx, fromIdx, ctx));
@@ -824,7 +828,7 @@ export class JsonTemplateTranslator {
 
   private static ValidateAssignmentPath(path: string) {
     if (path.startsWith(BINDINGS_PARAM_KEY) && !path.startsWith(BINDINGS_CONTEXT_KEY)) {
-      throw new JsonTemplateTranslatorError('Invalid assignment path at' + path);
+      throw new JsonTemplateTranslatorError(`Invalid assignment path at${path}`);
     }
   }
 

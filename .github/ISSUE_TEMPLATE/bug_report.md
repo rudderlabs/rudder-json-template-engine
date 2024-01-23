@@ -1,10 +1,9 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: "[ISSUE]"
+title: '[ISSUE]'
 labels: bug
 assignees: ''
-
 ---
 
 **Describe the issue**
@@ -20,7 +19,8 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **Required information (please complete the following information):**
- - Package version: [e.g., v0.1.1]
+
+- Package version: [e.g., v0.1.1]
 
 **Additional context**
 Add any other context about the problem here.

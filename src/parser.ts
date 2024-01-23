@@ -44,7 +44,9 @@ import { JsonTemplateEngine } from './engine';
 const EMPTY_EXPR = { type: SyntaxType.EMPTY };
 export class JsonTemplateParser {
   private lexer: JsonTemplateLexer;
+
   private options?: EngineOptions;
+
   // indicates currently how many loops being parsed
   private loopCount = 0;
 
@@ -77,7 +79,7 @@ export class JsonTemplateParser {
   }
 
   private parseStatements(blockEnd?: string): Expression[] {
-    let statements: Expression[] = [];
+    const statements: Expression[] = [];
     while (!this.lexer.matchEOT() && !this.lexer.match(blockEnd)) {
       statements.push(this.parseStatementExpr());
       this.parseEndOfStatement(blockEnd);
@@ -100,15 +102,14 @@ export class JsonTemplateParser {
     for (let i = 0; i < statements.length; i++) {
       const currStatement = statements[i];
       if (
-        currStatement.type === SyntaxType.RETURN_EXPR ||
-        currStatement.type === SyntaxType.THROW_EXPR ||
-        currStatement.type === SyntaxType.LOOP_CONTROL_EXPR
+        (currStatement.type === SyntaxType.RETURN_EXPR ||
+          currStatement.type === SyntaxType.THROW_EXPR ||
+          currStatement.type === SyntaxType.LOOP_CONTROL_EXPR) &&
+        (options?.parentType !== SyntaxType.CONDITIONAL_EXPR || i !== statements.length - 1)
       ) {
-        if (options?.parentType !== SyntaxType.CONDITIONAL_EXPR || i !== statements.length - 1) {
-          throw new JsonTemplateParserError(
-            'return, throw, continue and break statements are only allowed as last statements in conditional expressions',
-          );
-        }
+        throw new JsonTemplateParserError(
+          'return, throw, continue and break statements are only allowed as last statements in conditional expressions',
+        );
       }
     }
   }
@@ -151,14 +152,13 @@ export class JsonTemplateParser {
   private parseBaseExpr(): Expression {
     const startIdx = this.lexer.currentIndex();
     try {
-      const expr = this.parseNextExpr(OperatorType.BASE);
-      return expr;
+      return this.parseNextExpr(OperatorType.BASE);
     } catch (error: any) {
       const code = this.lexer.getCode(startIdx, this.lexer.currentIndex());
       if (error.message.includes('at')) {
         throw error;
       }
-      throw new JsonTemplateParserError(error.message + ' at ' + code);
+      throw new JsonTemplateParserError(`${error.message} at ${code}`);
     }
   }
 
@@ -243,10 +243,12 @@ export class JsonTemplateParser {
     while (this.lexer.match('@') || this.lexer.match('#') || this.lexer.matchToArray()) {
       if (this.lexer.match('@')) {
         context.item = this.parseContextVariable();
+        // eslint-disable-next-line no-continue
         continue;
       }
       if (this.lexer.match('#')) {
         context.index = this.parseContextVariable();
+        // eslint-disable-next-line no-continue
         continue;
       }
       if (this.lexer.matchToArray()) {
@@ -267,7 +269,8 @@ export class JsonTemplateParser {
     if (this.lexer.match('^')) {
       this.lexer.ignoreTokens(1);
       return DATA_PARAM_KEY;
-    } else if (this.lexer.matchID()) {
+    }
+    if (this.lexer.matchID()) {
       return this.lexer.value();
     }
   }
@@ -276,7 +279,8 @@ export class JsonTemplateParser {
     if (this.lexer.matchSimplePath()) {
       this.lexer.ignoreTokens(1);
       return PathType.SIMPLE;
-    } else if (this.lexer.matchRichPath()) {
+    }
+    if (this.lexer.matchRichPath()) {
       this.lexer.ignoreTokens(1);
       return PathType.RICH;
     }
@@ -294,7 +298,7 @@ export class JsonTemplateParser {
 
   private parsePath(options?: { root?: Expression }): PathExpression | Expression {
     const pathType = this.parsePathType();
-    let expr: PathExpression = {
+    const expr: PathExpression = {
       type: SyntaxType.PATH,
       root: this.parsePathRoot(options?.root),
       parts: this.parsePathParts(),
@@ -327,7 +331,7 @@ export class JsonTemplateParser {
   }
 
   private parseSelector(): SelectorExpression | IndexFilterExpression | Expression {
-    let selector = this.lexer.value();
+    const selector = this.lexer.value();
     if (this.lexer.matchINT()) {
       return this.createArrayFilterExpr(this.createArrayIndexFilterExpr(this.parseLiteralExpr()));
     }
@@ -338,7 +342,7 @@ export class JsonTemplateParser {
     }
     return {
       type: SyntaxType.SELECTOR,
-      selector: selector,
+      selector,
       prop,
     };
   }
@@ -352,7 +356,7 @@ export class JsonTemplateParser {
       };
     }
 
-    let fromExpr = this.parseBaseExpr();
+    const fromExpr = this.parseBaseExpr();
     if (this.lexer.match(':')) {
       this.lexer.ignoreTokens(1);
       if (this.lexer.match(']')) {
@@ -579,7 +583,7 @@ export class JsonTemplateParser {
   }
 
   private parseCoalesceExpr(): BinaryExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.COALESCING);
+    const expr = this.parseNextExpr(OperatorType.COALESCING);
 
     if (this.lexer.match('??')) {
       return {
@@ -593,7 +597,7 @@ export class JsonTemplateParser {
   }
 
   private parseLogicalORExpr(): BinaryExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.OR);
+    const expr = this.parseNextExpr(OperatorType.OR);
 
     if (this.lexer.match('||')) {
       return {
@@ -607,7 +611,7 @@ export class JsonTemplateParser {
   }
 
   private parseLogicalANDExpr(): BinaryExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.AND);
+    const expr = this.parseNextExpr(OperatorType.AND);
 
     if (this.lexer.match('&&')) {
       return {
@@ -621,7 +625,7 @@ export class JsonTemplateParser {
   }
 
   private parseEqualityExpr(): BinaryExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.EQUALITY);
+    const expr = this.parseNextExpr(OperatorType.EQUALITY);
 
     if (
       this.lexer.match('==') ||
@@ -650,7 +654,7 @@ export class JsonTemplateParser {
   }
 
   private parseRelationalExpr(): BinaryExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.RELATIONAL);
+    const expr = this.parseNextExpr(OperatorType.RELATIONAL);
 
     if (
       this.lexer.match('<') ||
@@ -670,7 +674,7 @@ export class JsonTemplateParser {
   }
 
   private parseShiftExpr(): BinaryExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.SHIFT);
+    const expr = this.parseNextExpr(OperatorType.SHIFT);
 
     if (this.lexer.match('>>') || this.lexer.match('<<')) {
       return {
@@ -684,7 +688,7 @@ export class JsonTemplateParser {
   }
 
   private parseAdditiveExpr(): BinaryExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.ADDITION);
+    const expr = this.parseNextExpr(OperatorType.ADDITION);
 
     if (this.lexer.match('+') || this.lexer.match('-')) {
       return {
@@ -698,7 +702,7 @@ export class JsonTemplateParser {
   }
 
   private parseMultiplicativeExpr(): BinaryExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.MULTIPLICATION);
+    const expr = this.parseNextExpr(OperatorType.MULTIPLICATION);
 
     if (this.lexer.match('*') || this.lexer.match('/') || this.lexer.match('%')) {
       return {
@@ -712,7 +716,7 @@ export class JsonTemplateParser {
   }
 
   private parsePowerExpr(): BinaryExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.POWER);
+    const expr = this.parseNextExpr(OperatorType.POWER);
 
     if (this.lexer.match('**')) {
       return {
@@ -760,7 +764,7 @@ export class JsonTemplateParser {
   }
 
   private parsePostfixIncreamentExpr(): IncrementExpression | Expression {
-    let expr = this.parseNextExpr(OperatorType.POSTFIX_INCREMENT);
+    const expr = this.parseNextExpr(OperatorType.POSTFIX_INCREMENT);
 
     if (this.lexer.matchIncrement() || this.lexer.matchDecrement()) {
       return {
@@ -812,6 +816,8 @@ export class JsonTemplateParser {
         if (!this.lexer.match('(')) {
           return true;
         }
+        break;
+      default: // Expected a default case
         break;
     }
     return false;
@@ -890,8 +896,8 @@ export class JsonTemplateParser {
 
   private parseDefinitionExpr(): DefinitionExpression {
     const definition = this.lexer.value();
-    let fromObject = this.lexer.match('{');
-    let vars: string[] = fromObject ? this.parseObjectDefVars() : this.parseNormalDefVars();
+    const fromObject = this.lexer.match('{');
+    const vars: string[] = fromObject ? this.parseObjectDefVars() : this.parseNormalDefVars();
     this.lexer.expect('=');
 
     return {
@@ -915,7 +921,7 @@ export class JsonTemplateParser {
 
     if (this.lexer.matchNew()) {
       this.lexer.ignoreTokens(1);
-      id = 'new ' + this.parseIDPath();
+      id = `new ${this.parseIDPath()}`;
     }
 
     return {
@@ -1059,7 +1065,7 @@ export class JsonTemplateParser {
 
   private parseBlockExpr(): BlockExpression | Expression {
     this.lexer.expect('(');
-    let statements: Expression[] = this.parseStatements(')');
+    const statements: Expression[] = this.parseStatements(')');
     this.lexer.expect(')');
     if (statements.length === 0) {
       throw new JsonTemplateParserError('empty block is not allowed');
@@ -1074,7 +1080,8 @@ export class JsonTemplateParser {
     this.lexer.ignoreTokens(1);
     if (this.lexer.matchFunction()) {
       return this.parseFunctionExpr(true);
-    } else if (this.lexer.matchLambda()) {
+    }
+    if (this.lexer.matchLambda()) {
       return this.parseLambdaExpr(true);
     }
     this.lexer.throwUnexpectedToken();
@@ -1263,7 +1270,7 @@ export class JsonTemplateParser {
   }
 
   private static prependFunctionID(prefix: string, id?: string): string {
-    return id ? prefix + '.' + id : prefix;
+    return id ? `${prefix}.${id}` : prefix;
   }
 
   private static ignoreEmptySelectors(parts: Expression[]): Expression[] {
@@ -1276,9 +1283,9 @@ export class JsonTemplateParser {
     if (parts.length < 2) {
       return parts;
     }
-    let newParts: Expression[] = [];
+    const newParts: Expression[] = [];
     for (let i = 0; i < parts.length; i++) {
-      let currPart = parts[i];
+      const currPart = parts[i];
       if (i < parts.length - 1 && parts[i + 1].type === SyntaxType.PATH_OPTIONS) {
         currPart.options = parts[i + 1].options;
         i++;
@@ -1292,23 +1299,25 @@ export class JsonTemplateParser {
     fnExpr: FunctionCallExpression,
     pathExpr: PathExpression,
   ): FunctionCallExpression | PathExpression {
-    let lastPart = CommonUtils.getLastElement(pathExpr.parts);
+    const lastPart = CommonUtils.getLastElement(pathExpr.parts);
+    // Updated
+    const newFnExpr = { ...fnExpr };
     if (lastPart?.type === SyntaxType.SELECTOR) {
       const selectorExpr = lastPart as SelectorExpression;
       if (selectorExpr.selector === '.' && selectorExpr.prop?.type === TokenType.ID) {
         pathExpr.parts.pop();
-        fnExpr.id = selectorExpr.prop.value;
-        fnExpr.dot = true;
+        newFnExpr.id = selectorExpr.prop.value;
+        newFnExpr.dot = true;
       }
     }
 
     if (!pathExpr.parts.length && pathExpr.root && typeof pathExpr.root !== 'object') {
-      fnExpr.id = this.prependFunctionID(pathExpr.root, fnExpr.id);
-      fnExpr.dot = false;
+      newFnExpr.id = this.prependFunctionID(pathExpr.root, fnExpr.id);
+      newFnExpr.dot = false;
     } else {
-      fnExpr.object = pathExpr;
+      newFnExpr.object = pathExpr;
     }
-    return fnExpr;
+    return newFnExpr;
   }
 
   private static isArrayFilterExpressionSimple(expr: ArrayFilterExpression): boolean {
@@ -1316,10 +1325,7 @@ export class JsonTemplateParser {
       return false;
     }
     const filter = expr.filter as IndexFilterExpression;
-    if (filter.indexes.elements.length > 1) {
-      return false;
-    }
-    return true;
+    return !(filter.indexes.elements.length > 1);
   }
 
   private static isSimplePathPart(part: Expression): boolean {

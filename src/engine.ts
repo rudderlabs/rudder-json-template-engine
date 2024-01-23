@@ -7,6 +7,7 @@ import { CommonUtils } from './utils';
 
 export class JsonTemplateEngine {
   private readonly fn: Function;
+
   private constructor(fn: Function) {
     this.fn = fn;
   }

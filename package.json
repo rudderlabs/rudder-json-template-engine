@@ -55,6 +55,7 @@
     "lint:fix": "eslint . --fix",
     "lint:check": "eslint . || exit 1",
     "format": "prettier --write '**/*.ts' '**/*.js' '**/*.json'",
+    "lint": "npm run format && npm run lint:fix",
     "prepare": "husky install",
     "jest:scenarios": "jest e2e.test.ts --verbose",
     "test:scenario": "jest test/scenario.test.ts --verbose",

@@ -59,7 +59,8 @@
     "prepare": "husky install",
     "jest:scenarios": "jest e2e.test.ts --verbose",
     "test:scenario": "jest test/scenario.test.ts --verbose",
-    "test:stryker": "stryker run"
+    "test:stryker": "stryker run",
+    "check:lint": "eslint . -f json -o reports/eslint.json || exit 0"
   },
   "lint-staged": {
     "*.(ts|json)": "prettier --write"

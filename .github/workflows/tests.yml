@@ -22,10 +22,28 @@ jobs:
       - name: Run Tests
         run: npm run test
 
+      - name: Run Lint Checks
+        run: |
+          npm run check:lint
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./reports/coverage
+      
+      - name: Update sonar-project.properties
+        run: |
+          # Retrieve the version from package.json
+          version=$(node -e "console.log(require('./package.json').version)")
+          # Update the sonar-project.properties file with the version
+          sed -i "s/sonar.projectVersion=.*$/sonar.projectVersion=$version/" sonar-project.properties
+      
+      - name: Fix filesystem paths in generated reports
+        if: always()
+        run: |
+          sed -i 's+home/runner/work/rudder-json-template-engine/rudder-json-template-engine+/github/workspace+g' reports/coverage/lcov.info
+          sed -i 's+/home/runner/work/rudder-json-template-engine/rudder-json-template-engine+/github/workspace+g' reports/eslint.json
 
       - name: SonarCloud Scan
         if: always()

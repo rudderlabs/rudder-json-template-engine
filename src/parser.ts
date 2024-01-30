@@ -1,45 +1,44 @@
+import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
+import { JsonTemplateLexerError, JsonTemplateParserError } from './errors';
+import { JsonTemplateLexer } from './lexer';
 import {
   ArrayExpression,
+  ArrayFilterExpression,
   AssignmentExpression,
   BinaryExpression,
+  BlockExpression,
+  BlockExpressionOptions,
+  ConditionalExpression,
+  DefinitionExpression,
+  EngineOptions,
   Expression,
   FunctionCallExpression,
   FunctionExpression,
+  IncrementExpression,
+  IndexFilterExpression,
+  Keyword,
   LiteralExpression,
+  LoopControlExpression,
+  LoopExpression,
   ObjectExpression,
+  ObjectFilterExpression,
+  ObjectPropExpression,
+  OperatorType,
   PathExpression,
+  PathOptions,
+  PathType,
+  RangeFilterExpression,
+  ReturnExpression,
   SelectorExpression,
+  SpreadExpression,
   StatementsExpression,
   SyntaxType,
+  ThrowExpression,
+  Token,
   TokenType,
   UnaryExpression,
-  ObjectFilterExpression,
-  RangeFilterExpression,
-  Token,
-  IndexFilterExpression,
-  DefinitionExpression,
-  SpreadExpression,
-  ObjectPropExpression,
-  ConditionalExpression,
-  OperatorType,
-  ArrayFilterExpression,
-  BlockExpression,
-  PathOptions,
-  Keyword,
-  EngineOptions,
-  PathType,
-  ReturnExpression,
-  ThrowExpression,
-  LoopControlExpression,
-  BlockExpressionOptions,
-  LoopExpression,
-  IncrementExpression,
 } from './types';
-import { JsonTemplateLexerError, JsonTemplateParserError } from './errors';
-import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
-import { JsonTemplateLexer } from './lexer';
 import { CommonUtils } from './utils';
-import { JsonTemplateEngine } from './engine';
 
 const EMPTY_EXPR = { type: SyntaxType.EMPTY };
 export class JsonTemplateParser {
@@ -87,7 +86,10 @@ export class JsonTemplateParser {
     return statements;
   }
 
-  private validateStatements(statements: Expression[], options?: BlockExpressionOptions): void {
+  private static validateStatements(
+    statements: Expression[],
+    options?: BlockExpressionOptions,
+  ): void {
     if (!statements.length) {
       if (
         options?.parentType === SyntaxType.CONDITIONAL_EXPR ||
@@ -99,7 +101,7 @@ export class JsonTemplateParser {
       }
       return;
     }
-    for (let i = 0; i < statements.length; i++) {
+    for (let i = 0; i < statements.length; i += 1) {
       const currStatement = statements[i];
       if (
         (currStatement.type === SyntaxType.RETURN_EXPR ||
@@ -116,7 +118,7 @@ export class JsonTemplateParser {
 
   private parseStatementsExpr(options?: BlockExpressionOptions): StatementsExpression {
     const statements = this.parseStatements(options?.blockEnd);
-    this.validateStatements(statements, options);
+    JsonTemplateParser.validateStatements(statements, options);
     return {
       type: SyntaxType.STATEMENTS_EXPR,
       statements,
@@ -221,6 +223,7 @@ export class JsonTemplateParser {
   private parsePathParts(): Expression[] {
     let parts: Expression[] = [];
     let newParts: Expression[] | undefined;
+    // eslint-disable-next-line no-cond-assign
     while ((newParts = CommonUtils.toArray(this.parsePathPart()))) {
       parts = parts.concat(newParts);
       if (newParts[0].type === SyntaxType.FUNCTION_CALL_EXPR) {
@@ -311,7 +314,7 @@ export class JsonTemplateParser {
     return JsonTemplateParser.updatePathExpr(expr);
   }
 
-  private createArrayIndexFilterExpr(expr: Expression): IndexFilterExpression {
+  private static createArrayIndexFilterExpr(expr: Expression): IndexFilterExpression {
     return {
       type: SyntaxType.ARRAY_INDEX_FILTER_EXPR,
       indexes: {
@@ -321,7 +324,7 @@ export class JsonTemplateParser {
     };
   }
 
-  private createArrayFilterExpr(
+  private static createArrayFilterExpr(
     expr: RangeFilterExpression | IndexFilterExpression,
   ): ArrayFilterExpression {
     return {
@@ -333,7 +336,9 @@ export class JsonTemplateParser {
   private parseSelector(): SelectorExpression | IndexFilterExpression | Expression {
     const selector = this.lexer.value();
     if (this.lexer.matchINT()) {
-      return this.createArrayFilterExpr(this.createArrayIndexFilterExpr(this.parseLiteralExpr()));
+      return JsonTemplateParser.createArrayFilterExpr(
+        JsonTemplateParser.createArrayIndexFilterExpr(this.parseLiteralExpr()),
+      );
     }
 
     let prop: Token | undefined;
@@ -746,7 +751,7 @@ export class JsonTemplateParser {
     return this.parseNextExpr(OperatorType.PREFIX_INCREMENT);
   }
 
-  private convertToID(expr: Expression): string {
+  private static convertToID(expr: Expression): string {
     if (expr.type === SyntaxType.PATH) {
       const path = expr as PathExpression;
       if (
@@ -770,7 +775,7 @@ export class JsonTemplateParser {
       return {
         type: SyntaxType.INCREMENT,
         op: this.lexer.value() as string,
-        id: this.convertToID(expr),
+        id: JsonTemplateParser.convertToID(expr),
         postfix: true,
       };
     }
@@ -840,7 +845,7 @@ export class JsonTemplateParser {
     return expr;
   }
 
-  private createLiteralExpr(token: Token): LiteralExpression {
+  private static createLiteralExpr(token: Token): LiteralExpression {
     return {
       type: SyntaxType.LITERAL,
       value: token.value,
@@ -849,7 +854,7 @@ export class JsonTemplateParser {
   }
 
   private parseLiteralExpr(): LiteralExpression {
-    return this.createLiteralExpr(this.lexer.lex());
+    return JsonTemplateParser.createLiteralExpr(this.lexer.lex());
   }
 
   private parseIDPath(): string {
@@ -1114,6 +1119,8 @@ export class JsonTemplateParser {
     const expr = skipJsonify ? this.parseCompileTimeBaseExpr() : this.parseBaseExpr();
     this.lexer.expect('}');
     this.lexer.expect('}');
+    // eslint-disable-next-line global-require
+    const { JsonTemplateEngine } = require('./engine');
     const exprVal = JsonTemplateEngine.createAsSync(expr).evaluate(
       {},
       this.options?.compileTimeBindings,
@@ -1258,7 +1265,7 @@ export class JsonTemplateParser {
   private static pathContainsVariables(parts: Expression[]): boolean {
     return parts
       .filter((part) => part.type === SyntaxType.PATH_OPTIONS)
-      .some((part) => part.options?.index || part.options?.item);
+      .some((part) => part.options?.index ?? part.options?.item);
   }
 
   private static convertToBlockExpr(expr: Expression): FunctionExpression {
@@ -1284,7 +1291,7 @@ export class JsonTemplateParser {
       return parts;
     }
     const newParts: Expression[] = [];
-    for (let i = 0; i < parts.length; i++) {
+    for (let i = 0; i < parts.length; i += 1) {
       const currPart = parts[i];
       if (i < parts.length - 1 && parts[i + 1].type === SyntaxType.PATH_OPTIONS) {
         currPart.options = parts[i + 1].options;
@@ -1301,7 +1308,7 @@ export class JsonTemplateParser {
   ): FunctionCallExpression | PathExpression {
     const lastPart = CommonUtils.getLastElement(pathExpr.parts);
     // Updated
-    const newFnExpr = { ...fnExpr };
+    const newFnExpr = fnExpr;
     if (lastPart?.type === SyntaxType.SELECTOR) {
       const selectorExpr = lastPart as SelectorExpression;
       if (selectorExpr.selector === '.' && selectorExpr.prop?.type === TokenType.ID) {
@@ -1325,7 +1332,7 @@ export class JsonTemplateParser {
       return false;
     }
     const filter = expr.filter as IndexFilterExpression;
-    return !(filter.indexes.elements.length > 1);
+    return filter.indexes.elements.length <= 1;
   }
 
   private static isSimplePathPart(part: Expression): boolean {
@@ -1351,33 +1358,34 @@ export class JsonTemplateParser {
   }
 
   private static updatePathExpr(pathExpr: PathExpression): Expression {
-    if (pathExpr.parts.length > 1 && pathExpr.parts[0].type === SyntaxType.PATH_OPTIONS) {
-      pathExpr.options = pathExpr.parts[0].options;
-      pathExpr.parts.shift();
+    const newPathExpr = pathExpr;
+    if (newPathExpr.parts.length > 1 && newPathExpr.parts[0].type === SyntaxType.PATH_OPTIONS) {
+      newPathExpr.options = newPathExpr.parts[0].options;
+      newPathExpr.parts.shift();
     }
 
-    const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(pathExpr.parts);
-    let lastPart = CommonUtils.getLastElement(pathExpr.parts);
+    const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(newPathExpr.parts);
+    let lastPart = CommonUtils.getLastElement(newPathExpr.parts);
     let fnExpr: FunctionCallExpression | undefined;
     if (lastPart?.type === SyntaxType.FUNCTION_CALL_EXPR) {
-      fnExpr = pathExpr.parts.pop() as FunctionCallExpression;
+      fnExpr = newPathExpr.parts.pop() as FunctionCallExpression;
     }
 
-    lastPart = CommonUtils.getLastElement(pathExpr.parts);
+    lastPart = CommonUtils.getLastElement(newPathExpr.parts);
     if (lastPart?.type === SyntaxType.PATH_OPTIONS) {
-      pathExpr.parts.pop();
-      pathExpr.returnAsArray = lastPart.options?.toArray;
+      newPathExpr.parts.pop();
+      newPathExpr.returnAsArray = lastPart.options?.toArray;
     }
-    pathExpr.parts = JsonTemplateParser.combinePathOptionParts(pathExpr.parts);
-    let expr: Expression = pathExpr;
+    newPathExpr.parts = JsonTemplateParser.combinePathOptionParts(newPathExpr.parts);
+    let expr: Expression = newPathExpr;
     if (fnExpr) {
-      expr = JsonTemplateParser.convertToFunctionCallExpr(fnExpr, pathExpr);
+      expr = JsonTemplateParser.convertToFunctionCallExpr(fnExpr, newPathExpr);
     }
     if (shouldConvertAsBlock) {
       expr = JsonTemplateParser.convertToBlockExpr(expr);
-      pathExpr.pathType = PathType.RICH;
-    } else if (this.isRichPath(pathExpr)) {
-      pathExpr.pathType = PathType.RICH;
+      newPathExpr.pathType = PathType.RICH;
+    } else if (this.isRichPath(newPathExpr)) {
+      newPathExpr.pathType = PathType.RICH;
     }
     return expr;
   }

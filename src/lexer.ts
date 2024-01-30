@@ -183,9 +183,10 @@ export class JsonTemplateLexer {
 
     const pos = this.idx;
     if (this.buf.length) {
+      // eslint-disable-next-line prefer-destructuring
       this.idx = this.buf[this.buf.length - 1].range[1];
     }
-    for (let i = this.buf.length; i <= steps; i++) {
+    for (let i = this.buf.length; i <= steps; i += 1) {
       this.buf.push(this.advance());
     }
     this.idx = pos;
@@ -258,11 +259,11 @@ export class JsonTemplateLexer {
       };
     }
 
-    const token = this.scanPunctuator() || this.scanID() || this.scanString() || this.scanInteger();
+    const token = this.scanPunctuator() ?? this.scanID() ?? this.scanString() ?? this.scanInteger();
     if (token) {
       return token;
     }
-    this.throwError(MESSAGES.UNKNOWN_TOKEN);
+    JsonTemplateLexer.throwError(MESSAGES.UNKNOWN_TOKEN);
   }
 
   value(): any {
@@ -298,15 +299,15 @@ export class JsonTemplateLexer {
   }
 
   throwUnexpectedToken(token?: Token): never {
-    token = token || this.lookahead();
-    if (token.type === TokenType.EOT) {
-      this.throwError(MESSAGES.UNEXP_EOT);
+    const newToken = token ?? this.lookahead();
+    if (newToken.type === TokenType.EOT) {
+      JsonTemplateLexer.throwError(MESSAGES.UNEXP_EOT);
     }
 
-    this.throwError(MESSAGES.UNEXP_TOKEN, token.value);
+    JsonTemplateLexer.throwError(MESSAGES.UNEXP_TOKEN, newToken.value);
   }
 
-  private throwError(messageFormat: string, ...args): never {
+  private static throwError(messageFormat: string, ...args): never {
     const msg = messageFormat.replace(/%(\d)/g, (_, idx) => args[idx]);
     throw new JsonTemplateLexerError(msg);
   }
@@ -323,9 +324,9 @@ export class JsonTemplateLexer {
     return this.isIdStart(ch) || (ch >= '0' && ch <= '9');
   }
 
-  private validateID(id: string) {
+  private static validateID(id: string) {
     if (id.startsWith(VARS_PREFIX)) {
-      this.throwError(MESSAGES.RESERVED_ID, id);
+      JsonTemplateLexer.throwError(MESSAGES.RESERVED_ID, id);
     }
   }
 
@@ -379,7 +380,7 @@ export class JsonTemplateLexer {
         };
 
       default:
-        this.validateID(id);
+        JsonTemplateLexer.validateID(id);
         return {
           type: TokenType.ID,
           value: id.replace(/^\$/, `${BINDINGS_PARAM_KEY}`),
@@ -619,13 +620,13 @@ export class JsonTemplateLexer {
 
   private scanPunctuator(): Token | undefined {
     return (
-      this.scanPunctuatorForDots() ||
-      this.scanPunctuatorForQuestionMarks() ||
-      this.scanPunctuatorForArithmeticAssignment() ||
-      this.scanPunctuatorForEquality() ||
-      this.scanPunctuatorForPaths() ||
-      this.scanPunctuatorForRepeatedTokens('?', 3) ||
-      this.scanPunctuatorForRepeatedTokens('|&*.=>?<+-', 2) ||
+      this.scanPunctuatorForDots() ??
+      this.scanPunctuatorForQuestionMarks() ??
+      this.scanPunctuatorForArithmeticAssignment() ??
+      this.scanPunctuatorForEquality() ??
+      this.scanPunctuatorForPaths() ??
+      this.scanPunctuatorForRepeatedTokens('?', 3) ??
+      this.scanPunctuatorForRepeatedTokens('|&*.=>?<+-', 2) ??
       this.scanSingleCharPunctuators()
     );
   }

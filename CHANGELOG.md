@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.2...v0.8.3) (2024-01-31)
+
+
+### Miscellaneous
+
+* eslint & formatting updates ([#49](https://github.com/rudderlabs/rudder-json-template-engine/issues/49)) ([dd7d0e1](https://github.com/rudderlabs/rudder-json-template-engine/commit/dd7d0e12e855ff42f37952ba1e90b9f4f0ebf3ea))
+
 ## [0.8.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.1...v0.8.2) (2023-11-10)
 
 ### Miscellaneous

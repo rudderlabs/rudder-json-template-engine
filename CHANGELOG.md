@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.3...v0.8.4) (2024-01-31)
+
+
+### Bug Fixes
+
+* tsconfig root dir ([c6419bc](https://github.com/rudderlabs/rudder-json-template-engine/commit/c6419bc5be27633e3570400bee48f6c3d2147837))
+
 ## [0.8.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.2...v0.8.3) (2024-01-31)
 
 

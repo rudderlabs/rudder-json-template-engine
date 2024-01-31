@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.4...v0.8.5) (2024-01-31)
+
+
+### Miscellaneous
+
+* standard workflows & PR templates ([#52](https://github.com/rudderlabs/rudder-json-template-engine/issues/52)) ([efc1252](https://github.com/rudderlabs/rudder-json-template-engine/commit/efc1252bba82a730d1234bb1244b19c92911438f))
+
 ## [0.8.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.3...v0.8.4) (2024-01-31)
 
 

@@ -7,6 +7,7 @@ import { CommonUtils } from './utils';
 
 export class JsonTemplateEngine {
   private readonly fn: Function;
+
   private constructor(fn: Function) {
     this.fn = fn;
   }
@@ -26,6 +27,7 @@ export class JsonTemplateEngine {
     templateOrExpr: string | Expression,
     options?: EngineOptions,
   ): Function {
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
     return Function(DATA_PARAM_KEY, BINDINGS_PARAM_KEY, this.translate(templateOrExpr, options));
   }
 
@@ -63,6 +65,6 @@ export class JsonTemplateEngine {
   }
 
   evaluate(data: any, bindings: Record<string, any> = {}): any {
-    return this.fn(data || {}, bindings);
+    return this.fn(data ?? {}, bindings);
   }
 }

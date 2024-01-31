@@ -11,7 +11,9 @@ const MESSAGES = {
 
 export class JsonTemplateLexer {
   private readonly codeChars: string[];
+
   private buf: Token[];
+
   private idx = 0;
 
   constructor(template: string) {
@@ -41,7 +43,7 @@ export class JsonTemplateLexer {
     if (!value) {
       return false;
     }
-    let token = this.lookahead(steps);
+    const token = this.lookahead(steps);
     return token.type === TokenType.PUNCT && token.value === value;
   }
 
@@ -100,7 +102,7 @@ export class JsonTemplateLexer {
   }
 
   matchPathPartSelector(): boolean {
-    let token = this.lookahead();
+    const token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
       return token.value === '.' || token.value === '..';
     }
@@ -108,9 +110,9 @@ export class JsonTemplateLexer {
   }
 
   matchPathSelector(): boolean {
-    let token = this.lookahead();
+    const token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
-      let value = token.value;
+      const { value } = token;
       return value === '.' || value === '..' || value === '^';
     }
 
@@ -118,7 +120,7 @@ export class JsonTemplateLexer {
   }
 
   matchTokenType(tokenType: TokenType, steps: number = 0): boolean {
-    let token = this.lookahead(steps);
+    const token = this.lookahead(steps);
     return token.type === tokenType;
   }
 
@@ -139,7 +141,7 @@ export class JsonTemplateLexer {
   }
 
   matchKeywordValue(val: string): boolean {
-    let token = this.lookahead();
+    const token = this.lookahead();
     return token.type === TokenType.KEYWORD && token.value === val;
   }
 
@@ -168,7 +170,7 @@ export class JsonTemplateLexer {
   }
 
   expect(value) {
-    let token = this.lex();
+    const token = this.lex();
     if (token.type !== TokenType.PUNCT || token.value !== value) {
       this.throwUnexpectedToken(token);
     }
@@ -179,11 +181,12 @@ export class JsonTemplateLexer {
       return this.buf[steps];
     }
 
-    let pos = this.idx;
+    const pos = this.idx;
     if (this.buf.length) {
+      // eslint-disable-next-line prefer-destructuring
       this.idx = this.buf[this.buf.length - 1].range[1];
     }
-    for (let i = this.buf.length; i <= steps; i++) {
+    for (let i = this.buf.length; i <= steps; i += 1) {
       this.buf.push(this.advance());
     }
     this.idx = pos;
@@ -224,7 +227,7 @@ export class JsonTemplateLexer {
     while (!this.isBlockCommentEnd()) {
       ++this.idx;
     }
-    this.idx = this.idx + 2;
+    this.idx += 2;
   }
 
   private isWhiteSpace() {
@@ -256,11 +259,11 @@ export class JsonTemplateLexer {
       };
     }
 
-    let token = this.scanPunctuator() || this.scanID() || this.scanString() || this.scanInteger();
+    const token = this.scanPunctuator() ?? this.scanID() ?? this.scanString() ?? this.scanInteger();
     if (token) {
       return token;
     }
-    this.throwError(MESSAGES.UNKNOWN_TOKEN);
+    JsonTemplateLexer.throwError(MESSAGES.UNKNOWN_TOKEN);
   }
 
   value(): any {
@@ -275,8 +278,9 @@ export class JsonTemplateLexer {
 
   lex(): Token {
     if (this.buf[0]) {
+      // eslint-disable-next-line prefer-destructuring
       this.idx = this.buf[0].range[1];
-      let token = this.buf[0];
+      const token = this.buf[0];
       this.buf = this.buf.slice(1);
       return token;
     }
@@ -295,18 +299,16 @@ export class JsonTemplateLexer {
   }
 
   throwUnexpectedToken(token?: Token): never {
-    token = token || this.lookahead();
-    if (token.type === TokenType.EOT) {
-      this.throwError(MESSAGES.UNEXP_EOT);
+    const newToken = token ?? this.lookahead();
+    if (newToken.type === TokenType.EOT) {
+      JsonTemplateLexer.throwError(MESSAGES.UNEXP_EOT);
     }
 
-    this.throwError(MESSAGES.UNEXP_TOKEN, token.value);
+    JsonTemplateLexer.throwError(MESSAGES.UNEXP_TOKEN, newToken.value);
   }
 
-  private throwError(messageFormat: string, ...args): never {
-    const msg = messageFormat.replace(/%(\d)/g, (_, idx) => {
-      return args[idx];
-    });
+  private static throwError(messageFormat: string, ...args): never {
+    const msg = messageFormat.replace(/%(\d)/g, (_, idx) => args[idx]);
     throw new JsonTemplateLexerError(msg);
   }
 
@@ -322,9 +324,9 @@ export class JsonTemplateLexer {
     return this.isIdStart(ch) || (ch >= '0' && ch <= '9');
   }
 
-  private validateID(id: string) {
+  private static validateID(id: string) {
     if (id.startsWith(VARS_PREFIX)) {
-      this.throwError(MESSAGES.RESERVED_ID, id);
+      JsonTemplateLexer.throwError(MESSAGES.RESERVED_ID, id);
     }
   }
 
@@ -335,8 +337,8 @@ export class JsonTemplateLexer {
       return;
     }
 
-    let start = this.idx,
-      id = ch;
+    const start = this.idx;
+    let id = ch;
 
     while (++this.idx < this.codeChars.length) {
       ch = this.codeChars[this.idx];
@@ -378,7 +380,7 @@ export class JsonTemplateLexer {
         };
 
       default:
-        this.validateID(id);
+        JsonTemplateLexer.validateID(id);
         return {
           type: TokenType.ID,
           value: id.replace(/^\$/, `${BINDINGS_PARAM_KEY}`),
@@ -396,11 +398,11 @@ export class JsonTemplateLexer {
       return;
     }
 
-    let orig = this.codeChars[this.idx],
-      start = ++this.idx,
-      str = '',
-      eosFound = false,
-      ch;
+    const orig = this.codeChars[this.idx];
+    const start = ++this.idx;
+    let str = '';
+    let eosFound = false;
+    let ch;
 
     while (this.idx < this.codeChars.length) {
       ch = this.codeChars[this.idx++];
@@ -424,7 +426,7 @@ export class JsonTemplateLexer {
   }
 
   scanInteger(): Token | undefined {
-    let start = this.idx;
+    const start = this.idx;
     let ch = this.codeChars[this.idx];
     if (!JsonTemplateLexer.isDigit(ch)) {
       return;
@@ -445,50 +447,51 @@ export class JsonTemplateLexer {
   }
 
   private scanPunctuatorForDots(): Token | undefined {
-    let start = this.idx,
-      ch1 = this.codeChars[this.idx],
-      ch2 = this.codeChars[this.idx + 1],
-      ch3 = this.codeChars[this.idx + 2];
+    const start = this.idx;
+    const ch1 = this.codeChars[this.idx];
+    const ch2 = this.codeChars[this.idx + 1];
+    const ch3 = this.codeChars[this.idx + 2];
 
     if (ch1 !== '.') {
       return;
     }
 
     if (ch2 === '(' && ch3 === ')') {
-      this.idx = this.idx + 3;
+      this.idx += 3;
       return {
         type: TokenType.PUNCT,
         value: '.()',
         range: [start, this.idx],
       };
-    } else if (ch2 === '.' && ch3 === '.') {
-      this.idx = this.idx + 3;
+    }
+    if (ch2 === '.' && ch3 === '.') {
+      this.idx += 3;
       return {
         type: TokenType.PUNCT,
         value: '...',
         range: [start, this.idx],
       };
-    } else if (ch2 === '.') {
-      this.idx = this.idx + 2;
+    }
+    if (ch2 === '.') {
+      this.idx += 2;
       return {
         type: TokenType.PUNCT,
         value: '..',
         range: [start, this.idx],
       };
-    } else {
-      return {
-        type: TokenType.PUNCT,
-        value: '.',
-        range: [start, ++this.idx],
-      };
     }
+    return {
+      type: TokenType.PUNCT,
+      value: '.',
+      range: [start, ++this.idx],
+    };
   }
 
   private scanPunctuatorForEquality(): Token | undefined {
-    let start = this.idx,
-      ch1 = this.codeChars[this.idx],
-      ch2 = this.codeChars[this.idx + 1],
-      ch3 = this.codeChars[this.idx + 2];
+    const start = this.idx;
+    const ch1 = this.codeChars[this.idx];
+    const ch2 = this.codeChars[this.idx + 1];
+    const ch3 = this.codeChars[this.idx + 2];
 
     if (ch2 === '=') {
       if (ch3 === '=') {
@@ -525,13 +528,12 @@ export class JsonTemplateLexer {
           value: ch1 + ch2,
           range: [start, this.idx],
         };
-      } else {
-        return {
-          type: TokenType.PUNCT,
-          value: ch1,
-          range: [start, ++this.idx],
-        };
       }
+      return {
+        type: TokenType.PUNCT,
+        value: ch1,
+        range: [start, ++this.idx],
+      };
     }
   }
 
@@ -539,8 +541,8 @@ export class JsonTemplateLexer {
     validSymbols: string,
     numRepeations = 2,
   ): Token | undefined {
-    let start = this.idx;
-    let ch = this.codeChars[this.idx];
+    const start = this.idx;
+    const ch = this.codeChars[this.idx];
     let tokenVal = ch;
     for (let i = 1; i < numRepeations; i++) {
       if (this.codeChars[this.idx + i] !== ch) {
@@ -560,8 +562,8 @@ export class JsonTemplateLexer {
   }
 
   private scanSingleCharPunctuators(): Token | undefined {
-    let start = this.idx,
-      ch1 = this.codeChars[this.idx];
+    const start = this.idx;
+    const ch1 = this.codeChars[this.idx];
 
     if (',;:{}()[]^+-*/%!><|=@~#?\n'.includes(ch1)) {
       return {
@@ -573,9 +575,9 @@ export class JsonTemplateLexer {
   }
 
   private scanPunctuatorForQuestionMarks(): Token | undefined {
-    let start = this.idx,
-      ch1 = this.codeChars[this.idx],
-      ch2 = this.codeChars[this.idx + 1];
+    const start = this.idx;
+    const ch1 = this.codeChars[this.idx];
+    const ch2 = this.codeChars[this.idx + 1];
 
     if (ch1 === '?' && JsonTemplateLexer.isDigit(ch2)) {
       this.idx += 2;
@@ -588,9 +590,9 @@ export class JsonTemplateLexer {
   }
 
   private scanPunctuatorForPaths(): Token | undefined {
-    let start = this.idx,
-      ch1 = this.codeChars[this.idx],
-      ch2 = this.codeChars[this.idx + 1];
+    const start = this.idx;
+    const ch1 = this.codeChars[this.idx];
+    const ch2 = this.codeChars[this.idx + 1];
 
     if (ch1 === '~' && 'rs'.includes(ch2)) {
       this.idx += 2;
@@ -603,9 +605,9 @@ export class JsonTemplateLexer {
   }
 
   private scanPunctuatorForArithmeticAssignment(): Token | undefined {
-    let start = this.idx,
-      ch1 = this.codeChars[this.idx],
-      ch2 = this.codeChars[this.idx + 1];
+    const start = this.idx;
+    const ch1 = this.codeChars[this.idx];
+    const ch2 = this.codeChars[this.idx + 1];
     if ('+-/*'.includes(ch1) && ch2 === '=') {
       this.idx += 2;
       return {
@@ -618,13 +620,13 @@ export class JsonTemplateLexer {
 
   private scanPunctuator(): Token | undefined {
     return (
-      this.scanPunctuatorForDots() ||
-      this.scanPunctuatorForQuestionMarks() ||
-      this.scanPunctuatorForArithmeticAssignment() ||
-      this.scanPunctuatorForEquality() ||
-      this.scanPunctuatorForPaths() ||
-      this.scanPunctuatorForRepeatedTokens('?', 3) ||
-      this.scanPunctuatorForRepeatedTokens('|&*.=>?<+-', 2) ||
+      this.scanPunctuatorForDots() ??
+      this.scanPunctuatorForQuestionMarks() ??
+      this.scanPunctuatorForArithmeticAssignment() ??
+      this.scanPunctuatorForEquality() ??
+      this.scanPunctuatorForPaths() ??
+      this.scanPunctuatorForRepeatedTokens('?', 3) ??
+      this.scanPunctuatorForRepeatedTokens('|&*.=>?<+-', 2) ??
       this.scanSingleCharPunctuators()
     );
   }

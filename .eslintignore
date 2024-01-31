@@ -1,2 +1,6 @@
 build
 *.jt
+coverage
+test
+commitlint.config.js
+jest.config.ts

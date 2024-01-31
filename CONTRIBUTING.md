@@ -29,7 +29,6 @@ For any questions, concerns, or queries, you can start by asking a question in o
 
 ### We look forward to your feedback on improving this project!
 
-
 <!----variables---->
 
 [issue]: https://github.com/rudderlabs/rudder-server/issues/new

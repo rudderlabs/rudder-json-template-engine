@@ -365,8 +365,6 @@ Refer this [example](test/scenarios/comments/template.jt) for more details.
 
 For more examples, refer [Scenarios](test/scenarios)
 
-## [Syntax](docs/syntax.md)
-
 ## Getting started
 
 `npm install @rudderstack/json-template-engine`

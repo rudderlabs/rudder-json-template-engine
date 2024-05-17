@@ -216,6 +216,12 @@ If we use this rich path`~r a.b.c` then it automatically handles following varia
 - `{"a": [{ "b": [{"c": 2}]}]}`
   Refer this [example](test/scenarios/paths/rich_path.jt) for more details.
 
+#### Json Paths
+We support some features of [JSON Path](https://goessner.net/articles/JsonPath/index.html#) syntax using path option (`~j`).
+Note: This is an experimental feature and may not support all the features of JSON Paths. 
+
+Refer this [example](test/scenarios/paths/json_path.jt) for more details.
+
 #### Simple selectors
 
 ```js
@@ -333,6 +339,8 @@ We can override the default path option using tags.
 ~s a.b.c
 // Use ~r to treat a.b.c as rich path
 ~r a.b.c
+// Use ~j for using json paths
+~j items[?(@.a>1)]
 ```
 
 **Note:** Rich paths are slower compare to the simple paths.

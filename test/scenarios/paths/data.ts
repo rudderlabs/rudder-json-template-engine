@@ -70,6 +70,53 @@ export const data: Scenario[] = [
     ],
   },
   {
+    templatePath: 'json_path.jt',
+    input: {
+      foo: 'bar',
+      items: [
+        {
+          a: 1,
+          b: 1,
+        },
+        {
+          a: 2,
+          b: 2,
+        },
+        {
+          a: 3,
+          b: 3,
+        },
+      ],
+    },
+    output: [
+      'bar',
+      [
+        {
+          a: 1,
+          b: 1,
+        },
+        {
+          a: 2,
+          b: 2,
+        },
+        {
+          a: 3,
+          b: 3,
+        },
+      ],
+      [
+        {
+          a: 2,
+          b: 2,
+        },
+        {
+          a: 3,
+          b: 3,
+        },
+      ],
+    ],
+  },
+  {
     templatePath: 'options.jt',
     options: {
       defaultPathType: PathType.SIMPLE,

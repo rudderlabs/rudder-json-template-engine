@@ -1,4 +1,4 @@
-import { BINDINGS_PARAM_KEY, VARS_PREFIX } from './constants';
+import { VARS_PREFIX } from './constants';
 import { JsonTemplateLexerError } from './errors';
 import { Keyword, Token, TokenType } from './types';
 
@@ -81,12 +81,16 @@ export class JsonTemplateLexer {
     return this.match('~r');
   }
 
+  matchJsonPath(): boolean {
+    return this.match('~j');
+  }
+
   matchPathType(): boolean {
-    return this.matchRichPath() || this.matchSimplePath();
+    return this.matchRichPath() || this.matchJsonPath() || this.matchSimplePath();
   }
 
   matchPath(): boolean {
-    return this.matchPathSelector() || this.matchID();
+    return this.matchPathType() || this.matchPathSelector() || this.matchID();
   }
 
   matchSpread(): boolean {
@@ -113,7 +117,7 @@ export class JsonTemplateLexer {
     const token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
       const { value } = token;
-      return value === '.' || value === '..' || value === '^';
+      return value === '.' || value === '..' || value === '^' || value === '$' || value === '@';
     }
 
     return false;
@@ -145,8 +149,24 @@ export class JsonTemplateLexer {
     return token.type === TokenType.KEYWORD && token.value === val;
   }
 
+  matchContains(): boolean {
+    return this.matchKeywordValue(Keyword.CONTAINS);
+  }
+
+  matchEmpty(): boolean {
+    return this.matchKeywordValue(Keyword.EMPTY);
+  }
+
+  matchSize(): boolean {
+    return this.matchKeywordValue(Keyword.SIZE);
+  }
+
+  matchSubsetOf(): boolean {
+    return this.matchKeywordValue(Keyword.SUBSETOF);
+  }
+
   matchIN(): boolean {
-    return this.matchKeywordValue(Keyword.IN);
+    return this.matchKeywordValue(Keyword.IN) || this.matchKeywordValue(Keyword.NOT_IN);
   }
 
   matchFunction(): boolean {
@@ -317,7 +337,7 @@ export class JsonTemplateLexer {
   }
 
   private static isIdStart(ch: string) {
-    return ch === '$' || ch === '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+    return ch === '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
   }
 
   private static isIdPart(ch: string) {
@@ -383,7 +403,7 @@ export class JsonTemplateLexer {
         JsonTemplateLexer.validateID(id);
         return {
           type: TokenType.ID,
-          value: id.replace(/^\$/, `${BINDINGS_PARAM_KEY}`),
+          value: id,
           range: [start, this.idx],
         };
     }
@@ -565,7 +585,7 @@ export class JsonTemplateLexer {
     const start = this.idx;
     const ch1 = this.codeChars[this.idx];
 
-    if (',;:{}()[]^+-*/%!><|=@~#?\n'.includes(ch1)) {
+    if (',;:{}()[]^+-*/%!><|=@~$#?\n'.includes(ch1)) {
       return {
         type: TokenType.PUNCT,
         value: ch1,
@@ -594,7 +614,7 @@ export class JsonTemplateLexer {
     const ch1 = this.codeChars[this.idx];
     const ch2 = this.codeChars[this.idx + 1];
 
-    if (ch1 === '~' && 'rs'.includes(ch2)) {
+    if (ch1 === '~' && 'rsj'.includes(ch2)) {
       this.idx += 2;
       return {
         type: TokenType.PUNCT,

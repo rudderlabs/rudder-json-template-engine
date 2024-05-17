@@ -23,7 +23,7 @@ function endsWith(val1, val2): string {
 }
 
 function containsStrict(val1, val2): string {
-  return `(typeof ${val1} === 'string' && ${val1}.includes(${val2}))`;
+  return `((typeof ${val1} === 'string' || Array.isArray(${val1})) && ${val1}.includes(${val2}))`;
 }
 
 function contains(val1, val2): string {
@@ -74,9 +74,17 @@ export const binaryOperators = {
 
   '=$': (val1, val2): string => endsWith(val2, val1),
 
+  contains: containsStrict,
+
   '==*': (val1, val2): string => containsStrict(val2, val1),
 
   '=*': (val1, val2): string => contains(val2, val1),
+
+  size: (val1, val2): string => `${val1}.length === ${val2}`,
+
+  empty: (val1, val2): string => `(${val1}.length === 0) === ${val2}`,
+
+  subsetof: (val1, val2): string => `${val1}.every((el) => {return ${val2}.includes(el);})`,
 
   '+': (val1, val2): string => `${val1}+${val2}`,
 

@@ -18,5 +18,17 @@
 'I start with' ^== 'I',
 'I' ==^ 'I start with',
 "a" in ["a", "b"],
-"a" in {a: 1, b: 2}
+"a" in {a: 1, b: 2},
+"a" nin ["b"],
+"a" nin {b: 1},
+["a", "b"] contains "a",
+"abc" contains "a",
+["a", "b"] size 2,
+"abc" size 3,
+[] empty true,
+["a"] empty false,
+"" empty true,
+"abc" empty false,
+["c", "a"] subsetof ["a", "b", "c"],
+[] subsetof ["a", "b", "c"]
 ]

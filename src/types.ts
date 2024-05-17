@@ -8,7 +8,12 @@ export enum Keyword {
   AWAIT = 'await',
   ASYNC = 'async',
   IN = 'in',
+  NOT_IN = 'nin',
   NOT = 'not',
+  CONTAINS = 'contains',
+  SUBSETOF = 'subsetof',
+  EMPTY = 'empty',
+  SIZE = 'size',
   RETURN = 'return',
   THROW = 'throw',
   CONTINUE = 'continue',
@@ -92,6 +97,7 @@ export enum SyntaxType {
 export enum PathType {
   SIMPLE = 'simple',
   RICH = 'rich',
+  JSON = 'json',
 }
 
 export interface EngineOptions {

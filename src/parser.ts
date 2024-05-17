@@ -211,10 +211,10 @@ export class JsonTemplateParser {
       return this.parseSelector();
     } else if (this.lexer.matchToArray()) {
       return this.parsePathOptions();
-    } else if (this.lexer.match('[')) {
-      return this.parseArrayFilterExpr();
     } else if (this.lexer.match('{')) {
       return this.parseObjectFiltersExpr();
+    } else if (this.lexer.match('[')) {
+      return this.parseArrayFilterExpr();
     } else if (this.lexer.match('@') || this.lexer.match('#')) {
       return this.parsePathOptions();
     }
@@ -265,7 +265,7 @@ export class JsonTemplateParser {
     };
   }
 
-  private parsePathRoot(root?: Expression): Expression | string | undefined {
+  private parsePathRoot(pathType: PathType, root?: Expression): Expression | string | undefined {
     if (root) {
       return root;
     }
@@ -273,6 +273,17 @@ export class JsonTemplateParser {
       this.lexer.ignoreTokens(1);
       return DATA_PARAM_KEY;
     }
+
+    if (this.lexer.match('$')) {
+      this.lexer.ignoreTokens(1);
+      return pathType === PathType.JSON ? DATA_PARAM_KEY : BINDINGS_PARAM_KEY;
+    }
+
+    if (this.lexer.match('@')) {
+      this.lexer.ignoreTokens(1);
+      return undefined;
+    }
+
     if (this.lexer.matchID()) {
       return this.lexer.value();
     }
@@ -287,23 +298,18 @@ export class JsonTemplateParser {
       this.lexer.ignoreTokens(1);
       return PathType.RICH;
     }
-    return this.options?.defaultPathType ?? PathType.RICH;
-  }
-
-  private parsePathTypeExpr(): Expression {
-    const pathType = this.parsePathType();
-    const expr = this.parseBaseExpr();
-    if (expr.type === SyntaxType.PATH) {
-      expr.pathType = pathType;
+    if (this.lexer.matchJsonPath()) {
+      this.lexer.ignoreTokens(1);
+      return PathType.JSON;
     }
-    return expr;
+    return this.options?.defaultPathType ?? PathType.RICH;
   }
 
   private parsePath(options?: { root?: Expression }): PathExpression | Expression {
     const pathType = this.parsePathType();
     const expr: PathExpression = {
       type: SyntaxType.PATH,
-      root: this.parsePathRoot(options?.root),
+      root: this.parsePathRoot(pathType, options?.root),
       parts: this.parsePathParts(),
       pathType,
     };
@@ -548,15 +554,29 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseArrayFilterExpr(): ArrayFilterExpression {
+  private parseArrayFilterExpr(): ArrayFilterExpression | ObjectFilterExpression | undefined {
+    let exprType = SyntaxType.ARRAY_FILTER_EXPR;
+    let filter: Expression | undefined;
     this.lexer.expect('[');
-    const filter = this.parseArrayFilter();
+    if (this.lexer.match('?')) {
+      this.lexer.ignoreTokens(1);
+      exprType = SyntaxType.OBJECT_FILTER_EXPR;
+      filter = this.parseBaseExpr();
+    } else if (this.lexer.match('*')) {
+      // this selects all the items so no filter
+      this.lexer.ignoreTokens(1);
+    } else {
+      filter = this.parseArrayFilter();
+    }
     this.lexer.expect(']');
 
-    return {
-      type: SyntaxType.ARRAY_FILTER_EXPR,
-      filter,
-    };
+    if (filter) {
+      return {
+        type: exprType,
+        filter,
+      };
+    }
+    return undefined;
   }
 
   private combineExpressionsAsBinaryExpr(
@@ -666,7 +686,11 @@ export class JsonTemplateParser {
       this.lexer.match('>') ||
       this.lexer.match('<=') ||
       this.lexer.match('>=') ||
-      this.lexer.matchIN()
+      this.lexer.matchIN() ||
+      this.lexer.matchContains() ||
+      this.lexer.matchSize() ||
+      this.lexer.matchEmpty() ||
+      this.lexer.matchSubsetOf()
     ) {
       return {
         type: this.lexer.matchIN() ? SyntaxType.IN_EXPR : SyntaxType.COMPARISON_EXPR,
@@ -1245,10 +1269,6 @@ export class JsonTemplateParser {
 
     if (this.lexer.match('[')) {
       return this.parseArrayExpr();
-    }
-
-    if (this.lexer.matchPathType()) {
-      return this.parsePathTypeExpr();
     }
 
     if (this.lexer.matchPath()) {

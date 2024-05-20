@@ -74,6 +74,7 @@ export enum SyntaxType {
   SPREAD_EXPR = 'spread_expr',
   CONDITIONAL_EXPR = 'conditional_expr',
   ARRAY_INDEX_FILTER_EXPR = 'array_index_filter_expr',
+  ALL_FILTER_EXPR = 'all_filter_expr',
   OBJECT_INDEX_FILTER_EXPR = 'object_index_filter_expr',
   RANGE_FILTER_EXPR = 'range_filter_expr',
   OBJECT_FILTER_EXPR = 'object_filter_expr',
@@ -192,12 +193,14 @@ export interface IndexFilterExpression extends Expression {
   exclude?: boolean;
 }
 
+export interface AllFilterExpression extends Expression {}
+
 export interface ObjectFilterExpression extends Expression {
   filter: Expression;
 }
 
 export interface ArrayFilterExpression extends Expression {
-  filter: RangeFilterExpression | IndexFilterExpression;
+  filter: RangeFilterExpression | IndexFilterExpression | AllFilterExpression;
 }
 export interface LiteralExpression extends Expression {
   value: string | number | boolean | null | undefined;

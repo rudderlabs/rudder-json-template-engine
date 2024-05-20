@@ -269,19 +269,19 @@ export class JsonTemplateParser {
     if (root) {
       return root;
     }
-    if (this.lexer.match('^')) {
-      this.lexer.ignoreTokens(1);
-      return DATA_PARAM_KEY;
-    }
-
-    if (this.lexer.match('$')) {
-      this.lexer.ignoreTokens(1);
-      return pathType === PathType.JSON ? DATA_PARAM_KEY : BINDINGS_PARAM_KEY;
-    }
-
-    if (this.lexer.match('@')) {
-      this.lexer.ignoreTokens(1);
-      return undefined;
+    const nextToken = this.lexer.lookahead();
+    switch (nextToken.value) {
+      case '^':
+        this.lexer.ignoreTokens(1);
+        return DATA_PARAM_KEY;
+      case '$':
+        this.lexer.ignoreTokens(1);
+        return pathType === PathType.JSON ? DATA_PARAM_KEY : BINDINGS_PARAM_KEY;
+      case '@':
+        this.lexer.ignoreTokens(1);
+        return undefined;
+      default:
+        break;
     }
 
     if (this.lexer.matchID()) {
@@ -554,7 +554,7 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseArrayFilterExpr(): ArrayFilterExpression | ObjectFilterExpression | undefined {
+  private parseArrayFilterExpr(): ArrayFilterExpression | ObjectFilterExpression {
     let exprType = SyntaxType.ARRAY_FILTER_EXPR;
     let filter: Expression | undefined;
     this.lexer.expect('[');
@@ -565,18 +565,18 @@ export class JsonTemplateParser {
     } else if (this.lexer.match('*')) {
       // this selects all the items so no filter
       this.lexer.ignoreTokens(1);
+      filter = {
+        type: SyntaxType.ALL_FILTER_EXPR,
+      };
     } else {
       filter = this.parseArrayFilter();
     }
     this.lexer.expect(']');
 
-    if (filter) {
-      return {
-        type: exprType,
-        filter,
-      };
-    }
-    return undefined;
+    return {
+      type: exprType,
+      filter,
+    };
   }
 
   private combineExpressionsAsBinaryExpr(

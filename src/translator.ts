@@ -721,7 +721,7 @@ export class JsonTemplateTranslator {
     const code: string[] = [];
     if (expr.filter.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
       code.push(this.translateIndexFilterExpr(expr.filter as IndexFilterExpression, dest, ctx));
-    } else {
+    } else if (expr.filter.type === SyntaxType.RANGE_FILTER_EXPR) {
       code.push(this.translateRangeFilterExpr(expr.filter as RangeFilterExpression, dest, ctx));
     }
     return code.join('');

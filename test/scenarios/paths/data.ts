@@ -73,6 +73,7 @@ export const data: Scenario[] = [
     templatePath: 'json_path.jt',
     input: {
       foo: 'bar',
+      min: 1,
       items: [
         {
           a: 1,

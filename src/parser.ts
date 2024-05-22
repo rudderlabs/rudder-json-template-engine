@@ -46,12 +46,15 @@ export class JsonTemplateParser {
 
   private options?: EngineOptions;
 
+  private pathTypesStack: PathType[];
+
   // indicates currently how many loops being parsed
   private loopCount = 0;
 
   constructor(lexer: JsonTemplateLexer, options?: EngineOptions) {
     this.lexer = lexer;
     this.options = options;
+    this.pathTypesStack = [];
   }
 
   parse(): Expression {
@@ -289,6 +292,13 @@ export class JsonTemplateParser {
     }
   }
 
+  private getCurrentPathType(): PathType | undefined {
+    if (this.pathTypesStack.length > 0) {
+      return this.pathTypesStack[this.pathTypesStack.length - 1];
+    }
+    return undefined;
+  }
+
   private parsePathType(): PathType {
     if (this.lexer.matchSimplePath()) {
       this.lexer.ignoreTokens(1);
@@ -302,11 +312,13 @@ export class JsonTemplateParser {
       this.lexer.ignoreTokens(1);
       return PathType.JSON;
     }
-    return this.options?.defaultPathType ?? PathType.RICH;
+
+    return this.getCurrentPathType() ?? this.options?.defaultPathType ?? PathType.RICH;
   }
 
   private parsePath(options?: { root?: Expression }): PathExpression | Expression {
     const pathType = this.parsePathType();
+    this.pathTypesStack.push(pathType);
     const expr: PathExpression = {
       type: SyntaxType.PATH,
       root: this.parsePathRoot(pathType, options?.root),
@@ -317,6 +329,7 @@ export class JsonTemplateParser {
       expr.pathType = PathType.SIMPLE;
       return expr;
     }
+    this.pathTypesStack.pop();
     return JsonTemplateParser.updatePathExpr(expr);
   }
 

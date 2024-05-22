@@ -114,6 +114,7 @@ export const data: Scenario[] = [
           b: 3,
         },
       ],
+      [2, 4, 6],
     ],
   },
   {

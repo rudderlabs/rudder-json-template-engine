@@ -1,6 +1,6 @@
 import { EMPTY_EXPR } from '../constants';
 import { SyntaxType } from '../types';
-import { CommonUtils } from './common';
+import * as CommonUtils from './common';
 
 describe('Common Utils tests', () => {
   describe('toArray', () => {

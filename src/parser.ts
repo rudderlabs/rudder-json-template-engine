@@ -38,7 +38,7 @@ import {
   TokenType,
   UnaryExpression,
 } from './types';
-import { CommonUtils } from './utils/common';
+import { convertToStatementsExpr, getLastElement, toArray } from './utils/common';
 
 export class JsonTemplateParser {
   private lexer: JsonTemplateLexer;
@@ -225,7 +225,7 @@ export class JsonTemplateParser {
     let parts: Expression[] = [];
     let newParts: Expression[] | undefined;
     // eslint-disable-next-line no-cond-assign
-    while ((newParts = CommonUtils.toArray(this.parsePathPart()))) {
+    while ((newParts = toArray(this.parsePathPart()))) {
       parts = parts.concat(newParts);
       if (newParts[0].type === SyntaxType.FUNCTION_CALL_EXPR) {
         break;
@@ -1137,7 +1137,7 @@ export class JsonTemplateParser {
     const expr = this.parseBaseExpr();
     return {
       type: SyntaxType.FUNCTION_EXPR,
-      body: CommonUtils.convertToStatementsExpr(expr),
+      body: convertToStatementsExpr(expr),
       params: ['...args'],
       async: asyncFn,
     };
@@ -1308,7 +1308,7 @@ export class JsonTemplateParser {
     return {
       type: SyntaxType.FUNCTION_EXPR,
       block: true,
-      body: CommonUtils.convertToStatementsExpr(expr),
+      body: convertToStatementsExpr(expr),
     };
   }
 
@@ -1342,7 +1342,7 @@ export class JsonTemplateParser {
     fnExpr: FunctionCallExpression,
     pathExpr: PathExpression,
   ): FunctionCallExpression | PathExpression {
-    const lastPart = CommonUtils.getLastElement(pathExpr.parts);
+    const lastPart = getLastElement(pathExpr.parts);
     // Updated
     const newFnExpr = fnExpr;
     if (lastPart?.type === SyntaxType.SELECTOR) {
@@ -1401,13 +1401,13 @@ export class JsonTemplateParser {
     }
 
     const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(newPathExpr.parts);
-    let lastPart = CommonUtils.getLastElement(newPathExpr.parts);
+    let lastPart = getLastElement(newPathExpr.parts);
     let fnExpr: FunctionCallExpression | undefined;
     if (lastPart?.type === SyntaxType.FUNCTION_CALL_EXPR) {
       fnExpr = newPathExpr.parts.pop() as FunctionCallExpression;
     }
 
-    lastPart = CommonUtils.getLastElement(newPathExpr.parts);
+    lastPart = getLastElement(newPathExpr.parts);
     if (lastPart?.type === SyntaxType.PATH_OPTIONS) {
       newPathExpr.parts.pop();
       newPathExpr.returnAsArray = lastPart.options?.toArray;

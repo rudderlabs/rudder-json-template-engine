@@ -3,7 +3,7 @@ import { JsonTemplateLexer } from './lexer';
 import { JsonTemplateParser } from './parser';
 import { JsonTemplateTranslator } from './translator';
 import { EngineOptions, Expression, FlatMappingAST, FlatMappingPaths } from './types';
-import { ConverterUtils, CommonUtils } from './utils';
+import { CreateAsyncFunction, convertToObjectMapping } from './utils';
 
 export class JsonTemplateEngine {
   private readonly fn: Function;
@@ -24,7 +24,7 @@ export class JsonTemplateEngine {
     templateOrExpr: string | Expression | FlatMappingPaths[],
     options?: EngineOptions,
   ): Function {
-    return CommonUtils.CreateAsyncFunction(
+    return CreateAsyncFunction(
       DATA_PARAM_KEY,
       BINDINGS_PARAM_KEY,
       this.translate(templateOrExpr, options),
@@ -76,12 +76,12 @@ export class JsonTemplateEngine {
     }
     let templateExpr = template as Expression;
     if (Array.isArray(template)) {
-      templateExpr = ConverterUtils.convertToObjectMapping(this.parseMappingPaths(template));
+      templateExpr = convertToObjectMapping(this.parseMappingPaths(template));
     }
     return this.translateExpression(templateExpr);
   }
 
-  evaluate(data: any, bindings: Record<string, any> = {}): any {
+  evaluate(data: unknown, bindings: Record<string, unknown> = {}): unknown {
     return this.fn(data ?? {}, bindings);
   }
 }

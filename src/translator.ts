@@ -41,7 +41,7 @@ import {
   LoopControlExpression,
   Keyword,
 } from './types';
-import { CommonUtils } from './utils/common';
+import { convertToStatementsExpr, escapeStr } from './utils/common';
 
 export class JsonTemplateTranslator {
   private vars: string[] = [];
@@ -390,7 +390,7 @@ export class JsonTemplateTranslator {
       const valuesCode = JsonTemplateTranslator.returnObjectValues(ctx);
       code.push(`${dest} = ${valuesCode}.flat();`);
     } else if (prop) {
-      const propStr = CommonUtils.escapeStr(prop);
+      const propStr = escapeStr(prop);
       code.push(`if(${ctx} && Object.prototype.hasOwnProperty.call(${ctx}, ${propStr})){`);
       code.push(`${dest}=${ctx}[${propStr}];`);
       code.push('} else {');
@@ -418,7 +418,7 @@ export class JsonTemplateTranslator {
     const result = this.acquireVar();
     code.push(JsonTemplateTranslator.generateAssignmentCode(result, '[]'));
     const { prop } = expr;
-    const propStr = CommonUtils.escapeStr(prop?.value);
+    const propStr = escapeStr(prop?.value);
     code.push(`${ctxs}=[${baseCtx}];`);
     code.push(`while(${ctxs}.length > 0) {`);
     code.push(`${currCtx} = ${ctxs}.shift();`);
@@ -454,7 +454,7 @@ export class JsonTemplateTranslator {
     }
     const fnExpr: FunctionExpression = {
       type: SyntaxType.FUNCTION_EXPR,
-      body: CommonUtils.convertToStatementsExpr(...expr.statements),
+      body: convertToStatementsExpr(...expr.statements),
       block: true,
     };
     return this.translateExpr(fnExpr, dest, ctx);
@@ -558,7 +558,7 @@ export class JsonTemplateTranslator {
 
   private getSimplePathSelector(expr: SelectorExpression, isAssignment: boolean): string {
     if (expr.prop?.type === TokenType.STR) {
-      return `${isAssignment ? '' : '?.'}[${CommonUtils.escapeStr(expr.prop?.value)}]`;
+      return `${isAssignment ? '' : '?.'}[${escapeStr(expr.prop?.value)}]`;
     }
     return `${isAssignment ? '' : '?'}.${expr.prop?.value}`;
   }
@@ -703,7 +703,7 @@ export class JsonTemplateTranslator {
 
   private translateLiteral(type: TokenType, val: any): string {
     if (type === TokenType.STR) {
-      return CommonUtils.escapeStr(val);
+      return escapeStr(val);
     }
     return String(val);
   }

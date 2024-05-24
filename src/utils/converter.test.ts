@@ -1,13 +1,13 @@
 /* eslint-disable sonarjs/no-duplicate-string */
 import { DATA_PARAM_KEY } from '../constants';
 import { PathType, SyntaxType, TokenType } from '../types';
-import { ConverterUtils } from './converter';
+import { convertToObjectMapping } from './converter';
 import { JsonTemplateEngine } from '../engine';
 
 describe('Converter Utils Tests', () => {
   describe('convertToObjectMapping', () => {
     it('should convert single simple flat mapping to object mapping', () => {
-      const objectMapping = ConverterUtils.convertToObjectMapping(
+      const objectMapping = convertToObjectMapping(
         JsonTemplateEngine.parseMappingPaths([
           {
             input: '.a.b',
@@ -51,7 +51,7 @@ describe('Converter Utils Tests', () => {
       });
     });
     it('should convert single simple flat mapping with array index to object mapping', () => {
-      const objectMapping = ConverterUtils.convertToObjectMapping(
+      const objectMapping = convertToObjectMapping(
         JsonTemplateEngine.parseMappingPaths([
           {
             input: '.a.b',
@@ -100,7 +100,7 @@ describe('Converter Utils Tests', () => {
       });
     });
     it('should convert single flat array mapping to object mapping', () => {
-      const objectMapping = ConverterUtils.convertToObjectMapping(
+      const objectMapping = convertToObjectMapping(
         JsonTemplateEngine.parseMappingPaths([
           {
             input: '.a[*].b',
@@ -155,7 +155,7 @@ describe('Converter Utils Tests', () => {
       });
     });
     it('should convert multiple flat array mapping to object mapping', () => {
-      const objectMapping = ConverterUtils.convertToObjectMapping(
+      const objectMapping = convertToObjectMapping(
         JsonTemplateEngine.parseMappingPaths([
           {
             input: '.a[*].b',
@@ -229,7 +229,7 @@ describe('Converter Utils Tests', () => {
       });
     });
     it('should convert multiple flat array mapping to object mapping with root level mapping', () => {
-      const objectMapping = ConverterUtils.convertToObjectMapping(
+      const objectMapping = convertToObjectMapping(
         JsonTemplateEngine.parseMappingPaths([
           {
             input: '~j $.root',
@@ -326,7 +326,7 @@ describe('Converter Utils Tests', () => {
       });
     });
     it('should convert multiple flat nested array mapping to object mapping with root level mapping', () => {
-      const objectMapping = ConverterUtils.convertToObjectMapping(
+      const objectMapping = convertToObjectMapping(
         JsonTemplateEngine.parseMappingPaths([
           {
             input: '~j $.root',

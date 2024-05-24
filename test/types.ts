@@ -1,9 +1,10 @@
-import { EngineOptions, PathType } from '../src';
+import { EngineOptions, FlatMappingPaths, PathType } from '../src';
 
 export type Scenario = {
   description?: string;
   input?: any;
   templatePath?: string;
+  containsMappings?: true;
   options?: EngineOptions;
   bindings?: any;
   output?: any;
@@ -12,6 +13,12 @@ export type Scenario = {
 
 export namespace Scenario {
   export function getTemplatePath(scenario: Scenario): string {
-    return scenario.templatePath || 'template.jt';
+    if (scenario.templatePath) {
+      return scenario.templatePath;
+    }
+    if (scenario.containsMappings) {
+      return 'mappings.json';
+    }
+    return 'template.jt';
   }
 }

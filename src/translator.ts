@@ -41,7 +41,7 @@ import {
   LoopControlExpression,
   Keyword,
 } from './types';
-import { CommonUtils } from './utils';
+import { CommonUtils } from './utils/common';
 
 export class JsonTemplateTranslator {
   private vars: string[] = [];

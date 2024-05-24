@@ -2,25 +2,14 @@ import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { JsonTemplateParser } from './parser';
 import { JsonTemplateTranslator } from './translator';
-import { EngineOptions, Expression } from './types';
-import { CommonUtils } from './utils';
+import { EngineOptions, Expression, FlatMappingAST, FlatMappingPaths } from './types';
+import { ConverterUtils, CommonUtils } from './utils';
 
 export class JsonTemplateEngine {
   private readonly fn: Function;
 
   private constructor(fn: Function) {
     this.fn = fn;
-  }
-
-  static create(templateOrExpr: string | Expression, options?: EngineOptions): JsonTemplateEngine {
-    return new JsonTemplateEngine(this.compileAsAsync(templateOrExpr, options));
-  }
-
-  static createAsSync(
-    templateOrExpr: string | Expression,
-    options?: EngineOptions,
-  ): JsonTemplateEngine {
-    return new JsonTemplateEngine(this.compileAsSync(templateOrExpr, options));
   }
 
   private static compileAsSync(
@@ -32,7 +21,7 @@ export class JsonTemplateEngine {
   }
 
   private static compileAsAsync(
-    templateOrExpr: string | Expression,
+    templateOrExpr: string | Expression | FlatMappingPaths[],
     options?: EngineOptions,
   ): Function {
     return CommonUtils.CreateAsyncFunction(
@@ -42,19 +31,6 @@ export class JsonTemplateEngine {
     );
   }
 
-  static parse(template: string, options?: EngineOptions): Expression {
-    const lexer = new JsonTemplateLexer(template);
-    const parser = new JsonTemplateParser(lexer, options);
-    return parser.parse();
-  }
-
-  static translate(templateOrExpr: string | Expression, options?: EngineOptions): string {
-    if (typeof templateOrExpr === 'string') {
-      return this.translateTemplate(templateOrExpr, options);
-    }
-    return this.translateExpression(templateOrExpr);
-  }
-
   private static translateTemplate(template: string, options?: EngineOptions): string {
     return this.translateExpression(this.parse(template, options));
   }
@@ -62,6 +38,47 @@ export class JsonTemplateEngine {
   private static translateExpression(expr: Expression): string {
     const translator = new JsonTemplateTranslator(expr);
     return translator.translate();
+  }
+
+  static parseMappingPaths(mappings: FlatMappingPaths[]): FlatMappingAST[] {
+    return mappings.map((mapping) => ({
+      input: JsonTemplateEngine.parse(mapping.input).statements[0],
+      output: JsonTemplateEngine.parse(mapping.output).statements[0],
+    }));
+  }
+
+  static create(
+    templateOrExpr: string | Expression | FlatMappingPaths[],
+    options?: EngineOptions,
+  ): JsonTemplateEngine {
+    return new JsonTemplateEngine(this.compileAsAsync(templateOrExpr, options));
+  }
+
+  static createAsSync(
+    templateOrExpr: string | Expression,
+    options?: EngineOptions,
+  ): JsonTemplateEngine {
+    return new JsonTemplateEngine(this.compileAsSync(templateOrExpr, options));
+  }
+
+  static parse(template: string, options?: EngineOptions): Expression {
+    const lexer = new JsonTemplateLexer(template);
+    const parser = new JsonTemplateParser(lexer, options);
+    return parser.parse();
+  }
+
+  static translate(
+    template: string | Expression | FlatMappingPaths[],
+    options?: EngineOptions,
+  ): string {
+    if (typeof template === 'string') {
+      return this.translateTemplate(template, options);
+    }
+    let templateExpr = template as Expression;
+    if (Array.isArray(template)) {
+      templateExpr = ConverterUtils.convertToObjectMapping(this.parseMappingPaths(template));
+    }
+    return this.translateExpression(templateExpr);
   }
 
   evaluate(data: any, bindings: Record<string, any> = {}): any {

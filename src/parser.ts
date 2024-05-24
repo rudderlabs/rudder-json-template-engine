@@ -1,4 +1,4 @@
-import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
+import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR } from './constants';
 import { JsonTemplateLexerError, JsonTemplateParserError } from './errors';
 import { JsonTemplateLexer } from './lexer';
 import {
@@ -38,15 +38,14 @@ import {
   TokenType,
   UnaryExpression,
 } from './types';
-import { CommonUtils } from './utils';
+import { CommonUtils } from './utils/common';
 
-const EMPTY_EXPR = { type: SyntaxType.EMPTY };
 export class JsonTemplateParser {
   private lexer: JsonTemplateLexer;
 
   private options?: EngineOptions;
 
-  private pathTypesStack: PathType[];
+  private pathTypesStack: PathType[] = [];
 
   // indicates currently how many loops being parsed
   private loopCount = 0;
@@ -54,7 +53,6 @@ export class JsonTemplateParser {
   constructor(lexer: JsonTemplateLexer, options?: EngineOptions) {
     this.lexer = lexer;
     this.options = options;
-    this.pathTypesStack = [];
   }
 
   parse(): Expression {
@@ -361,7 +359,12 @@ export class JsonTemplateParser {
     }
 
     let prop: Token | undefined;
-    if (this.lexer.match('*') || this.lexer.matchID() || this.lexer.matchTokenType(TokenType.STR)) {
+    if (
+      this.lexer.match('*') ||
+      this.lexer.matchID() ||
+      this.lexer.matchKeyword() ||
+      this.lexer.matchTokenType(TokenType.STR)
+    ) {
       prop = this.lexer.lex();
     }
     return {

@@ -262,3 +262,13 @@ export interface LoopExpression extends Expression {
 export interface ThrowExpression extends Expression {
   value: Expression;
 }
+
+export type FlatMappingPaths = {
+  input: string;
+  output: string;
+};
+
+export type FlatMappingAST = {
+  input: PathExpression;
+  output: PathExpression;
+};

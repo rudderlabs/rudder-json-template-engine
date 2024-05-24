@@ -1,0 +1,42 @@
+[
+  {
+    "input": "~j $.discount",
+    "output": "~j $.events[0].items[*].discount"
+  },
+  {
+    "input": "~j $.products[*].id",
+    "output": "~j $.events[0].items[*].product_id"
+  },
+  {
+    "input": "~j $.event",
+    "output": "~j $.events[0].name"
+  },
+  {
+    "input": "~j $.products[*].name",
+    "output": "~j $.events[0].items[*].product_name"
+  },
+  {
+    "input": "~j $.products[*].category",
+    "output": "~j $.events[0].items[*].product_category"
+  },
+  {
+    "input": "~j $.products[*].variations[*].size",
+    "output": "~j $.events[0].items[*].options[*].s"
+  },
+  {
+    "input": "~j $.products[*].variations[*].length",
+    "output": "~j $.events[0].items[*].options[*].l"
+  },
+  {
+    "input": "~j $.products[*].variations[*].width",
+    "output": "~j $.events[0].items[*].options[*].w"
+  },
+  {
+    "input": "~j $.products[*].variations[*].color",
+    "output": "~j $.events[0].items[*].options[*].c"
+  },
+  {
+    "input": "~j $.products[*].variations[*].height",
+    "output": "~j $.events[0].items[*].options[*].h"
+  }
+]

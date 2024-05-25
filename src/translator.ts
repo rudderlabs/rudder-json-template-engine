@@ -687,13 +687,8 @@ export class JsonTemplateTranslator {
     code.push(this.translateExpr(expr.args[0], val1, ctx));
     code.push(this.translateExpr(expr.args[1], val2, ctx));
     code.push(`if(typeof ${val2} === 'object'){`);
-    if (expr.op === Keyword.IN) {
-      const inCode = `(Array.isArray(${val2}) ? ${val2}.includes(${val1}) : ${val1} in ${val2})`;
-      code.push(JsonTemplateTranslator.generateAssignmentCode(resultVar, inCode));
-    } else {
-      const notInCode = `(Array.isArray(${val2}) ? !${val2}.includes(${val1}) : !(${val1} in ${val2}))`;
-      code.push(JsonTemplateTranslator.generateAssignmentCode(resultVar, notInCode));
-    }
+    const inCode = `(Array.isArray(${val2}) ? ${val2}.includes(${val1}) : ${val1} in ${val2})`;
+    code.push(JsonTemplateTranslator.generateAssignmentCode(resultVar, inCode));
     code.push('} else {');
     code.push(JsonTemplateTranslator.generateAssignmentCode(resultVar, 'false'));
     code.push('}');

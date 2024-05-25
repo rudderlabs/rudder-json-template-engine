@@ -694,6 +694,15 @@ export class JsonTemplateParser {
     return expr;
   }
 
+  private parseInExpr(expr: Expression): BinaryExpression {
+    this.lexer.ignoreTokens(1);
+    return {
+      type: SyntaxType.IN_EXPR,
+      op: Keyword.IN,
+      args: [expr, this.parseRelationalExpr()],
+    };
+  }
+
   private parseRelationalExpr(): BinaryExpression | Expression {
     const expr = this.parseNextExpr(OperatorType.RELATIONAL);
 
@@ -702,16 +711,41 @@ export class JsonTemplateParser {
       this.lexer.match('>') ||
       this.lexer.match('<=') ||
       this.lexer.match('>=') ||
-      this.lexer.matchIN() ||
       this.lexer.matchContains() ||
       this.lexer.matchSize() ||
       this.lexer.matchEmpty() ||
+      this.lexer.matchAnyOf() ||
       this.lexer.matchSubsetOf()
     ) {
       return {
-        type: this.lexer.matchIN() ? SyntaxType.IN_EXPR : SyntaxType.COMPARISON_EXPR,
+        type: SyntaxType.COMPARISON_EXPR,
         op: this.lexer.value(),
         args: [expr, this.parseRelationalExpr()],
+      };
+    }
+
+    if (this.lexer.matchIN()) {
+      return this.parseInExpr(expr);
+    }
+
+    if (this.lexer.matchNotIN()) {
+      return {
+        type: SyntaxType.UNARY_EXPR,
+        op: '!',
+        arg: this.parseInExpr(expr),
+      };
+    }
+
+    if (this.lexer.matchNoneOf()) {
+      this.lexer.ignoreTokens(1);
+      return {
+        type: SyntaxType.UNARY_EXPR,
+        op: '!',
+        arg: {
+          type: SyntaxType.COMPARISON_EXPR,
+          op: Keyword.ANYOF,
+          args: [expr, this.parseRelationalExpr()],
+        },
       };
     }
 

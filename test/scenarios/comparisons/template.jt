@@ -33,4 +33,6 @@
 [] subsetof ["a", "b", "c"],
 "abc" =~ /a.*c/,
 "AdC" =~ /a.*c/i,
+["a", "b"] anyof ["a", "c"],
+["c", "d"] noneof ["a", "b"]
 ]

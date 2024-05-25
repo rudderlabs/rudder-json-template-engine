@@ -165,8 +165,20 @@ export class JsonTemplateLexer {
     return this.matchKeywordValue(Keyword.SUBSETOF);
   }
 
+  matchAnyOf(): boolean {
+    return this.matchKeywordValue(Keyword.ANYOF);
+  }
+
+  matchNoneOf(): boolean {
+    return this.matchKeywordValue(Keyword.NONEOF);
+  }
+
   matchIN(): boolean {
-    return this.matchKeywordValue(Keyword.IN) || this.matchKeywordValue(Keyword.NOT_IN);
+    return this.matchKeywordValue(Keyword.IN);
+  }
+
+  matchNotIN(): boolean {
+    return this.matchKeywordValue(Keyword.NOT_IN);
   }
 
   matchFunction(): boolean {

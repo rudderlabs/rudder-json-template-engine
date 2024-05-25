@@ -89,6 +89,8 @@ export const binaryOperators = {
 
   subsetof: (val1, val2): string => `${val1}.every((el) => {return ${val2}.includes(el);})`,
 
+  anyof: (val1, val2): string => `${val1}.some((el) => {return ${val2}.includes(el);})`,
+
   '+': (val1, val2): string => `${val1}+${val2}`,
 
   '-': (val1, val2): string => `${val1}-${val2}`,

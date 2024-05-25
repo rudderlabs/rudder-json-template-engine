@@ -12,6 +12,8 @@ export enum Keyword {
   NOT = 'not',
   CONTAINS = 'contains',
   SUBSETOF = 'subsetof',
+  ANYOF = 'anyof',
+  NONEOF = 'noneof',
   EMPTY = 'empty',
   SIZE = 'size',
   RETURN = 'return',

@@ -682,6 +682,7 @@ export class JsonTemplateParser {
       this.lexer.match('$=') ||
       this.lexer.match('=$') ||
       this.lexer.match('==*') ||
+      this.lexer.match('=~') ||
       this.lexer.match('=*')
     ) {
       return {
@@ -690,7 +691,6 @@ export class JsonTemplateParser {
         args: [expr, this.parseEqualityExpr()],
       };
     }
-
     return expr;
   }
 

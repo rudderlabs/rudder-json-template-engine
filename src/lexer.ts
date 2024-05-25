@@ -279,7 +279,12 @@ export class JsonTemplateLexer {
       };
     }
 
-    const token = this.scanPunctuator() ?? this.scanID() ?? this.scanString() ?? this.scanInteger();
+    const token =
+      this.scanRegularExpressions() ??
+      this.scanPunctuator() ??
+      this.scanID() ??
+      this.scanString() ??
+      this.scanInteger();
     if (token) {
       return token;
     }
@@ -314,7 +319,8 @@ export class JsonTemplateLexer {
       token.type === TokenType.FLOAT ||
       token.type === TokenType.STR ||
       token.type === TokenType.NULL ||
-      token.type === TokenType.UNDEFINED
+      token.type === TokenType.UNDEFINED ||
+      token.type === TokenType.REGEXP
     );
   }
 
@@ -541,7 +547,7 @@ export class JsonTemplateLexer {
         };
       }
     } else if (ch1 === '=') {
-      if ('^$*'.indexOf(ch2) >= 0) {
+      if ('^$*~'.indexOf(ch2) >= 0) {
         this.idx += 2;
         return {
           type: TokenType.PUNCT,
@@ -635,6 +641,56 @@ export class JsonTemplateLexer {
         value: ch1 + ch2,
         range: [start, this.idx],
       };
+    }
+  }
+
+  private static isValidRegExp(regexp: string, modifiers: string) {
+    try {
+      RegExp(regexp, modifiers);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  private getRegExpModifiers(): string {
+    let modifiers = '';
+    while ('gimsuyv'.includes(this.codeChars[this.idx])) {
+      modifiers += this.codeChars[this.idx];
+      this.idx++;
+    }
+    return modifiers;
+  }
+
+  private scanRegularExpressions(): Token | undefined {
+    const start = this.idx;
+    const ch1 = this.codeChars[this.idx];
+
+    if (ch1 === '/') {
+      let end = this.idx + 1;
+      while (end < this.codeChars.length) {
+        if (this.codeChars[end] === '\n') {
+          return;
+        }
+        if (this.codeChars[end] === '/') {
+          break;
+        }
+        end++;
+      }
+
+      if (end < this.codeChars.length) {
+        this.idx = end + 1;
+        const regexp = this.getCode(start + 1, end);
+        const modifiers = this.getRegExpModifiers();
+        if (!JsonTemplateLexer.isValidRegExp(regexp, modifiers)) {
+          JsonTemplateLexer.throwError("invalid regular expression '%0'", regexp);
+        }
+        return {
+          type: TokenType.REGEXP,
+          value: this.getCode(start, this.idx),
+          range: [start, this.idx],
+        };
+      }
     }
   }
 

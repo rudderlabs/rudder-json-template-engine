@@ -74,6 +74,9 @@ export const binaryOperators = {
 
   '=$': (val1, val2): string => endsWith(val2, val1),
 
+  '=~': (val1, val2): string =>
+    `(${val2} instanceof RegExp) ? (${val2}.test(${val1})) : (${val1}==${val2})`,
+
   contains: containsStrict,
 
   '==*': (val1, val2): string => containsStrict(val2, val1),

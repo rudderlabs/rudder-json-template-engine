@@ -705,6 +705,9 @@ export class JsonTemplateTranslator {
     if (type === TokenType.STR) {
       return escapeStr(val);
     }
+    if (type === TokenType.REGEXP) {
+      return val;
+    }
     return String(val);
   }
 

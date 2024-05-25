@@ -30,5 +30,7 @@
 "" empty true,
 "abc" empty false,
 ["c", "a"] subsetof ["a", "b", "c"],
-[] subsetof ["a", "b", "c"]
+[] subsetof ["a", "b", "c"],
+"abc" =~ /a.*c/,
+"AdC" =~ /a.*c/i,
 ]

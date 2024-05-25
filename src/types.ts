@@ -35,6 +35,7 @@ export enum TokenType {
   THROW = 'throw',
   KEYWORD = 'keyword',
   EOT = 'eot',
+  REGEXP = 'regexp',
 }
 
 // In the order of precedence

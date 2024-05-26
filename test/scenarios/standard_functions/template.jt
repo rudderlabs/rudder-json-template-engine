@@ -1,0 +1,14 @@
+const arr = .arr;
+const obj = .obj;
+{
+    sum: .arr.sum(),
+    sum2: (arr.index(0) + arr.index(-1)) * arr.length() / 2,
+    avg: arr.avg(),
+    min: arr.min(),
+    max: arr.max(),
+    stddev: arr.stddev(),
+    length: arr.length(),
+    first: arr.first(),
+    last: arr.last(),
+    keys: obj.keys(),
+}

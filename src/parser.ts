@@ -366,6 +366,9 @@ export class JsonTemplateParser {
       this.lexer.matchTokenType(TokenType.STR)
     ) {
       prop = this.lexer.lex();
+      if (prop.type === TokenType.KEYWORD) {
+        prop.type = TokenType.ID;
+      }
     }
     return {
       type: SyntaxType.SELECTOR,
@@ -1346,10 +1349,6 @@ export class JsonTemplateParser {
     };
   }
 
-  private static prependFunctionID(prefix: string, id?: string): string {
-    return id ? `${prefix}.${id}` : prefix;
-  }
-
   private static ignoreEmptySelectors(parts: Expression[]): Expression[] {
     return parts.filter(
       (part) => !(part.type === SyntaxType.SELECTOR && part.selector === '.' && !part.prop),
@@ -1384,13 +1383,11 @@ export class JsonTemplateParser {
       if (selectorExpr.selector === '.' && selectorExpr.prop?.type === TokenType.ID) {
         pathExpr.parts.pop();
         newFnExpr.id = selectorExpr.prop.value;
-        newFnExpr.dot = true;
       }
     }
 
     if (!pathExpr.parts.length && pathExpr.root && typeof pathExpr.root !== 'object') {
-      newFnExpr.id = this.prependFunctionID(pathExpr.root, fnExpr.id);
-      newFnExpr.dot = false;
+      newFnExpr.parent = pathExpr.root;
     } else {
       newFnExpr.object = pathExpr;
     }

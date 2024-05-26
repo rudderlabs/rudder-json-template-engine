@@ -107,3 +107,66 @@ export const binaryOperators = {
 
   '**': (val1, val2): string => `${val1}**${val2}`,
 };
+
+export const standardFunctions = {
+  sum: `function sum(arr) { 
+    if(!Array.isArray(arr)) {
+      throw new Error('Expected an array');
+    }
+    return arr.reduce((a, b) => a + b, 0); 
+  }`,
+  max: `function max(arr) { 
+    if(!Array.isArray(arr)) {
+      throw new Error('Expected an array');
+    }
+    return Math.max(...arr); 
+  }`,
+  min: `function min(arr) { 
+    if(!Array.isArray(arr)) {
+      throw new Error('Expected an array');
+    }
+    return Math.min(...arr); 
+  }`,
+  avg: `function avg(arr) { 
+    if(!Array.isArray(arr)) {
+      throw new Error('Expected an array');
+    }
+    return sum(arr) / arr.length; 
+  }`,
+  length: `function length(arr) {
+    if(!Array.isArray(arr) && typeof arr !== 'string') {
+      throw new Error('Expected an array or string');
+    }
+     return arr.length; 
+    }`,
+  stddev: `function stddev(arr) {
+    if(!Array.isArray(arr)) {
+      throw new Error('Expected an array');
+    }
+    const mu = avg(arr);
+    const diffSq = arr.map((el) => (el - mu) ** 2);
+    return Math.sqrt(avg(diffSq));
+  }`,
+  first: `function first(arr) { 
+    if(!Array.isArray(arr)) {
+      throw new Error('Expected an array');
+    }
+    return arr[0]; 
+  }`,
+  last: `function last(arr) { 
+    if(!Array.isArray(arr)) {
+      throw new Error('Expected an array');
+    }
+    return arr[arr.length - 1]; 
+  }`,
+  index: `function index(arr, i) { 
+    if(!Array.isArray(arr)) {
+      throw new Error('Expected an array');
+    }
+    if (i < 0) {
+      return arr[arr.length + i];
+    }
+    return arr[i];
+   }`,
+  keys: `function keys(obj) { return Object.keys(obj); }`,
+};

@@ -234,7 +234,7 @@ export interface FunctionCallExpression extends Expression {
   args: Expression[];
   object?: Expression;
   id?: string;
-  dot?: boolean;
+  parent?: string;
 }
 
 export interface ConditionalExpression extends Expression {
@@ -272,6 +272,6 @@ export type FlatMappingPaths = {
 };
 
 export type FlatMappingAST = {
-  input: PathExpression;
+  input: PathExpression | FunctionCallExpression;
   output: PathExpression;
 };

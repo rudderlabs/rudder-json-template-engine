@@ -2,6 +2,14 @@ import { Scenario } from '../../types';
 
 export const data: Scenario[] = [
   {
+    templatePath: 'array_functions.jt',
+    input: [1, 2, 3, 4],
+    output: {
+      map: [2, 4, 6, 8],
+      filter: [2, 4],
+    },
+  },
+  {
     templatePath: 'function_calls.jt',
     output: ['abc', null, undefined],
   },

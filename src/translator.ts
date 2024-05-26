@@ -7,7 +7,7 @@ import {
   VARS_PREFIX,
 } from './constants';
 import { JsonTemplateTranslatorError } from './errors';
-import { binaryOperators } from './operators';
+import { binaryOperators, standardFunctions } from './operators';
 import {
   ArrayExpression,
   AssignmentExpression,
@@ -39,7 +39,6 @@ import {
   LoopExpression,
   IncrementExpression,
   LoopControlExpression,
-  Keyword,
 } from './types';
 import { convertToStatementsExpr, escapeStr } from './utils/common';
 
@@ -49,6 +48,8 @@ export class JsonTemplateTranslator {
   private lastVarId = 0;
 
   private unusedVars: string[] = [];
+
+  private standardFunctions: Record<string, string> = {};
 
   private readonly expr: Expression;
 
@@ -91,6 +92,10 @@ export class JsonTemplateTranslator {
     this.init();
     const code: string[] = [];
     const exprCode = this.translateExpr(this.expr, dest, ctx);
+    const functions = Object.values(this.standardFunctions);
+    if (functions.length > 0) {
+      code.push(functions.join('').replaceAll(/\s+/g, ' '));
+    }
     code.push(`let ${dest};`);
     code.push(this.vars.map((elm) => `let ${elm};`).join(''));
     code.push(exprCode);
@@ -475,7 +480,13 @@ export class JsonTemplateTranslator {
   }
 
   private getFunctionName(expr: FunctionCallExpression, ctx: string): string {
-    return expr.dot ? `${ctx}.${expr.id}` : expr.id || ctx;
+    if (expr.object) {
+      return expr.id ? `${ctx}.${expr.id}` : ctx;
+    }
+    if (expr.parent) {
+      return expr.id ? `${expr.parent}.${expr.id}` : expr.parent;
+    }
+    return expr.id as string;
   }
 
   private translateFunctionCallExpr(
@@ -491,7 +502,17 @@ export class JsonTemplateTranslator {
       code.push(`if(${JsonTemplateTranslator.returnIsNotEmpty(result)}){`);
     }
     const functionArgsStr = this.translateSpreadableExpressions(expr.args, result, code);
-    code.push(result, '=', this.getFunctionName(expr, result), '(', functionArgsStr, ');');
+    const functionName = this.getFunctionName(expr, result);
+    if (expr.id && standardFunctions[expr.id]) {
+      this.standardFunctions[expr.id] = standardFunctions[expr.id];
+      code.push(`if(${functionName} && typeof ${functionName} === 'function'){`);
+      code.push(result, '=', functionName, '(', functionArgsStr, ');');
+      code.push('} else {');
+      code.push(result, '=', expr.id, '(', expr.parent || result, ',', functionArgsStr, ');');
+      code.push('}');
+    } else {
+      code.push(result, '=', functionName, '(', functionArgsStr, ');');
+    }
     if (expr.object) {
       code.push('}');
     }

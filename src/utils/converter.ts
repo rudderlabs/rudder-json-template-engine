@@ -22,17 +22,21 @@ export function convertToObjectMapping(flatMappingAST: FlatMappingAST[]): Object
     type: SyntaxType.OBJECT_EXPR,
     props: [] as ObjectPropExpression[],
   };
+
   const outputObject: OutputObject = {};
+
   for (const flatMapping of flatMappingAST) {
     let currentOutputObject = outputObject;
     let currentOutputAST = outputAST.props;
     let currentInputAST = flatMapping.input;
+
     const numOutputParts = flatMapping.output.parts.length;
     for (let i = 0; i < numOutputParts; i++) {
       const outputPart = flatMapping.output.parts[i];
+
       if (outputPart.type === SyntaxType.SELECTOR && outputPart.prop?.value) {
         const key = outputPart.prop.value;
-        // If it's the last part, assign the value
+
         if (i === numOutputParts - 1) {
           currentOutputAST.push({
             type: SyntaxType.OBJECT_PROP_EXPR,
@@ -42,7 +46,7 @@ export function convertToObjectMapping(flatMappingAST: FlatMappingAST[]): Object
           break;
         }
 
-        const nextOuptutPart = flatMapping.output.parts[i + 1] as ArrayFilterExpression;
+        const nextOutputPart = flatMapping.output.parts[i + 1] as ArrayFilterExpression;
         const items = [] as ObjectPropExpression[];
         const objectExpr: ObjectExpression = {
           type: SyntaxType.OBJECT_EXPR,
@@ -50,17 +54,18 @@ export function convertToObjectMapping(flatMappingAST: FlatMappingAST[]): Object
         };
 
         if (!currentOutputObject[key]) {
-          const outputPropAST = {
+          const outputPropAST: ObjectPropExpression = {
             type: SyntaxType.OBJECT_PROP_EXPR,
             key,
             value: objectExpr,
-          } as ObjectPropExpression;
-          if (nextOuptutPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
+          };
+
+          if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
             const arrayExpr: ArrayExpression = {
               type: SyntaxType.ARRAY_EXPR,
               elements: [],
             };
-            arrayExpr.elements[nextOuptutPart.filter.indexes.elements[0].value] = objectExpr;
+            arrayExpr.elements[nextOutputPart.filter.indexes.elements[0].value] = objectExpr;
             outputPropAST.value = arrayExpr;
           }
 
@@ -70,18 +75,22 @@ export function convertToObjectMapping(flatMappingAST: FlatMappingAST[]): Object
           };
           currentOutputAST.push(outputPropAST);
         }
-        if (nextOuptutPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
+
+        if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
           const filterIndex = currentInputAST.parts.findIndex(
             (part) => part.type === SyntaxType.ARRAY_FILTER_EXPR,
           );
+
           if (filterIndex !== -1) {
             const inputRemainingParts = currentInputAST.parts.splice(filterIndex + 1);
             currentInputAST.returnAsArray = true;
             const outputPropAST = currentOutputObject[key].$___ast as ObjectPropExpression;
+
             if (outputPropAST.value.type !== SyntaxType.PATH) {
               currentInputAST.parts.push(outputPropAST.value);
               outputPropAST.value = currentInputAST;
             }
+
             currentInputAST = {
               type: SyntaxType.PATH,
               pathType: currentInputAST.pathType,
@@ -89,7 +98,7 @@ export function convertToObjectMapping(flatMappingAST: FlatMappingAST[]): Object
             } as PathExpression;
           }
         }
-        // Move to the next level
+
         currentOutputAST = currentOutputObject[key].$___items as ObjectPropExpression[];
         currentOutputObject = currentOutputObject[key] as OutputObject;
       }

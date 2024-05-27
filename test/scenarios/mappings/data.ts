@@ -11,6 +11,8 @@ export const data: Scenario[] = [
           id: 1,
           name: 'p1',
           category: 'baby',
+          price: 3,
+          quantity: 2,
           variations: [
             {
               color: 'blue',
@@ -24,6 +26,8 @@ export const data: Scenario[] = [
         {
           id: 2,
           name: 'p2',
+          price: 5,
+          quantity: 3,
           variations: [
             {
               length: 1,
@@ -38,6 +42,8 @@ export const data: Scenario[] = [
           id: 3,
           name: 'p3',
           category: 'home',
+          price: 10,
+          quantity: 1,
           variations: [
             {
               width: 1,
@@ -66,6 +72,7 @@ export const data: Scenario[] = [
                   s: 2,
                 },
               ],
+              value: 5.4,
             },
             {
               discount: 10,
@@ -80,6 +87,7 @@ export const data: Scenario[] = [
                   c: 'red',
                 },
               ],
+              value: 13.5,
             },
             {
               discount: 10,
@@ -93,9 +101,11 @@ export const data: Scenario[] = [
                   h: 2,
                 },
               ],
+              value: 9,
             },
           ],
           name: 'purchase',
+          revenue: 27.9,
         },
       ],
     },

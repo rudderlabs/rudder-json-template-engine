@@ -24,6 +24,14 @@
     "output": "~j $.events[0].items[*].options[*].s"
   },
   {
+    "input": "~j $.products[*].(@.price * @.quantity * (1 - $.discount / 100))",
+    "output": "~j $.events[0].items[*].value"
+  },
+  {
+    "input": "~j $.products[*].(@.price * @.quantity * (1 - $.discount / 100)).sum()",
+    "output": "~j $.events[0].revenue"
+  },
+  {
     "input": "~j $.products[*].variations[*].length",
     "output": "~j $.events[0].items[*].options[*].l"
   },

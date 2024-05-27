@@ -168,5 +168,5 @@ export const standardFunctions = {
     }
     return arr[i];
    }`,
-  keys: `function keys(obj) { return Object.keys(obj); }`,
+  keys: 'function keys(obj) { return Object.keys(obj); }',
 };

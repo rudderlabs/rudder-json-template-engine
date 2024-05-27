@@ -1,6 +1,6 @@
 import { type Expression, type StatementsExpression, SyntaxType } from '../types';
 
-export function toArray(val: any): any[] | undefined {
+export function toArray<T>(val: T | T[] | undefined): T[] | undefined {
   if (val === undefined || val === null) {
     return undefined;
   }

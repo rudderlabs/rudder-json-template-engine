@@ -1,5 +1,5 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { FlatMappingPaths, JsonTemplateEngine, PathType } from '../../src';
 import { Scenario } from '../types';
 

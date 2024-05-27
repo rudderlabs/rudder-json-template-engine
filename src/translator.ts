@@ -39,6 +39,7 @@ import {
   LoopExpression,
   IncrementExpression,
   LoopControlExpression,
+  Literal,
 } from './types';
 import { convertToStatementsExpr, escapeStr } from './utils/common';
 
@@ -395,9 +396,9 @@ export class JsonTemplateTranslator {
       const valuesCode = JsonTemplateTranslator.returnObjectValues(ctx);
       code.push(`${dest} = ${valuesCode}.flat();`);
     } else if (prop) {
-      const propStr = escapeStr(prop);
-      code.push(`if(${ctx} && Object.prototype.hasOwnProperty.call(${ctx}, ${propStr})){`);
-      code.push(`${dest}=${ctx}[${propStr}];`);
+      const escapedPropName = escapeStr(prop);
+      code.push(`if(${ctx} && Object.prototype.hasOwnProperty.call(${ctx}, ${escapedPropName})){`);
+      code.push(`${dest}=${ctx}[${escapedPropName}];`);
       code.push('} else {');
       code.push(`${dest} = undefined;`);
       code.push('}');
@@ -717,13 +718,11 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private translateLiteral(type: TokenType, val: any): string {
+  private translateLiteral(type: TokenType, val: Literal): string {
     if (type === TokenType.STR) {
-      return escapeStr(val);
+      return escapeStr(String(val));
     }
-    if (type === TokenType.REGEXP) {
-      return val;
-    }
+
     return String(val);
   }
 
@@ -738,10 +737,15 @@ export class JsonTemplateTranslator {
 
   private translateArrayFilterExpr(expr: ArrayFilterExpression, dest: string, ctx: string): string {
     const code: string[] = [];
-    if (expr.filter.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
-      code.push(this.translateIndexFilterExpr(expr.filter as IndexFilterExpression, dest, ctx));
-    } else if (expr.filter.type === SyntaxType.RANGE_FILTER_EXPR) {
-      code.push(this.translateRangeFilterExpr(expr.filter as RangeFilterExpression, dest, ctx));
+    switch (expr.filter.type) {
+      case SyntaxType.ARRAY_INDEX_FILTER_EXPR:
+        code.push(this.translateIndexFilterExpr(expr.filter as IndexFilterExpression, dest, ctx));
+        break;
+      case SyntaxType.RANGE_FILTER_EXPR:
+        code.push(this.translateRangeFilterExpr(expr.filter as RangeFilterExpression, dest, ctx));
+        break;
+      default:
+        break;
     }
     return code.join('');
   }

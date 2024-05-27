@@ -205,8 +205,10 @@ export interface ObjectFilterExpression extends Expression {
 export interface ArrayFilterExpression extends Expression {
   filter: RangeFilterExpression | IndexFilterExpression | AllFilterExpression;
 }
+
+export type Literal = string | number | boolean | null | undefined;
 export interface LiteralExpression extends Expression {
-  value: string | number | boolean | null | undefined;
+  value: Literal;
   tokenType: TokenType;
 }
 export interface PathExpression extends Expression {

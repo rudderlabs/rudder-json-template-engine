@@ -1,13 +1,13 @@
-import { EngineOptions, FlatMappingPaths, PathType } from '../src';
+import type { EngineOptions } from '../src';
 
 export type Scenario = {
   description?: string;
-  input?: any;
+  input?: unknown;
   templatePath?: string;
   containsMappings?: true;
   options?: EngineOptions;
-  bindings?: any;
-  output?: any;
+  bindings?: Record<string, unknown> | undefined;
+  output?: unknown;
   error?: string;
 };
 

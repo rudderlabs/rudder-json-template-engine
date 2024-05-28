@@ -138,7 +138,7 @@ export class JsonTemplateParser {
       if (!path.root || typeof path.root === 'object' || path.root === DATA_PARAM_KEY) {
         throw new JsonTemplateParserError('Invalid assignment path');
       }
-      if (JsonTemplateParser.isRichPath(expr as PathExpression)) {
+      if (!JsonTemplateParser.isSimplePath(expr as PathExpression)) {
         throw new JsonTemplateParserError('Invalid assignment path');
       }
       path.pathType = PathType.SIMPLE;
@@ -577,10 +577,10 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseAllFilter(): ArrayFilterExpression {
+  private parseAllFilter(): ObjectFilterExpression {
     this.lexer.expect('*');
     return {
-      type: SyntaxType.ARRAY_FILTER_EXPR,
+      type: SyntaxType.OBJECT_FILTER_EXPR,
       filter: {
         type: SyntaxType.ALL_FILTER_EXPR,
       },

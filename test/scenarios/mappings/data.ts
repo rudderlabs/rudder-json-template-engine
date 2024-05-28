@@ -1,11 +1,15 @@
+import { PathType } from '../../../src';
 import type { Scenario } from '../../types';
 
 export const data: Scenario[] = [
   {
     containsMappings: true,
+    options: {
+      defaultPathType: PathType.JSON,
+    },
     input: {
       discount: 10,
-      event: 'purchase',
+      events: ['purchase', 'custom'],
       products: [
         {
           id: 1,
@@ -76,21 +80,6 @@ export const data: Scenario[] = [
             },
             {
               discount: 10,
-              product_id: 2,
-              product_name: 'p2',
-              options: [
-                {
-                  l: 1,
-                },
-                {
-                  l: 2,
-                  c: 'red',
-                },
-              ],
-              value: 13.5,
-            },
-            {
-              discount: 10,
               product_id: 3,
               product_name: 'p3',
               product_category: 'home',
@@ -105,7 +94,7 @@ export const data: Scenario[] = [
             },
           ],
           name: 'purchase',
-          revenue: 27.9,
+          revenue: 14.4,
         },
       ],
     },

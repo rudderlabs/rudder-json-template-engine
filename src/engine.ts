@@ -40,10 +40,13 @@ export class JsonTemplateEngine {
     return translator.translate();
   }
 
-  static parseMappingPaths(mappings: FlatMappingPaths[]): FlatMappingAST[] {
+  static parseMappingPaths(
+    mappings: FlatMappingPaths[],
+    options?: EngineOptions,
+  ): FlatMappingAST[] {
     return mappings.map((mapping) => ({
-      input: JsonTemplateEngine.parse(mapping.input).statements[0],
-      output: JsonTemplateEngine.parse(mapping.output).statements[0],
+      input: JsonTemplateEngine.parse(mapping.input, options).statements[0],
+      output: JsonTemplateEngine.parse(mapping.output, options).statements[0],
     }));
   }
 
@@ -76,7 +79,7 @@ export class JsonTemplateEngine {
     }
     let templateExpr = template as Expression;
     if (Array.isArray(template)) {
-      templateExpr = convertToObjectMapping(this.parseMappingPaths(template));
+      templateExpr = convertToObjectMapping(this.parseMappingPaths(template, options));
     }
     return this.translateExpression(templateExpr);
   }

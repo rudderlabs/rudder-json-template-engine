@@ -78,7 +78,7 @@ export function convertToObjectMapping(flatMappingAST: FlatMappingAST[]): Object
 
         if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
           const filterIndex = currentInputAST.parts.findIndex(
-            (part) => part.type === SyntaxType.ARRAY_FILTER_EXPR,
+            (part) => part.type === SyntaxType.OBJECT_FILTER_EXPR,
           );
 
           if (filterIndex !== -1) {

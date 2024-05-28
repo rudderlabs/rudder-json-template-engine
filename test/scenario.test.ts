@@ -34,6 +34,7 @@ describe(`${scenarioName}:`, () => {
       result = await ScenarioUtils.evaluateScenario(templateEngine, scenario);
       expect(result).toEqual(scenario.output);
     } catch (error: any) {
+      console.error(error);
       console.log('Actual result', JSON.stringify(result, null, 2));
       console.log('Expected result', JSON.stringify(scenario.output, null, 2));
       expect(error.message).toContain(scenario.error);

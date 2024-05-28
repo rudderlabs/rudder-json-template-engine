@@ -737,15 +737,10 @@ export class JsonTemplateTranslator {
 
   private translateArrayFilterExpr(expr: ArrayFilterExpression, dest: string, ctx: string): string {
     const code: string[] = [];
-    switch (expr.filter.type) {
-      case SyntaxType.ARRAY_INDEX_FILTER_EXPR:
-        code.push(this.translateIndexFilterExpr(expr.filter as IndexFilterExpression, dest, ctx));
-        break;
-      case SyntaxType.RANGE_FILTER_EXPR:
-        code.push(this.translateRangeFilterExpr(expr.filter as RangeFilterExpression, dest, ctx));
-        break;
-      default:
-        break;
+    if (expr.filter.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
+      code.push(this.translateIndexFilterExpr(expr.filter as IndexFilterExpression, dest, ctx));
+    } else if (expr.filter.type === SyntaxType.RANGE_FILTER_EXPR) {
+      code.push(this.translateRangeFilterExpr(expr.filter as RangeFilterExpression, dest, ctx));
     }
     return code.join('');
   }
@@ -757,6 +752,7 @@ export class JsonTemplateTranslator {
   ): string {
     const code: string[] = [];
     const condition = this.acquireVar();
+    code.push(JsonTemplateTranslator.generateAssignmentCode(condition, 'true'));
     code.push(this.translateExpr(expr.filter, condition, ctx));
     code.push(`if(!${condition}) {${dest} = undefined;}`);
     this.releaseVars(condition);

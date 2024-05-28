@@ -123,7 +123,7 @@ describe('Converter Utils Tests', () => {
                   prop: { type: TokenType.ID, value: 'a' },
                 },
                 {
-                  type: SyntaxType.ARRAY_FILTER_EXPR,
+                  type: SyntaxType.OBJECT_FILTER_EXPR,
                   filter: { type: SyntaxType.ALL_FILTER_EXPR },
                 },
                 {
@@ -182,7 +182,7 @@ describe('Converter Utils Tests', () => {
                   prop: { type: TokenType.ID, value: 'a' },
                 },
                 {
-                  type: SyntaxType.ARRAY_FILTER_EXPR,
+                  type: SyntaxType.OBJECT_FILTER_EXPR,
                   filter: { type: SyntaxType.ALL_FILTER_EXPR },
                 },
                 {
@@ -260,7 +260,7 @@ describe('Converter Utils Tests', () => {
                   prop: { type: TokenType.ID, value: 'a' },
                 },
                 {
-                  type: SyntaxType.ARRAY_FILTER_EXPR,
+                  type: SyntaxType.OBJECT_FILTER_EXPR,
                   filter: { type: SyntaxType.ALL_FILTER_EXPR },
                 },
                 {
@@ -368,7 +368,7 @@ describe('Converter Utils Tests', () => {
                   },
                 },
                 {
-                  type: SyntaxType.ARRAY_FILTER_EXPR,
+                  type: SyntaxType.OBJECT_FILTER_EXPR,
                   filter: {
                     type: SyntaxType.ALL_FILTER_EXPR,
                   },
@@ -447,7 +447,7 @@ describe('Converter Utils Tests', () => {
                             },
                           },
                           {
-                            type: SyntaxType.ARRAY_FILTER_EXPR,
+                            type: SyntaxType.OBJECT_FILTER_EXPR,
                             filter: {
                               type: SyntaxType.ALL_FILTER_EXPR,
                             },

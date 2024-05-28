@@ -1,6 +1,6 @@
 [
     ~j $.foo,
     ~j $.items[*],
-    ~j $.items[?(@.a>$.min)],
+    ~j $.items[?(@.a>$.size)],
     ~j $.items.(@.a + @.b)
 ]

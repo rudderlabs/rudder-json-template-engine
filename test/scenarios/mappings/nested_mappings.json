@@ -1,0 +1,34 @@
+[
+  {
+    "input": "$.products[*].id",
+    "output": "$.items[*].product_id"
+  },
+  {
+    "input": "$.products[*].name",
+    "output": "$.items[*].product_name"
+  },
+  {
+    "input": "$.products[*].category",
+    "output": "$.items[*].product_category"
+  },
+  {
+    "input": "$.products[*].variations[*].size",
+    "output": "$.items[*].options[*].s"
+  },
+  {
+    "input": "$.products[*].variations[*].length",
+    "output": "$.items[*].options[*].l"
+  },
+  {
+    "input": "$.products[*].variations[*].width",
+    "output": "$.items[*].options[*].w"
+  },
+  {
+    "input": "$.products[*].variations[*].color",
+    "output": "$.items[*].options[*].c"
+  },
+  {
+    "input": "$.products[*].variations[*].height",
+    "output": "$.items[*].options[*].h"
+  }
+]

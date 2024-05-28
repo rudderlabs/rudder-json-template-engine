@@ -31,23 +31,17 @@ export class JsonTemplateEngine {
     );
   }
 
-  private static translateTemplate(template: string, options?: EngineOptions): string {
-    return this.translateExpression(this.parse(template, options));
-  }
-
   private static translateExpression(expr: Expression): string {
     const translator = new JsonTemplateTranslator(expr);
     return translator.translate();
   }
 
-  static parseMappingPaths(
-    mappings: FlatMappingPaths[],
-    options?: EngineOptions,
-  ): FlatMappingAST[] {
-    return mappings.map((mapping) => ({
+  static parseMappingPaths(mappings: FlatMappingPaths[], options?: EngineOptions): Expression {
+    const flatMappingAST = mappings.map((mapping) => ({
       input: JsonTemplateEngine.parse(mapping.input, options).statements[0],
       output: JsonTemplateEngine.parse(mapping.output, options).statements[0],
     }));
+    return convertToObjectMapping(flatMappingAST);
   }
 
   static create(
@@ -74,12 +68,11 @@ export class JsonTemplateEngine {
     template: string | Expression | FlatMappingPaths[],
     options?: EngineOptions,
   ): string {
-    if (typeof template === 'string') {
-      return this.translateTemplate(template, options);
-    }
     let templateExpr = template as Expression;
-    if (Array.isArray(template)) {
-      templateExpr = convertToObjectMapping(this.parseMappingPaths(template, options));
+    if (typeof template === 'string') {
+      templateExpr = this.parse(template, options);
+    } else if (Array.isArray(template)) {
+      templateExpr = this.parseMappingPaths(template, options);
     }
     return this.translateExpression(templateExpr);
   }

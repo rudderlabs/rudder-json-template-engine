@@ -1,0 +1,18 @@
+[
+  {
+    "input": "$.events[0]",
+    "output": "$.events[0].name"
+  },
+  {
+    "input": "'identify'",
+    "output": "$.events[0].type"
+  },
+  {
+    "input": "$.events[1]",
+    "output": "$.events[1].name"
+  },
+  {
+    "input": "'track'",
+    "output": "$.events[1].type"
+  }
+]

@@ -9,7 +9,6 @@ import {
   FlatMappingAST,
   Expression,
   IndexFilterExpression,
-  AllFilterExpression,
 } from '../types';
 import { getLastElement } from './common';
 

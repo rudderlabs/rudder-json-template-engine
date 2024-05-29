@@ -1,0 +1,4 @@
+{
+    true: [1, 2] anyof [2, 3],
+    false: [1, 2] anyof [3, 4]
+}

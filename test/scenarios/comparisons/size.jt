@@ -1,0 +1,4 @@
+{
+    true: [["a", "b"] size 2, "ab" size 2],
+    false: [[] size 1, "" size 1]
+}

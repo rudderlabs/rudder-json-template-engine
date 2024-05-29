@@ -1,0 +1,4 @@
+{
+    true:["EndsWith" $== "With", "With" ==$ "EndsWith"],
+    false: ["EndsWith" $== "NotWith", "NotWith" ==$ "EndsWith"]
+}

@@ -1059,9 +1059,9 @@ export class JsonTemplateParser {
       this.lexer.ignoreTokens(1);
       key = this.parseBaseExpr();
       this.lexer.expect(']');
-    } else if (this.lexer.matchID()) {
+    } else if (this.lexer.matchID() || this.lexer.matchKeyword()) {
       key = this.lexer.value();
-    } else if (this.lexer.matchTokenType(TokenType.STR)) {
+    } else if (this.lexer.matchLiteral() && !this.lexer.matchTokenType(TokenType.REGEXP)) {
       key = this.parseLiteralExpr();
     } else {
       this.lexer.throwUnexpectedToken();
@@ -1070,7 +1070,10 @@ export class JsonTemplateParser {
   }
 
   private parseShortKeyValueObjectPropExpr(): ObjectPropExpression | undefined {
-    if (this.lexer.matchID() && (this.lexer.match(',', 1) || this.lexer.match('}', 1))) {
+    if (
+      (this.lexer.matchID() || this.lexer.matchKeyword()) &&
+      (this.lexer.match(',', 1) || this.lexer.match('}', 1))
+    ) {
       const key = this.lexer.lookahead().value;
       const value = this.parseBaseExpr();
       return {

@@ -1,0 +1,4 @@
+{
+    true: ["aBc" ==* "aB", "abc" contains "c", ["a", "b", "c"] contains "c"],
+    false: ["aBc" ==* "ab", "abc" contains "d", ["a", "b", "c"] contains "d"]
+}

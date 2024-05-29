@@ -1,0 +1,4 @@
+{
+    true: ['abc' =~ /a.*c/, 'aBC' =~ /a.*c/i],
+    false: ['abC' =~ /a.*c/, 'aBd' =~ /a.*c/i]
+}

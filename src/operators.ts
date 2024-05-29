@@ -28,9 +28,11 @@ function containsStrict(val1, val2): string {
 
 function contains(val1, val2): string {
   const code: string[] = [];
-  code.push(`(typeof ${val1} === 'string' && `);
-  code.push(`typeof ${val2} === 'string' && `);
-  code.push(`${val1}.toLowerCase().includes(${val2}.toLowerCase()))`);
+  code.push(`(typeof ${val1} === 'string' && typeof ${val2} === 'string') ?`);
+  code.push(`(${val1}.toLowerCase().includes(${val2}.toLowerCase()))`);
+  code.push(':');
+  code.push(`(Array.isArray(${val1}) && (${val1}.includes(${val2})`);
+  code.push(`|| (typeof ${val2} === 'string' && ${val1}.includes(${val2}.toLowerCase()))))`);
   return code.join('');
 }
 
@@ -56,7 +58,14 @@ export const binaryOperators = {
 
   '!==': (val1, val2): string => `${val1}!==${val2}`,
 
-  '!=': (val1, val2): string => `${val1}!=${val2}`,
+  '!=': (val1, val2): string => {
+    const code: string[] = [];
+    code.push(`(typeof ${val1} == 'string' && typeof ${val2} == 'string') ?`);
+    code.push(`(${val1}.toLowerCase() != ${val2}.toLowerCase())`);
+    code.push(':');
+    code.push(`(${val1} != ${val2})`);
+    return code.join('');
+  },
 
   '^==': startsWithStrict,
 
@@ -77,11 +86,11 @@ export const binaryOperators = {
   '=~': (val1, val2): string =>
     `(${val2} instanceof RegExp) ? (${val2}.test(${val1})) : (${val1}==${val2})`,
 
-  contains: containsStrict,
+  contains,
 
-  '==*': (val1, val2): string => containsStrict(val2, val1),
+  '==*': (val1, val2): string => containsStrict(val1, val2),
 
-  '=*': (val1, val2): string => contains(val2, val1),
+  '=*': (val1, val2): string => contains(val1, val2),
 
   size: (val1, val2): string => `${val1}.length === ${val2}`,
 

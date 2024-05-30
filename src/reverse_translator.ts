@@ -44,6 +44,12 @@ export class JsonTemplateReverseTranslator {
   }
 
   translate(expr: Expression): string {
+    let code: string = this.translateExpression(expr);
+    code = code.replace(/\.\s+\./g, '.');
+    return code;
+  }
+
+  translateExpression(expr: Expression): string {
     switch (expr.type) {
       case SyntaxType.LITERAL:
         return this.translateLiteralExpression(expr as LiteralExpression);
@@ -110,25 +116,25 @@ export class JsonTemplateReverseTranslator {
   }
 
   translateArrayFilterExpression(expr: ArrayFilterExpression): string {
-    return this.translate(expr.filter);
+    return this.translateExpression(expr.filter);
   }
 
   translateRangeFilterExpression(expr: RangeFilterExpression): string {
     const code: string[] = [];
     code.push('[');
     if (expr.fromIdx) {
-      code.push(this.translate(expr.fromIdx));
+      code.push(this.translateExpression(expr.fromIdx));
     }
     code.push(':');
     if (expr.toIdx) {
-      code.push(this.translate(expr.toIdx));
+      code.push(this.translateExpression(expr.toIdx));
     }
     code.push(']');
     return code.join('');
   }
 
   translateArrayIndexFilterExpression(expr: IndexFilterExpression): string {
-    return this.translate(expr.indexes);
+    return this.translateExpression(expr.indexes);
   }
 
   translateObjectIndexFilterExpression(expr: IndexFilterExpression): string {
@@ -137,7 +143,7 @@ export class JsonTemplateReverseTranslator {
     if (expr.exclude) {
       code.push('!');
     }
-    code.push(this.translate(expr.indexes));
+    code.push(this.translateExpression(expr.indexes));
     code.push('}');
     return code.join('');
   }
@@ -156,7 +162,7 @@ export class JsonTemplateReverseTranslator {
   }
 
   translateWithWrapper(expr: Expression, prefix: string, suffix: string): string {
-    return `${prefix}${this.translate(expr)}${suffix}`;
+    return `${prefix}${this.translateExpression(expr)}${suffix}`;
   }
 
   translateObjectFilterExpression(expr: ObjectFilterExpression): string {
@@ -182,37 +188,37 @@ export class JsonTemplateReverseTranslator {
     code.push('for');
     code.push('(');
     if (expr.init) {
-      code.push(this.translate(expr.init));
+      code.push(this.translateExpression(expr.init));
     }
     code.push(';');
     if (expr.test) {
-      code.push(this.translate(expr.test));
+      code.push(this.translateExpression(expr.test));
     }
     code.push(';');
     if (expr.update) {
-      code.push(this.translate(expr.update));
+      code.push(this.translateExpression(expr.update));
     }
     code.push(')');
     code.push('{');
-    code.push(this.translate(expr.body));
+    code.push(this.translateExpression(expr.body));
     code.push('}');
     return code.join(' ');
   }
 
   translateReturnExpression(expr: ReturnExpression): string {
-    return `return ${this.translate(expr.value || EMPTY_EXPR)};`;
+    return `return ${this.translateExpression(expr.value || EMPTY_EXPR)};`;
   }
 
   translateThrowExpression(expr: ThrowExpression): string {
-    return `throw ${this.translate(expr.value)}`;
+    return `throw ${this.translateExpression(expr.value)}`;
   }
 
   translateExpressions(exprs: Expression[], sep: string): string {
-    return exprs.map((expr) => this.translate(expr)).join(sep);
+    return exprs.map((expr) => this.translateExpression(expr)).join(sep);
   }
 
   translateLambdaFunctionExpression(expr: FunctionExpression): string {
-    return `lambda ${this.translate(expr.body)}`;
+    return `lambda ${this.translateExpression(expr.body)}`;
   }
 
   translateRegularFunctionExpression(expr: FunctionExpression): string {
@@ -224,14 +230,14 @@ export class JsonTemplateReverseTranslator {
     }
     code.push(')');
     code.push('{');
-    code.push(this.translate(expr.body));
+    code.push(this.translateExpression(expr.body));
     code.push('}');
     return code.join(' ');
   }
 
   translateFunctionExpression(expr: FunctionExpression): string {
     if (expr.block) {
-      return this.translate(expr.body.statements[0]);
+      return this.translateExpression(expr.body.statements[0]);
     }
     const code: string[] = [];
     if (expr.async) {
@@ -248,7 +254,7 @@ export class JsonTemplateReverseTranslator {
   translateFunctionCallExpression(expr: FunctionCallExpression): string {
     const code: string[] = [];
     if (expr.object) {
-      code.push(this.translate(expr.object));
+      code.push(this.translateExpression(expr.object));
       if (expr.id) {
         code.push(` .${expr.id}`);
       }
@@ -272,7 +278,7 @@ export class JsonTemplateReverseTranslator {
     const code: string[] = [];
     code.push(this.translatePathExpression(expr.path));
     code.push(expr.op);
-    code.push(this.translate(expr.value));
+    code.push(this.translateExpression(expr.value));
     return code.join(' ');
   }
 
@@ -287,7 +293,7 @@ export class JsonTemplateReverseTranslator {
       code.push(' }');
     }
     code.push(' = ');
-    code.push(this.translate(expr.value));
+    code.push(this.translateExpression(expr.value));
     return code.join(' ');
   }
 
@@ -295,12 +301,12 @@ export class JsonTemplateReverseTranslator {
     if (expr.type === SyntaxType.STATEMENTS_EXPR) {
       return this.translateWithWrapper(expr, '{', '}');
     }
-    return this.translate(expr);
+    return this.translateExpression(expr);
   }
 
   translateConditionalExpression(expr: ConditionalExpression): string {
     const code: string[] = [];
-    code.push(this.translate(expr.if));
+    code.push(this.translateExpression(expr.if));
     code.push(' ? ');
     code.push(this.translateConditionalExpressionBody(expr.then));
     if (expr.else) {
@@ -339,7 +345,7 @@ export class JsonTemplateReverseTranslator {
     }
     if (expr.root) {
       const code: string[] = [];
-      code.push(this.translate(expr.root));
+      code.push(this.translateExpression(expr.root));
       if (expr.root.type === SyntaxType.PATH) {
         code.push('.(). ');
       }
@@ -380,7 +386,7 @@ export class JsonTemplateReverseTranslator {
       if (part.type === SyntaxType.BLOCK_EXPR) {
         code.push('.');
       }
-      code.push(this.translate(part));
+      code.push(this.translateExpression(part));
       code.push(this.translatePathOptions(part.options));
     }
     return code.join('');
@@ -406,7 +412,7 @@ export class JsonTemplateReverseTranslator {
   }
 
   translateUnaryExpression(expr: UnaryExpression): string {
-    return `${expr.op} ${this.translate(expr.arg)}`;
+    return `${expr.op} ${this.translateExpression(expr.arg)}`;
   }
 
   translateBlockExpression(expr: BlockExpression): string {
@@ -418,7 +424,7 @@ export class JsonTemplateReverseTranslator {
   }
 
   translateSpreadExpression(expr: SpreadExpression): string {
-    return `...${this.translate(expr.value)}`;
+    return `...${this.translateExpression(expr.value)}`;
   }
 
   translateObjectExpression(expr: ObjectExpression): string {
@@ -435,13 +441,13 @@ export class JsonTemplateReverseTranslator {
       if (typeof expr.key === 'string') {
         code.push(expr.key);
       } else if (expr.key.type === SyntaxType.LITERAL) {
-        code.push(this.translate(expr.key));
+        code.push(this.translateExpression(expr.key));
       } else {
         code.push(this.translateWithWrapper(expr.key, '[', ']'));
       }
       code.push(': ');
     }
-    code.push(this.translate(expr.value));
+    code.push(this.translateExpression(expr.value));
     return code.join('');
   }
 
@@ -462,8 +468,8 @@ export class JsonTemplateReverseTranslator {
   }
 
   translateBinaryExpression(expr: BinaryExpression): string {
-    const left = this.translate(expr.args[0]);
-    const right = this.translate(expr.args[1]);
+    const left = this.translateExpression(expr.args[0]);
+    const right = this.translateExpression(expr.args[1]);
     return `${left} ${expr.op} ${right}`;
   }
 }

@@ -39,9 +39,9 @@ import {
   LoopExpression,
   IncrementExpression,
   LoopControlExpression,
-  Literal,
 } from './types';
 import { convertToStatementsExpr, escapeStr } from './utils/common';
+import { translateLiteral } from './utils/transalator';
 
 export class JsonTemplateTranslator {
   private vars: string[] = [];
@@ -250,7 +250,7 @@ export class JsonTemplateTranslator {
       code.push(`return ${value};`);
       this.releaseVars(value);
     }
-    code.push(`return ${ctx};`);
+    code.push(`return;`);
     return code.join('');
   }
 
@@ -377,7 +377,7 @@ export class JsonTemplateTranslator {
   }
 
   private translatePathExpr(expr: PathExpression, dest: string, ctx: string): string {
-    if (expr.pathType === PathType.SIMPLE) {
+    if (expr.inferredPathType === PathType.SIMPLE) {
       return this.translateSimplePathExpr(expr, dest, ctx);
     }
     const code: string[] = [];
@@ -574,7 +574,7 @@ export class JsonTemplateTranslator {
   }
 
   private translateLiteralExpr(expr: LiteralExpression, dest: string, _ctx: string): string {
-    const literalCode = this.translateLiteral(expr.tokenType, expr.value);
+    const literalCode = translateLiteral(expr.tokenType, expr.value);
     return JsonTemplateTranslator.generateAssignmentCode(dest, literalCode);
   }
 
@@ -716,14 +716,6 @@ export class JsonTemplateTranslator {
     code.push('}');
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, resultVar));
     return code.join('');
-  }
-
-  private translateLiteral(type: TokenType, val: Literal): string {
-    if (type === TokenType.STR) {
-      return escapeStr(String(val));
-    }
-
-    return String(val);
   }
 
   private translateUnaryExpr(expr: UnaryExpression, dest: string, ctx: string): string {

@@ -89,7 +89,6 @@ export enum SyntaxType {
   ARRAY_EXPR = 'array_expr',
   BLOCK_EXPR = 'block_expr',
   FUNCTION_EXPR = 'function_expr',
-  FUNCTION_CALL_ARG = 'function_call_arg',
   FUNCTION_CALL_EXPR = 'function_call_expr',
   RETURN_EXPR = 'return_expr',
   THROW_EXPR = 'throw_expr',
@@ -102,6 +101,7 @@ export enum PathType {
   SIMPLE = 'simple',
   RICH = 'rich',
   JSON = 'json',
+  UNKNOWN = 'unknown',
 }
 
 export interface EngineOptions {
@@ -127,6 +127,10 @@ export interface Expression {
   [key: string]: any;
 }
 
+export interface PathOptionsExpression extends Expression {
+  options: PathOptions;
+}
+
 export interface LambdaArgExpression extends Expression {
   index: number;
 }
@@ -136,6 +140,7 @@ export interface FunctionExpression extends Expression {
   body: StatementsExpression;
   block?: boolean;
   async?: boolean;
+  lambda?: boolean;
 }
 
 export interface BlockExpression extends Expression {
@@ -203,7 +208,7 @@ export interface ObjectFilterExpression extends Expression {
 }
 
 export interface ArrayFilterExpression extends Expression {
-  filter: RangeFilterExpression | IndexFilterExpression | AllFilterExpression;
+  filter: RangeFilterExpression | IndexFilterExpression;
 }
 
 export type Literal = string | number | boolean | null | undefined;
@@ -216,6 +221,7 @@ export interface PathExpression extends Expression {
   root?: Expression | string;
   returnAsArray?: boolean;
   pathType: PathType;
+  inferredPathType: PathType;
 }
 
 export interface IncrementExpression extends Expression {

@@ -90,7 +90,7 @@ export class JsonTemplateLexer {
   }
 
   matchPath(): boolean {
-    return this.matchPathType() || this.matchPathSelector() || this.matchID();
+    return this.matchPathSelector() || this.matchID();
   }
 
   matchSpread(): boolean {

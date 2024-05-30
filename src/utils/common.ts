@@ -1,4 +1,4 @@
-import { type Expression, type StatementsExpression, SyntaxType } from '../types';
+import { type Expression, type StatementsExpression, SyntaxType, BlockExpression } from '../types';
 
 export function toArray<T>(val: T | T[] | undefined): T[] | undefined {
   if (val === undefined || val === null) {
@@ -12,6 +12,13 @@ export function getLastElement<T>(arr: T[]): T | undefined {
     return undefined;
   }
   return arr[arr.length - 1];
+}
+
+export function createBlockExpression(expr: Expression): BlockExpression {
+  return {
+    type: SyntaxType.BLOCK_EXPR,
+    statements: [expr],
+  };
 }
 
 export function convertToStatementsExpr(...expressions: Expression[]): StatementsExpression {

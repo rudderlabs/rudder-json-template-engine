@@ -38,14 +38,24 @@ import {
   TokenType,
   UnaryExpression,
 } from './types';
-import { convertToStatementsExpr, getLastElement, toArray } from './utils/common';
+import {
+  convertToStatementsExpr,
+  createBlockExpression,
+  getLastElement,
+  toArray,
+} from './utils/common';
+
+type PathTypeResult = {
+  pathType: PathType;
+  inferredPathType: PathType;
+};
 
 export class JsonTemplateParser {
   private lexer: JsonTemplateLexer;
 
   private options?: EngineOptions;
 
-  private pathTypesStack: PathType[] = [];
+  private pathTypesStack: PathTypeResult[] = [];
 
   // indicates currently how many loops being parsed
   private loopCount = 0;
@@ -141,7 +151,7 @@ export class JsonTemplateParser {
       if (!JsonTemplateParser.isSimplePath(expr as PathExpression)) {
         throw new JsonTemplateParserError('Invalid assignment path');
       }
-      path.pathType = PathType.SIMPLE;
+      path.inferredPathType = PathType.SIMPLE;
       return {
         type: SyntaxType.ASSIGNMENT_EXPR,
         value: this.parseBaseExpr(),
@@ -266,7 +276,10 @@ export class JsonTemplateParser {
     };
   }
 
-  private parsePathRoot(pathType: PathType, root?: Expression): Expression | string | undefined {
+  private parsePathRoot(
+    pathType: PathTypeResult,
+    root?: Expression,
+  ): Expression | string | undefined {
     if (root) {
       return root;
     }
@@ -276,7 +289,7 @@ export class JsonTemplateParser {
     const nextToken = this.lexer.lookahead();
     const tokenReturnValues = {
       '^': DATA_PARAM_KEY,
-      $: pathType === PathType.JSON ? DATA_PARAM_KEY : BINDINGS_PARAM_KEY,
+      $: pathType.inferredPathType === PathType.JSON ? DATA_PARAM_KEY : BINDINGS_PARAM_KEY,
       '@': undefined,
     };
     if (Object.prototype.hasOwnProperty.call(tokenReturnValues, nextToken.value)) {
@@ -285,44 +298,60 @@ export class JsonTemplateParser {
     }
   }
 
-  private getCurrentPathType(): PathType | undefined {
+  private getInferredPathType(): PathTypeResult {
     if (this.pathTypesStack.length > 0) {
       return this.pathTypesStack[this.pathTypesStack.length - 1];
     }
-    return undefined;
+    return {
+      pathType: PathType.UNKNOWN,
+      inferredPathType: this.options?.defaultPathType || PathType.RICH,
+    };
   }
 
-  private parsePathType(): PathType {
+  private createPathResult(pathType: PathType) {
+    return {
+      pathType,
+      inferredPathType: pathType,
+    };
+  }
+
+  private parsePathType(): PathTypeResult {
     if (this.lexer.matchSimplePath()) {
       this.lexer.ignoreTokens(1);
-      return PathType.SIMPLE;
+      return this.createPathResult(PathType.SIMPLE);
     }
     if (this.lexer.matchRichPath()) {
       this.lexer.ignoreTokens(1);
-      return PathType.RICH;
+      return this.createPathResult(PathType.RICH);
     }
     if (this.lexer.matchJsonPath()) {
       this.lexer.ignoreTokens(1);
-      return PathType.JSON;
+      return this.createPathResult(PathType.JSON);
     }
 
-    return this.getCurrentPathType() ?? this.options?.defaultPathType ?? PathType.RICH;
+    return this.getInferredPathType();
+  }
+
+  private parsePathTypeExpr(): Expression {
+    const pathTypeResult = this.parsePathType();
+    this.pathTypesStack.push(pathTypeResult);
+    const expr = this.parseBaseExpr();
+    this.pathTypesStack.pop();
+    return expr;
   }
 
   private parsePath(options?: { root?: Expression }): PathExpression | Expression {
-    const pathType = this.parsePathType();
-    this.pathTypesStack.push(pathType);
+    const pathTypeResult = this.parsePathType();
     const expr: PathExpression = {
       type: SyntaxType.PATH,
-      root: this.parsePathRoot(pathType, options?.root),
+      root: this.parsePathRoot(pathTypeResult, options?.root),
       parts: this.parsePathParts(),
-      pathType,
+      ...pathTypeResult,
     };
     if (!expr.parts.length) {
-      expr.pathType = PathType.SIMPLE;
+      expr.inferredPathType = PathType.SIMPLE;
       return expr;
     }
-    this.pathTypesStack.pop();
     return JsonTemplateParser.updatePathExpr(expr);
   }
 
@@ -433,7 +462,7 @@ export class JsonTemplateParser {
 
   private parseObjectFilter(): IndexFilterExpression | ObjectFilterExpression {
     let exclude = false;
-    if (this.lexer.match('~')) {
+    if (this.lexer.match('~') || this.lexer.match('!')) {
       this.lexer.ignoreTokens(1);
       exclude = true;
     }
@@ -741,7 +770,7 @@ export class JsonTemplateParser {
       return {
         type: SyntaxType.UNARY_EXPR,
         op: '!',
-        arg: this.parseInExpr(expr),
+        arg: createBlockExpression(this.parseInExpr(expr)),
       };
     }
 
@@ -750,11 +779,11 @@ export class JsonTemplateParser {
       return {
         type: SyntaxType.UNARY_EXPR,
         op: '!',
-        arg: {
+        arg: createBlockExpression({
           type: SyntaxType.COMPARISON_EXPR,
           op: Keyword.ANYOF,
           args: [expr, this.parseRelationalExpr()],
-        },
+        }),
       };
     }
 
@@ -1186,6 +1215,7 @@ export class JsonTemplateParser {
       body: convertToStatementsExpr(expr),
       params: ['...args'],
       async: asyncFn,
+      lambda: true,
     };
   }
 
@@ -1333,6 +1363,10 @@ export class JsonTemplateParser {
       return this.parseArrayExpr();
     }
 
+    if (this.lexer.matchPathType()) {
+      return this.parsePathTypeExpr();
+    }
+
     if (this.lexer.matchPath()) {
       return this.parsePath();
     }
@@ -1453,15 +1487,16 @@ export class JsonTemplateParser {
       newPathExpr.returnAsArray = lastPart.options?.toArray;
     }
     newPathExpr.parts = JsonTemplateParser.combinePathOptionParts(newPathExpr.parts);
+
     let expr: Expression = newPathExpr;
     if (fnExpr) {
       expr = JsonTemplateParser.convertToFunctionCallExpr(fnExpr, newPathExpr);
     }
     if (shouldConvertAsBlock) {
       expr = JsonTemplateParser.convertToBlockExpr(expr);
-      newPathExpr.pathType = PathType.RICH;
+      newPathExpr.inferredPathType = PathType.RICH;
     } else if (this.isRichPath(newPathExpr)) {
-      newPathExpr.pathType = PathType.RICH;
+      newPathExpr.inferredPathType = PathType.RICH;
     }
     return expr;
   }

@@ -12,7 +12,11 @@ export class ScenarioUtils {
     }
     scenario.options = scenario.options || {};
     scenario.options.defaultPathType = scenario.options.defaultPathType || PathType.SIMPLE;
-    return JsonTemplateEngine.create(template, scenario.options);
+    const newTemplate = JsonTemplateEngine.reverseTranslate(
+      JsonTemplateEngine.parse(template, scenario.options),
+      scenario.options,
+    );
+    return JsonTemplateEngine.create(newTemplate, scenario.options);
   }
 
   static evaluateScenario(templateEngine: JsonTemplateEngine, scenario: Scenario): any {

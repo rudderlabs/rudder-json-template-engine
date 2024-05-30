@@ -9,8 +9,9 @@ import {
   FlatMappingAST,
   Expression,
   IndexFilterExpression,
+  BlockExpression,
 } from '../types';
-import { getLastElement } from './common';
+import { createBlockExpression, getLastElement } from './common';
 
 function CreateObjectExpression(): ObjectExpression {
   return {
@@ -67,7 +68,7 @@ function processAllFilter(
   }
   const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
   if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
-    matchedInputParts.push(currentOutputPropAST.value);
+    matchedInputParts.push(createBlockExpression(currentOutputPropAST.value));
     currentOutputPropAST.value = {
       type: SyntaxType.PATH,
       root: currentInputAST.root,
@@ -78,7 +79,8 @@ function processAllFilter(
   }
   currentInputAST.root = undefined;
 
-  return getLastElement(currentOutputPropAST.value.parts) as ObjectExpression;
+  const blockExpr = getLastElement(currentOutputPropAST.value.parts) as BlockExpression;
+  return blockExpr.statements[0] as ObjectExpression;
 }
 
 function processFlatMapping(flatMapping: FlatMappingAST, outputAST: ObjectExpression) {

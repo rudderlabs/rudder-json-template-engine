@@ -2,7 +2,7 @@ let c = "c key";
 let d = 3;
 let b = 2;
 let a = {
-    "a": 1,
+    "a b": 1,
     b,
     // [c] coverts to "c key"
     [c]: {
@@ -11,7 +11,7 @@ let a = {
     },
 };
 a.({
-    a: .a,
+    a: ."a b",
     b: .b,
     ...(.'c key')
 })

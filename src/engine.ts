@@ -1,6 +1,7 @@
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { JsonTemplateParser } from './parser';
+import { JsonTemplateReverseTranslator } from './reverse_translator';
 import { JsonTemplateTranslator } from './translator';
 import { EngineOptions, Expression, FlatMappingPaths } from './types';
 import { CreateAsyncFunction, convertToObjectMapping } from './utils';
@@ -36,7 +37,10 @@ export class JsonTemplateEngine {
     return translator.translate();
   }
 
-  static parseMappingPaths(mappings: FlatMappingPaths[], options?: EngineOptions): Expression {
+  private static parseMappingPaths(
+    mappings: FlatMappingPaths[],
+    options?: EngineOptions,
+  ): Expression {
     const flatMappingAST = mappings.map((mapping) => ({
       input: JsonTemplateEngine.parse(mapping.input, options).statements[0],
       output: JsonTemplateEngine.parse(mapping.output, options).statements[0],
@@ -58,7 +62,10 @@ export class JsonTemplateEngine {
     return new JsonTemplateEngine(this.compileAsSync(templateOrExpr, options));
   }
 
-  static parse(template: string, options?: EngineOptions): Expression {
+  static parse(template: string | FlatMappingPaths[], options?: EngineOptions): Expression {
+    if (Array.isArray(template)) {
+      return this.parseMappingPaths(template, options);
+    }
     const lexer = new JsonTemplateLexer(template);
     const parser = new JsonTemplateParser(lexer, options);
     return parser.parse();
@@ -69,12 +76,15 @@ export class JsonTemplateEngine {
     options?: EngineOptions,
   ): string {
     let templateExpr = template as Expression;
-    if (typeof template === 'string') {
+    if (typeof template === 'string' || Array.isArray(template)) {
       templateExpr = this.parse(template, options);
-    } else if (Array.isArray(template)) {
-      templateExpr = this.parseMappingPaths(template, options);
     }
     return this.translateExpression(templateExpr);
+  }
+
+  static reverseTranslate(expr: Expression, options?: EngineOptions): string {
+    const translator = new JsonTemplateReverseTranslator(options);
+    return translator.translate(expr);
   }
 
   evaluate(data: unknown, bindings: Record<string, unknown> = {}): unknown {

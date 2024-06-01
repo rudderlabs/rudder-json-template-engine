@@ -42,8 +42,9 @@ export class JsonTemplateEngine {
     options?: EngineOptions,
   ): Expression {
     const flatMappingAST = mappings.map((mapping) => ({
-      input: JsonTemplateEngine.parse(mapping.input, options).statements[0],
-      output: JsonTemplateEngine.parse(mapping.output, options).statements[0],
+      ...mapping,
+      inputExpr: JsonTemplateEngine.parse(mapping.input, options).statements[0],
+      outputExpr: JsonTemplateEngine.parse(mapping.output, options).statements[0],
     }));
     return convertToObjectMapping(flatMappingAST);
   }

@@ -143,7 +143,14 @@ export const data: Scenario[] = [
       ],
     },
   },
-
+  {
+    containsMappings: true,
+    templatePath: 'invalid_mappings.json',
+    options: {
+      defaultPathType: PathType.JSON,
+    },
+    error: 'Failed to process output mapping',
+  },
   {
     containsMappings: true,
     templatePath: 'mappings_with_root_fields.json',

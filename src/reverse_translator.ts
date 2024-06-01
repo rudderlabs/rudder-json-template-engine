@@ -429,8 +429,8 @@ export class JsonTemplateReverseTranslator {
 
   translateObjectExpression(expr: ObjectExpression): string {
     const code: string[] = [];
-    code.push('{\n');
-    code.push(this.translateExpressions(expr.props, ',\n'));
+    code.push('{\n\t');
+    code.push(this.translateExpressions(expr.props, ',\n\t'));
     code.push('\n}');
     return code.join('');
   }

@@ -85,11 +85,14 @@ function processAllFilter(
 
 function processFlatMapping(flatMapping: FlatMappingAST, outputAST: ObjectExpression) {
   let currentOutputPropsAST = outputAST.props;
-  const currentInputAST = flatMapping.input;
+  const currentInputAST = flatMapping.inputExpr;
 
-  const numOutputParts = flatMapping.output.parts.length;
+  const numOutputParts = flatMapping.outputExpr.parts.length;
   for (let i = 0; i < numOutputParts; i++) {
-    const outputPart = flatMapping.output.parts[i];
+    if (!currentOutputPropsAST) {
+      throw new Error(`Failed to process output mapping: ${flatMapping.output}`);
+    }
+    const outputPart = flatMapping.outputExpr.parts[i];
 
     if (outputPart.type === SyntaxType.SELECTOR && outputPart.prop?.value) {
       const key = outputPart.prop.value;
@@ -105,7 +108,7 @@ function processFlatMapping(flatMapping: FlatMappingAST, outputAST: ObjectExpres
 
       const currentOutputPropAST = findOrCreateObjectPropExpression(currentOutputPropsAST, key);
       let objectExpr: ObjectExpression = currentOutputPropAST.value as ObjectExpression;
-      const nextOutputPart = flatMapping.output.parts[i + 1] as ArrayFilterExpression;
+      const nextOutputPart = flatMapping.outputExpr.parts[i + 1] as ArrayFilterExpression;
       if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
         objectExpr = processAllFilter(currentInputAST, currentOutputPropAST);
       } else if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {

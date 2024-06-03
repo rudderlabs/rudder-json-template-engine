@@ -32,7 +32,7 @@ import {
   TokenType,
   UnaryExpression,
 } from './types';
-import { translateLiteral } from './utils/transalator';
+import { translateLiteral } from './utils/translator';
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR } from './constants';
 import { escapeStr } from './utils';
 

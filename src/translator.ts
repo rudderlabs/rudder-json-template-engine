@@ -41,7 +41,7 @@ import {
   LoopControlExpression,
 } from './types';
 import { convertToStatementsExpr, escapeStr } from './utils/common';
-import { translateLiteral } from './utils/transalator';
+import { translateLiteral } from './utils/translator';
 
 export class JsonTemplateTranslator {
   private vars: string[] = [];

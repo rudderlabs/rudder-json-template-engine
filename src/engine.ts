@@ -3,7 +3,7 @@ import { JsonTemplateLexer } from './lexer';
 import { JsonTemplateParser } from './parser';
 import { JsonTemplateReverseTranslator } from './reverse_translator';
 import { JsonTemplateTranslator } from './translator';
-import { EngineOptions, Expression, FlatMappingPaths } from './types';
+import { EngineOptions, Expression, FlatMappingPaths, TemplateInput } from './types';
 import { CreateAsyncFunction, convertToObjectMapping, isExpression } from './utils';
 
 export class JsonTemplateEngine {
@@ -21,10 +21,7 @@ export class JsonTemplateEngine {
     return Function(DATA_PARAM_KEY, BINDINGS_PARAM_KEY, this.translate(templateOrExpr, options));
   }
 
-  private static compileAsAsync(
-    templateOrExpr: string | Expression | FlatMappingPaths[],
-    options?: EngineOptions,
-  ): Function {
+  private static compileAsAsync(templateOrExpr: TemplateInput, options?: EngineOptions): Function {
     return CreateAsyncFunction(
       DATA_PARAM_KEY,
       BINDINGS_PARAM_KEY,
@@ -49,10 +46,7 @@ export class JsonTemplateEngine {
     return convertToObjectMapping(flatMappingAST);
   }
 
-  static create(
-    templateOrExpr: string | Expression | FlatMappingPaths[],
-    options?: EngineOptions,
-  ): JsonTemplateEngine {
+  static create(templateOrExpr: TemplateInput, options?: EngineOptions): JsonTemplateEngine {
     return new JsonTemplateEngine(this.compileAsAsync(templateOrExpr, options));
   }
 
@@ -63,10 +57,7 @@ export class JsonTemplateEngine {
     return new JsonTemplateEngine(this.compileAsSync(templateOrExpr, options));
   }
 
-  static parse(
-    template: string | Expression | FlatMappingPaths[],
-    options?: EngineOptions,
-  ): Expression {
+  static parse(template: TemplateInput, options?: EngineOptions): Expression {
     if (isExpression(template)) {
       return template as Expression;
     }
@@ -78,10 +69,7 @@ export class JsonTemplateEngine {
     return this.parseMappingPaths(template as FlatMappingPaths[], options);
   }
 
-  static translate(
-    template: string | Expression | FlatMappingPaths[],
-    options?: EngineOptions,
-  ): string {
+  static translate(template: TemplateInput, options?: EngineOptions): string {
     return this.translateExpression(this.parse(template, options));
   }
 

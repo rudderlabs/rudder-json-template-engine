@@ -1,3 +1,4 @@
+/* eslint-disable import/no-cycle */
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR } from './constants';
 import { JsonTemplateEngine } from './engine';
 import { JsonTemplateLexerError, JsonTemplateParserError } from './errors';
@@ -305,7 +306,7 @@ export class JsonTemplateParser {
     }
     return {
       pathType: PathType.UNKNOWN,
-      inferredPathType: this.options?.defaultPathType || PathType.RICH,
+      inferredPathType: this.options?.defaultPathType ?? PathType.RICH,
     };
   }
 

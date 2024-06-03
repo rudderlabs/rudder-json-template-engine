@@ -283,3 +283,5 @@ export type FlatMappingAST = FlatMappingPaths & {
   inputExpr: PathExpression;
   outputExpr: PathExpression;
 };
+
+export type TemplateInput = string | Expression | FlatMappingPaths[];

@@ -1,3 +1,4 @@
+/* eslint-disable import/no-cycle */
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { JsonTemplateParser } from './parser';

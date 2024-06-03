@@ -1,4 +1,10 @@
-import { type Expression, type StatementsExpression, SyntaxType, BlockExpression } from '../types';
+import {
+  type Expression,
+  type StatementsExpression,
+  SyntaxType,
+  BlockExpression,
+  FlatMappingPaths,
+} from '../types';
 
 export function toArray<T>(val: T | T[] | undefined): T[] | undefined {
   if (val === undefined || val === null) {
@@ -31,6 +37,12 @@ export function convertToStatementsExpr(...expressions: Expression[]): Statement
 export function CreateAsyncFunction(...args) {
   // eslint-disable-next-line @typescript-eslint/no-empty-function, func-names
   return async function () {}.constructor(...args);
+}
+
+export function isExpression(val: string | Expression | FlatMappingPaths[]): boolean {
+  return (
+    typeof val === 'object' && !Array.isArray(val) && Object.values(SyntaxType).includes(val.type)
+  );
 }
 
 export function escapeStr(s?: string): string {

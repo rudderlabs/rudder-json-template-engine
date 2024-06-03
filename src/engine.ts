@@ -4,7 +4,7 @@ import { JsonTemplateParser } from './parser';
 import { JsonTemplateReverseTranslator } from './reverse_translator';
 import { JsonTemplateTranslator } from './translator';
 import { EngineOptions, Expression, FlatMappingPaths } from './types';
-import { CreateAsyncFunction, convertToObjectMapping } from './utils';
+import { CreateAsyncFunction, convertToObjectMapping, isExpression } from './utils';
 
 export class JsonTemplateEngine {
   private readonly fn: Function;
@@ -63,24 +63,26 @@ export class JsonTemplateEngine {
     return new JsonTemplateEngine(this.compileAsSync(templateOrExpr, options));
   }
 
-  static parse(template: string | FlatMappingPaths[], options?: EngineOptions): Expression {
-    if (Array.isArray(template)) {
-      return this.parseMappingPaths(template, options);
+  static parse(
+    template: string | Expression | FlatMappingPaths[],
+    options?: EngineOptions,
+  ): Expression {
+    if (isExpression(template)) {
+      return template as Expression;
     }
-    const lexer = new JsonTemplateLexer(template);
-    const parser = new JsonTemplateParser(lexer, options);
-    return parser.parse();
+    if (typeof template === 'string') {
+      const lexer = new JsonTemplateLexer(template);
+      const parser = new JsonTemplateParser(lexer, options);
+      return parser.parse();
+    }
+    return this.parseMappingPaths(template as FlatMappingPaths[], options);
   }
 
   static translate(
     template: string | Expression | FlatMappingPaths[],
     options?: EngineOptions,
   ): string {
-    let templateExpr = template as Expression;
-    if (typeof template === 'string' || Array.isArray(template)) {
-      templateExpr = this.parse(template, options);
-    }
-    return this.translateExpression(templateExpr);
+    return this.translateExpression(this.parse(template, options));
   }
 
   static reverseTranslate(expr: Expression, options?: EngineOptions): string {

@@ -1,4 +1,5 @@
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR } from './constants';
+import { JsonTemplateEngine } from './engine';
 import { JsonTemplateLexerError, JsonTemplateParserError } from './errors';
 import { JsonTemplateLexer } from './lexer';
 import {
@@ -1235,14 +1236,12 @@ export class JsonTemplateParser {
     const expr = skipJsonify ? this.parseCompileTimeBaseExpr() : this.parseBaseExpr();
     this.lexer.expect('}');
     this.lexer.expect('}');
-    // eslint-disable-next-line global-require
-    const { JsonTemplateEngine } = require('./engine');
     const exprVal = JsonTemplateEngine.createAsSync(expr).evaluate(
       {},
       this.options?.compileTimeBindings,
     );
     const template = skipJsonify ? exprVal : JSON.stringify(exprVal);
-    return JsonTemplateParser.parseBaseExprFromTemplate(template);
+    return JsonTemplateParser.parseBaseExprFromTemplate(template as string);
   }
 
   private parseNumber(): LiteralExpression {

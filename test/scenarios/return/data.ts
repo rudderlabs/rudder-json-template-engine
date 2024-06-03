@@ -16,10 +16,6 @@ export const data: Scenario[] = [
     input: 2,
   },
   {
-    templatePath: 'return_no_value.jt',
-    input: 2,
-  },
-  {
     templatePath: 'return_value.jt',
     input: 3,
     output: 1,

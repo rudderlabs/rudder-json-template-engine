@@ -2,7 +2,6 @@
 import {
   SyntaxType,
   PathExpression,
-  ArrayFilterExpression,
   ObjectPropExpression,
   ArrayExpression,
   ObjectExpression,
@@ -83,48 +82,57 @@ function processAllFilter(
   return blockExpr.statements[0] as ObjectExpression;
 }
 
-function processFlatMapping(flatMapping: FlatMappingAST, outputAST: ObjectExpression) {
-  let currentOutputPropsAST = outputAST.props;
-  const currentInputAST = flatMapping.inputExpr;
-
-  const numOutputParts = flatMapping.outputExpr.parts.length;
-  for (let i = 0; i < numOutputParts; i++) {
-    const outputPart = flatMapping.outputExpr.parts[i];
-
-    if (outputPart.type === SyntaxType.SELECTOR && outputPart.prop?.value) {
-      const key = outputPart.prop.value;
-
-      if (i === numOutputParts - 1) {
-        currentOutputPropsAST.push({
-          type: SyntaxType.OBJECT_PROP_EXPR,
-          key,
-          value: currentInputAST,
-        } as ObjectPropExpression);
-        break;
-      }
-
-      const currentOutputPropAST = findOrCreateObjectPropExpression(currentOutputPropsAST, key);
-      let objectExpr: ObjectExpression = currentOutputPropAST.value as ObjectExpression;
-      const nextOutputPart = flatMapping.outputExpr.parts[i + 1] as ArrayFilterExpression;
-      if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
-        objectExpr = processAllFilter(currentInputAST, currentOutputPropAST);
-      } else if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
-        objectExpr = processArrayIndexFilter(
-          currentOutputPropAST,
-          nextOutputPart.filter as IndexFilterExpression,
-        );
-      }
-      if (
-        objectExpr.type !== SyntaxType.OBJECT_EXPR ||
-        !objectExpr.props ||
-        !Array.isArray(objectExpr.props)
-      ) {
-        throw new Error(`Failed to process output mapping: ${flatMapping.output}`);
-      }
-      currentOutputPropsAST = objectExpr.props;
-    }
+function handleNextPart(
+  nextOutputPart: Expression,
+  currentInputAST: PathExpression,
+  currentOutputPropAST: ObjectPropExpression,
+): ObjectExpression {
+  if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
+    return processAllFilter(currentInputAST, currentOutputPropAST);
   }
+  if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
+    return processArrayIndexFilter(
+      currentOutputPropAST,
+      nextOutputPart.filter as IndexFilterExpression,
+    );
+  }
+  return currentOutputPropAST.value as ObjectExpression;
 }
+
+function processFlatMappingPart(
+  flatMapping: FlatMappingAST,
+  partNum: number,
+  currentOutputPropsAST: ObjectPropExpression[],
+): ObjectPropExpression[] {
+  const outputPart = flatMapping.outputExpr.parts[partNum];
+
+  if (outputPart.type !== SyntaxType.SELECTOR || !outputPart.prop?.value) {
+    return currentOutputPropsAST;
+  }
+  const key = outputPart.prop.value;
+
+  if (partNum === flatMapping.outputExpr.parts.length - 1) {
+    currentOutputPropsAST.push({
+      type: SyntaxType.OBJECT_PROP_EXPR,
+      key,
+      value: flatMapping.inputExpr,
+    } as ObjectPropExpression);
+    return currentOutputPropsAST;
+  }
+
+  const currentOutputPropAST = findOrCreateObjectPropExpression(currentOutputPropsAST, key);
+  const nextOutputPart = flatMapping.outputExpr.parts[partNum + 1];
+  const objectExpr = handleNextPart(nextOutputPart, flatMapping.inputExpr, currentOutputPropAST);
+  if (
+    objectExpr.type !== SyntaxType.OBJECT_EXPR ||
+    !objectExpr.props ||
+    !Array.isArray(objectExpr.props)
+  ) {
+    throw new Error(`Failed to process output mapping: ${flatMapping.output}`);
+  }
+  return objectExpr.props;
+}
+
 /**
  * Convert Flat to Object Mappings
  */
@@ -132,7 +140,10 @@ export function convertToObjectMapping(flatMappingAST: FlatMappingAST[]): Object
   const outputAST: ObjectExpression = CreateObjectExpression();
 
   for (const flatMapping of flatMappingAST) {
-    processFlatMapping(flatMapping, outputAST);
+    let currentOutputPropsAST = outputAST.props;
+    for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
+      currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
+    }
   }
 
   return outputAST;

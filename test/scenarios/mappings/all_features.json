@@ -1,5 +1,9 @@
 [
   {
+    "input": "$.userId",
+    "output": "$.user.id"
+  },
+  {
     "input": "$.discount",
     "output": "$.events[0].items[*].discount"
   },

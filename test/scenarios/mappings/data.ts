@@ -2,6 +2,7 @@ import { PathType } from '../../../src';
 import type { Scenario } from '../../types';
 
 const input = {
+  userId: 'u1',
   discount: 10,
   events: ['purchase', 'custom'],
   products: [
@@ -99,6 +100,9 @@ export const data: Scenario[] = [
           revenue: 14.4,
         },
       ],
+      user: {
+        id: 'u1',
+      },
     },
   },
   {

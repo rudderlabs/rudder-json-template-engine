@@ -89,9 +89,6 @@ function processFlatMapping(flatMapping: FlatMappingAST, outputAST: ObjectExpres
 
   const numOutputParts = flatMapping.outputExpr.parts.length;
   for (let i = 0; i < numOutputParts; i++) {
-    if (!currentOutputPropsAST) {
-      throw new Error(`Failed to process output mapping: ${flatMapping.output}`);
-    }
     const outputPart = flatMapping.outputExpr.parts[i];
 
     if (outputPart.type === SyntaxType.SELECTOR && outputPart.prop?.value) {
@@ -116,6 +113,13 @@ function processFlatMapping(flatMapping: FlatMappingAST, outputAST: ObjectExpres
           currentOutputPropAST,
           nextOutputPart.filter as IndexFilterExpression,
         );
+      }
+      if (
+        objectExpr.type !== SyntaxType.OBJECT_EXPR ||
+        !objectExpr.props ||
+        !Array.isArray(objectExpr.props)
+      ) {
+        throw new Error(`Failed to process output mapping: ${flatMapping.output}`);
       }
       currentOutputPropsAST = objectExpr.props;
     }

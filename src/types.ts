@@ -8,7 +8,14 @@ export enum Keyword {
   AWAIT = 'await',
   ASYNC = 'async',
   IN = 'in',
+  NOT_IN = 'nin',
   NOT = 'not',
+  CONTAINS = 'contains',
+  SUBSETOF = 'subsetof',
+  ANYOF = 'anyof',
+  NONEOF = 'noneof',
+  EMPTY = 'empty',
+  SIZE = 'size',
   RETURN = 'return',
   THROW = 'throw',
   CONTINUE = 'continue',
@@ -30,6 +37,7 @@ export enum TokenType {
   THROW = 'throw',
   KEYWORD = 'keyword',
   EOT = 'eot',
+  REGEXP = 'regexp',
 }
 
 // In the order of precedence
@@ -69,6 +77,7 @@ export enum SyntaxType {
   SPREAD_EXPR = 'spread_expr',
   CONDITIONAL_EXPR = 'conditional_expr',
   ARRAY_INDEX_FILTER_EXPR = 'array_index_filter_expr',
+  ALL_FILTER_EXPR = 'all_filter_expr',
   OBJECT_INDEX_FILTER_EXPR = 'object_index_filter_expr',
   RANGE_FILTER_EXPR = 'range_filter_expr',
   OBJECT_FILTER_EXPR = 'object_filter_expr',
@@ -80,7 +89,6 @@ export enum SyntaxType {
   ARRAY_EXPR = 'array_expr',
   BLOCK_EXPR = 'block_expr',
   FUNCTION_EXPR = 'function_expr',
-  FUNCTION_CALL_ARG = 'function_call_arg',
   FUNCTION_CALL_EXPR = 'function_call_expr',
   RETURN_EXPR = 'return_expr',
   THROW_EXPR = 'throw_expr',
@@ -92,6 +100,8 @@ export enum SyntaxType {
 export enum PathType {
   SIMPLE = 'simple',
   RICH = 'rich',
+  JSON = 'json',
+  UNKNOWN = 'unknown',
 }
 
 export interface EngineOptions {
@@ -117,6 +127,10 @@ export interface Expression {
   [key: string]: any;
 }
 
+export interface PathOptionsExpression extends Expression {
+  options: PathOptions;
+}
+
 export interface LambdaArgExpression extends Expression {
   index: number;
 }
@@ -126,6 +140,7 @@ export interface FunctionExpression extends Expression {
   body: StatementsExpression;
   block?: boolean;
   async?: boolean;
+  lambda?: boolean;
 }
 
 export interface BlockExpression extends Expression {
@@ -186,6 +201,8 @@ export interface IndexFilterExpression extends Expression {
   exclude?: boolean;
 }
 
+export interface AllFilterExpression extends Expression {}
+
 export interface ObjectFilterExpression extends Expression {
   filter: Expression;
 }
@@ -193,8 +210,10 @@ export interface ObjectFilterExpression extends Expression {
 export interface ArrayFilterExpression extends Expression {
   filter: RangeFilterExpression | IndexFilterExpression;
 }
+
+export type Literal = string | number | boolean | null | undefined;
 export interface LiteralExpression extends Expression {
-  value: string | number | boolean | null | undefined;
+  value: Literal;
   tokenType: TokenType;
 }
 export interface PathExpression extends Expression {
@@ -202,6 +221,7 @@ export interface PathExpression extends Expression {
   root?: Expression | string;
   returnAsArray?: boolean;
   pathType: PathType;
+  inferredPathType: PathType;
 }
 
 export interface IncrementExpression extends Expression {
@@ -222,7 +242,7 @@ export interface FunctionCallExpression extends Expression {
   args: Expression[];
   object?: Expression;
   id?: string;
-  dot?: boolean;
+  parent?: string;
 }
 
 export interface ConditionalExpression extends Expression {
@@ -253,3 +273,15 @@ export interface LoopExpression extends Expression {
 export interface ThrowExpression extends Expression {
   value: Expression;
 }
+
+export type FlatMappingPaths = {
+  input: string;
+  output: string;
+};
+
+export type FlatMappingAST = FlatMappingPaths & {
+  inputExpr: PathExpression;
+  outputExpr: PathExpression;
+};
+
+export type TemplateInput = string | Expression | FlatMappingPaths[];

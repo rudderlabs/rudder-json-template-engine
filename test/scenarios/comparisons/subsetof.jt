@@ -1,0 +1,4 @@
+{
+    true: [[1, 2] subsetof [1, 2, 3], [] subsetof [1]],
+    false: [[1, 2] subsetof [1], [1] subsetof []],
+}

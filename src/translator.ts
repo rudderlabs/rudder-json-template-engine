@@ -7,7 +7,7 @@ import {
   VARS_PREFIX,
 } from './constants';
 import { JsonTemplateTranslatorError } from './errors';
-import { binaryOperators } from './operators';
+import { binaryOperators, standardFunctions } from './operators';
 import {
   ArrayExpression,
   AssignmentExpression,
@@ -40,7 +40,8 @@ import {
   IncrementExpression,
   LoopControlExpression,
 } from './types';
-import { CommonUtils } from './utils';
+import { convertToStatementsExpr, escapeStr } from './utils/common';
+import { translateLiteral } from './utils/translator';
 
 export class JsonTemplateTranslator {
   private vars: string[] = [];
@@ -48,6 +49,8 @@ export class JsonTemplateTranslator {
   private lastVarId = 0;
 
   private unusedVars: string[] = [];
+
+  private standardFunctions: Record<string, string> = {};
 
   private readonly expr: Expression;
 
@@ -90,6 +93,10 @@ export class JsonTemplateTranslator {
     this.init();
     const code: string[] = [];
     const exprCode = this.translateExpr(this.expr, dest, ctx);
+    const functions = Object.values(this.standardFunctions);
+    if (functions.length > 0) {
+      code.push(functions.join('').replaceAll(/\s+/g, ' '));
+    }
     code.push(`let ${dest};`);
     code.push(this.vars.map((elm) => `let ${elm};`).join(''));
     code.push(exprCode);
@@ -243,7 +250,7 @@ export class JsonTemplateTranslator {
       code.push(`return ${value};`);
       this.releaseVars(value);
     }
-    code.push(`return ${ctx};`);
+    code.push(`return;`);
     return code.join('');
   }
 
@@ -370,7 +377,7 @@ export class JsonTemplateTranslator {
   }
 
   private translatePathExpr(expr: PathExpression, dest: string, ctx: string): string {
-    if (expr.pathType === PathType.SIMPLE) {
+    if (expr.inferredPathType === PathType.SIMPLE) {
       return this.translateSimplePathExpr(expr, dest, ctx);
     }
     const code: string[] = [];
@@ -389,9 +396,9 @@ export class JsonTemplateTranslator {
       const valuesCode = JsonTemplateTranslator.returnObjectValues(ctx);
       code.push(`${dest} = ${valuesCode}.flat();`);
     } else if (prop) {
-      const propStr = CommonUtils.escapeStr(prop);
-      code.push(`if(${ctx} && Object.prototype.hasOwnProperty.call(${ctx}, ${propStr})){`);
-      code.push(`${dest}=${ctx}[${propStr}];`);
+      const escapedPropName = escapeStr(prop);
+      code.push(`if(${ctx} && Object.prototype.hasOwnProperty.call(${ctx}, ${escapedPropName})){`);
+      code.push(`${dest}=${ctx}[${escapedPropName}];`);
       code.push('} else {');
       code.push(`${dest} = undefined;`);
       code.push('}');
@@ -417,7 +424,7 @@ export class JsonTemplateTranslator {
     const result = this.acquireVar();
     code.push(JsonTemplateTranslator.generateAssignmentCode(result, '[]'));
     const { prop } = expr;
-    const propStr = CommonUtils.escapeStr(prop?.value);
+    const propStr = escapeStr(prop?.value);
     code.push(`${ctxs}=[${baseCtx}];`);
     code.push(`while(${ctxs}.length > 0) {`);
     code.push(`${currCtx} = ${ctxs}.shift();`);
@@ -453,7 +460,7 @@ export class JsonTemplateTranslator {
     }
     const fnExpr: FunctionExpression = {
       type: SyntaxType.FUNCTION_EXPR,
-      body: CommonUtils.convertToStatementsExpr(...expr.statements),
+      body: convertToStatementsExpr(...expr.statements),
       block: true,
     };
     return this.translateExpr(fnExpr, dest, ctx);
@@ -474,7 +481,13 @@ export class JsonTemplateTranslator {
   }
 
   private getFunctionName(expr: FunctionCallExpression, ctx: string): string {
-    return expr.dot ? `${ctx}.${expr.id}` : expr.id || ctx;
+    if (expr.object) {
+      return expr.id ? `${ctx}.${expr.id}` : ctx;
+    }
+    if (expr.parent) {
+      return expr.id ? `${expr.parent}.${expr.id}` : expr.parent;
+    }
+    return expr.id as string;
   }
 
   private translateFunctionCallExpr(
@@ -490,7 +503,17 @@ export class JsonTemplateTranslator {
       code.push(`if(${JsonTemplateTranslator.returnIsNotEmpty(result)}){`);
     }
     const functionArgsStr = this.translateSpreadableExpressions(expr.args, result, code);
-    code.push(result, '=', this.getFunctionName(expr, result), '(', functionArgsStr, ');');
+    const functionName = this.getFunctionName(expr, result);
+    if (expr.id && standardFunctions[expr.id]) {
+      this.standardFunctions[expr.id] = standardFunctions[expr.id];
+      code.push(`if(${functionName} && typeof ${functionName} === 'function'){`);
+      code.push(result, '=', functionName, '(', functionArgsStr, ');');
+      code.push('} else {');
+      code.push(result, '=', expr.id, '(', expr.parent ?? result, ',', functionArgsStr, ');');
+      code.push('}');
+    } else {
+      code.push(result, '=', functionName, '(', functionArgsStr, ');');
+    }
     if (expr.object) {
       code.push('}');
     }
@@ -551,13 +574,13 @@ export class JsonTemplateTranslator {
   }
 
   private translateLiteralExpr(expr: LiteralExpression, dest: string, _ctx: string): string {
-    const literalCode = this.translateLiteral(expr.tokenType, expr.value);
+    const literalCode = translateLiteral(expr.tokenType, expr.value);
     return JsonTemplateTranslator.generateAssignmentCode(dest, literalCode);
   }
 
   private getSimplePathSelector(expr: SelectorExpression, isAssignment: boolean): string {
     if (expr.prop?.type === TokenType.STR) {
-      return `${isAssignment ? '' : '?.'}[${CommonUtils.escapeStr(expr.prop?.value)}]`;
+      return `${isAssignment ? '' : '?.'}[${escapeStr(expr.prop?.value)}]`;
     }
     return `${isAssignment ? '' : '?'}.${expr.prop?.value}`;
   }
@@ -695,13 +718,6 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private translateLiteral(type: TokenType, val: any): string {
-    if (type === TokenType.STR) {
-      return CommonUtils.escapeStr(val);
-    }
-    return String(val);
-  }
-
   private translateUnaryExpr(expr: UnaryExpression, dest: string, ctx: string): string {
     const code: string[] = [];
     const val = this.acquireVar();
@@ -715,7 +731,7 @@ export class JsonTemplateTranslator {
     const code: string[] = [];
     if (expr.filter.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
       code.push(this.translateIndexFilterExpr(expr.filter as IndexFilterExpression, dest, ctx));
-    } else {
+    } else if (expr.filter.type === SyntaxType.RANGE_FILTER_EXPR) {
       code.push(this.translateRangeFilterExpr(expr.filter as RangeFilterExpression, dest, ctx));
     }
     return code.join('');
@@ -728,6 +744,7 @@ export class JsonTemplateTranslator {
   ): string {
     const code: string[] = [];
     const condition = this.acquireVar();
+    code.push(JsonTemplateTranslator.generateAssignmentCode(condition, 'true'));
     code.push(this.translateExpr(expr.filter, condition, ctx));
     code.push(`if(!${condition}) {${dest} = undefined;}`);
     this.releaseVars(condition);

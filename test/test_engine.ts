@@ -216,25 +216,25 @@ const address = {
 //   // ),
 // );
 
-JsonTemplateEngine.create(
-  `
-.b ?? .a
-`,
-)
-  .evaluate({ a: 1 })
-  .then((a) => console.log(JSON.stringify(a)));
+// JsonTemplateEngine.create(
+//   `
+// .b ?? .a
+// `,
+// )
+//   .evaluate({ a: 1 })
+//   .then((a) => console.log(JSON.stringify(a)));
 
-console.log(
-  JsonTemplateEngine.translate(`
-      let a = [{a: [1, 2], b: "1"}, {a: [3, 4], b: 2}, {a:[5], b: 3}, {b: 4}]
-      a{.a.length > 1}
-      `),
-);
+// console.log(
+//   JsonTemplateEngine.translate(`
+//       let a = [{a: [1, 2], b: "1"}, {a: [3, 4], b: 2}, {a:[5], b: 3}, {b: 4}]
+//       a{.a.length > 1}
+//       `),
+// );
 
 console.log(
   JSON.stringify(
     JsonTemplateEngine.parse(`
-      .(.a)
+    ~j $.foo
       `),
     //   null,
     //   2,

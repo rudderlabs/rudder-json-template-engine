@@ -12,17 +12,14 @@ command
   .parse();
 
 const opts = command.opts();
-const scenarioName = opts.scenario || 'none';
+const scenarioName = opts.scenario || 'arrays';
 const index = +(opts.index || 0);
 
 describe(`${scenarioName}:`, () => {
-  it(`Scenario ${index}`, async () => {
-    if (scenarioName === 'none') {
-      return;
-    }
-    const scenarioDir = join(__dirname, 'scenarios', scenarioName);
-    const scenarios = ScenarioUtils.extractScenarios(scenarioDir);
-    const scenario: Scenario = scenarios[index] || scenarios[0];
+  const scenarioDir = join(__dirname, 'scenarios', scenarioName);
+  const scenarios = ScenarioUtils.extractScenarios(scenarioDir);
+  const scenario: Scenario = scenarios[index] || scenarios[0];
+  it(`Scenario ${index}: ${Scenario.getTemplatePath(scenario)}`, async () => {
     let result;
     try {
       console.log(
@@ -34,6 +31,7 @@ describe(`${scenarioName}:`, () => {
       result = await ScenarioUtils.evaluateScenario(templateEngine, scenario);
       expect(result).toEqual(scenario.output);
     } catch (error: any) {
+      console.error(error);
       console.log('Actual result', JSON.stringify(result, null, 2));
       console.log('Expected result', JSON.stringify(scenario.output, null, 2));
       expect(error.message).toContain(scenario.error);

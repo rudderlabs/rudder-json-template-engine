@@ -26,6 +26,10 @@ export const data: Scenario[] = [
     error: 'Unexpected token',
   },
   {
+    templatePath: 'bad_regex.jt',
+    error: 'invalid regular expression',
+  },
+  {
     templatePath: 'bad_string.jt',
     error: 'Unexpected end of template',
   },

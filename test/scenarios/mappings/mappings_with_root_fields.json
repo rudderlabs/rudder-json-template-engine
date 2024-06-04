@@ -1,0 +1,18 @@
+[
+  {
+    "input": "$.discount",
+    "output": "$.items[*].discount"
+  },
+  {
+    "input": "$.products[*].id",
+    "output": "$.items[*].product_id"
+  },
+  {
+    "input": "$.products[*].name",
+    "output": "$.items[*].product_name"
+  },
+  {
+    "input": "$.products[*].category",
+    "output": "$.items[*].product_category"
+  }
+]

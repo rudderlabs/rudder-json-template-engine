@@ -1,0 +1,4 @@
+{
+    true: "aBc" =* "aB",
+    false: "ac" =* "aB"
+}

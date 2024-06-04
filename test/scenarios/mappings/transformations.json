@@ -1,0 +1,22 @@
+[
+  {
+    "input": "$.products[*].id",
+    "output": "$.items[*].product_id"
+  },
+  {
+    "input": "$.products[*].name",
+    "output": "$.items[*].product_name"
+  },
+  {
+    "input": "$.products[*].category",
+    "output": "$.items[*].product_category"
+  },
+  {
+    "input": "$.products[*].(@.price * @.quantity * (1 - $.discount / 100))",
+    "output": "$.items[*].value"
+  },
+  {
+    "input": "$.products[*].(@.price * @.quantity * (1 - $.discount / 100)).sum()",
+    "output": "$.revenue"
+  }
+]

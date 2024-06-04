@@ -1,0 +1,14 @@
+[
+  {
+    "input": "$.products[?(@.category)].id",
+    "output": "$.items[*].product_id"
+  },
+  {
+    "input": "$.products[?(@.category)].name",
+    "output": "$.items[*].product_name"
+  },
+  {
+    "input": "$.products[?(@.category)].category",
+    "output": "$.items[*].product_category"
+  }
+]

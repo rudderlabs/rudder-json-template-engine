@@ -1,0 +1,4 @@
+{
+    true: [1, 2] noneof [3, 4],
+    false: [1, 2] noneof [2, 3],
+}

@@ -1,0 +1,4 @@
+{
+    true: ["c" nin ["a", "b"], "c" nin {"a": 1, "b": 2}],
+    false: ["a" nin ["a", "b"], "a" nin {"a": 1, "b": 2}]
+}

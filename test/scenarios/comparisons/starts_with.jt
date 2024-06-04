@@ -1,0 +1,4 @@
+{
+    true:["StartsWith" ^== "Starts", "Starts" ==^ "StartsWith"],
+    false: ["StartsWith" ^= "NotStarts", "NotStarts" =^ "StartsWith"]
+}

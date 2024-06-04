@@ -1,17 +1,25 @@
-import { EngineOptions, PathType } from '../src';
+import type { EngineOptions } from '../src';
 
 export type Scenario = {
   description?: string;
-  input?: any;
+  input?: unknown;
   templatePath?: string;
+  template?: string;
+  containsMappings?: true;
   options?: EngineOptions;
-  bindings?: any;
-  output?: any;
+  bindings?: Record<string, unknown> | undefined;
+  output?: unknown;
   error?: string;
 };
 
 export namespace Scenario {
   export function getTemplatePath(scenario: Scenario): string {
-    return scenario.templatePath || 'template.jt';
+    if (scenario.templatePath) {
+      return scenario.templatePath;
+    }
+    if (scenario.containsMappings) {
+      return 'mappings.json';
+    }
+    return 'template.jt';
   }
 }

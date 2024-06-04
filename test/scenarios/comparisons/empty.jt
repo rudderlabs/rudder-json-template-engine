@@ -1,0 +1,4 @@
+{
+    true: ["" empty true, [] empty true],
+    false: ["a" empty true, ["a"] empty true]
+}

@@ -1,0 +1,4 @@
+{
+    map: .map(lambda ?0 * 2),
+    filter: .filter(lambda ?0 % 2 == 0)
+}

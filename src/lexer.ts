@@ -1,4 +1,4 @@
-import { BINDINGS_PARAM_KEY, VARS_PREFIX } from './constants';
+import { VARS_PREFIX } from './constants';
 import { JsonTemplateLexerError } from './errors';
 import { Keyword, Token, TokenType } from './types';
 
@@ -81,8 +81,12 @@ export class JsonTemplateLexer {
     return this.match('~r');
   }
 
+  matchJsonPath(): boolean {
+    return this.match('~j');
+  }
+
   matchPathType(): boolean {
-    return this.matchRichPath() || this.matchSimplePath();
+    return this.matchRichPath() || this.matchJsonPath() || this.matchSimplePath();
   }
 
   matchPath(): boolean {
@@ -113,7 +117,7 @@ export class JsonTemplateLexer {
     const token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
       const { value } = token;
-      return value === '.' || value === '..' || value === '^';
+      return value === '.' || value === '..' || value === '^' || value === '$' || value === '@';
     }
 
     return false;
@@ -145,8 +149,36 @@ export class JsonTemplateLexer {
     return token.type === TokenType.KEYWORD && token.value === val;
   }
 
+  matchContains(): boolean {
+    return this.matchKeywordValue(Keyword.CONTAINS);
+  }
+
+  matchEmpty(): boolean {
+    return this.matchKeywordValue(Keyword.EMPTY);
+  }
+
+  matchSize(): boolean {
+    return this.matchKeywordValue(Keyword.SIZE);
+  }
+
+  matchSubsetOf(): boolean {
+    return this.matchKeywordValue(Keyword.SUBSETOF);
+  }
+
+  matchAnyOf(): boolean {
+    return this.matchKeywordValue(Keyword.ANYOF);
+  }
+
+  matchNoneOf(): boolean {
+    return this.matchKeywordValue(Keyword.NONEOF);
+  }
+
   matchIN(): boolean {
     return this.matchKeywordValue(Keyword.IN);
+  }
+
+  matchNotIN(): boolean {
+    return this.matchKeywordValue(Keyword.NOT_IN);
   }
 
   matchFunction(): boolean {
@@ -259,7 +291,12 @@ export class JsonTemplateLexer {
       };
     }
 
-    const token = this.scanPunctuator() ?? this.scanID() ?? this.scanString() ?? this.scanInteger();
+    const token =
+      this.scanRegularExpressions() ??
+      this.scanPunctuator() ??
+      this.scanID() ??
+      this.scanString() ??
+      this.scanInteger();
     if (token) {
       return token;
     }
@@ -294,7 +331,8 @@ export class JsonTemplateLexer {
       token.type === TokenType.FLOAT ||
       token.type === TokenType.STR ||
       token.type === TokenType.NULL ||
-      token.type === TokenType.UNDEFINED
+      token.type === TokenType.UNDEFINED ||
+      token.type === TokenType.REGEXP
     );
   }
 
@@ -317,7 +355,7 @@ export class JsonTemplateLexer {
   }
 
   private static isIdStart(ch: string) {
-    return ch === '$' || ch === '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+    return ch === '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
   }
 
   private static isIdPart(ch: string) {
@@ -383,7 +421,7 @@ export class JsonTemplateLexer {
         JsonTemplateLexer.validateID(id);
         return {
           type: TokenType.ID,
-          value: id.replace(/^\$/, `${BINDINGS_PARAM_KEY}`),
+          value: id,
           range: [start, this.idx],
         };
     }
@@ -521,7 +559,7 @@ export class JsonTemplateLexer {
         };
       }
     } else if (ch1 === '=') {
-      if ('^$*'.indexOf(ch2) >= 0) {
+      if ('^$*~'.indexOf(ch2) >= 0) {
         this.idx += 2;
         return {
           type: TokenType.PUNCT,
@@ -565,7 +603,7 @@ export class JsonTemplateLexer {
     const start = this.idx;
     const ch1 = this.codeChars[this.idx];
 
-    if (',;:{}()[]^+-*/%!><|=@~#?\n'.includes(ch1)) {
+    if (',;:{}()[]^+-*/%!><|=@~$#?\n'.includes(ch1)) {
       return {
         type: TokenType.PUNCT,
         value: ch1,
@@ -594,7 +632,7 @@ export class JsonTemplateLexer {
     const ch1 = this.codeChars[this.idx];
     const ch2 = this.codeChars[this.idx + 1];
 
-    if (ch1 === '~' && 'rs'.includes(ch2)) {
+    if (ch1 === '~' && 'rsj'.includes(ch2)) {
       this.idx += 2;
       return {
         type: TokenType.PUNCT,
@@ -615,6 +653,56 @@ export class JsonTemplateLexer {
         value: ch1 + ch2,
         range: [start, this.idx],
       };
+    }
+  }
+
+  private static isValidRegExp(regexp: string, modifiers: string) {
+    try {
+      RegExp(regexp, modifiers);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  private getRegExpModifiers(): string {
+    let modifiers = '';
+    while ('gimsuyv'.includes(this.codeChars[this.idx])) {
+      modifiers += this.codeChars[this.idx];
+      this.idx++;
+    }
+    return modifiers;
+  }
+
+  private scanRegularExpressions(): Token | undefined {
+    const start = this.idx;
+    const ch1 = this.codeChars[this.idx];
+
+    if (ch1 === '/') {
+      let end = this.idx + 1;
+      while (end < this.codeChars.length) {
+        if (this.codeChars[end] === '\n') {
+          return;
+        }
+        if (this.codeChars[end] === '/') {
+          break;
+        }
+        end++;
+      }
+
+      if (end < this.codeChars.length) {
+        this.idx = end + 1;
+        const regexp = this.getCode(start + 1, end);
+        const modifiers = this.getRegExpModifiers();
+        if (!JsonTemplateLexer.isValidRegExp(regexp, modifiers)) {
+          JsonTemplateLexer.throwError("invalid regular expression '%0'", regexp);
+        }
+        return {
+          type: TokenType.REGEXP,
+          value: this.getCode(start, this.idx),
+          range: [start, this.idx],
+        };
+      }
     }
   }
 

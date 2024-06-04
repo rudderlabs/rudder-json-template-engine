@@ -1,0 +1,4 @@
+{
+    true: "abc" !== "aBc",
+    false: "aBc" !== "aBc"
+}

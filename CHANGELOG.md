@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.5...v0.9.0) (2024-06-04)
+
+
+### Features
+
+* add support for json path syntax ([#54](https://github.com/rudderlabs/rudder-json-template-engine/issues/54)) ([4ee3874](https://github.com/rudderlabs/rudder-json-template-engine/commit/4ee38744837bdb4390e503f9bdeed1b669d6e3be))
+
 ## [0.8.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.4...v0.8.5) (2024-01-31)
 
 

@@ -4,6 +4,9 @@
             @key: {
                 value: @value
             }
+        }),
+        events: .events.({
+            @value: @key
         })
     }
 }

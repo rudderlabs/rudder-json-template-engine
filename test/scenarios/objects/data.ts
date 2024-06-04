@@ -19,6 +19,10 @@ export const data: Scenario[] = [
         name: 'John Doe',
         age: 30,
       },
+      events: {
+        foo: 'bar',
+        something: 'something else',
+      },
     },
     output: {
       user: {
@@ -29,6 +33,10 @@ export const data: Scenario[] = [
           age: {
             value: 30,
           },
+        },
+        events: {
+          bar: 'foo',
+          'something else': 'something',
         },
       },
     },

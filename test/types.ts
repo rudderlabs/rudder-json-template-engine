@@ -4,6 +4,7 @@ export type Scenario = {
   description?: string;
   input?: unknown;
   templatePath?: string;
+  template?: string;
   containsMappings?: true;
   options?: EngineOptions;
   bindings?: Record<string, unknown> | undefined;

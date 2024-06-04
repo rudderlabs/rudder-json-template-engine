@@ -4,19 +4,25 @@ import { FlatMappingPaths, JsonTemplateEngine, PathType } from '../../src';
 import { Scenario } from '../types';
 
 export class ScenarioUtils {
-  static createTemplateEngine(scenarioDir: string, scenario: Scenario): JsonTemplateEngine {
-    const templatePath = join(scenarioDir, Scenario.getTemplatePath(scenario));
-    let template: string | FlatMappingPaths[] = readFileSync(templatePath, 'utf-8');
-    if (scenario.containsMappings) {
-      template = JSON.parse(template) as FlatMappingPaths[];
-    }
+  private static initializeScenario(scenarioDir: string, scenario: Scenario) {
     scenario.options = scenario.options || {};
     scenario.options.defaultPathType = scenario.options.defaultPathType || PathType.SIMPLE;
-    const newTemplate = JsonTemplateEngine.reverseTranslate(
+    const templatePath = join(scenarioDir, Scenario.getTemplatePath(scenario));
+    let template: string = readFileSync(templatePath, 'utf-8');
+    if (scenario.containsMappings) {
+      template = JsonTemplateEngine.convertMappingsToTemplate(
+        JSON.parse(template) as FlatMappingPaths[],
+      );
+    }
+    scenario.template = JsonTemplateEngine.reverseTranslate(
       JsonTemplateEngine.parse(template, scenario.options),
       scenario.options,
     );
-    return JsonTemplateEngine.create(newTemplate, scenario.options);
+  }
+
+  static createTemplateEngine(scenarioDir: string, scenario: Scenario): JsonTemplateEngine {
+    this.initializeScenario(scenarioDir, scenario);
+    return JsonTemplateEngine.create(scenario.template as string, scenario.options);
   }
 
   static evaluateScenario(templateEngine: JsonTemplateEngine, scenario: Scenario): any {

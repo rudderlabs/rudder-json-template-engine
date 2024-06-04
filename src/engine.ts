@@ -79,6 +79,10 @@ export class JsonTemplateEngine {
     return translator.translate(expr);
   }
 
+  static convertMappingsToTemplate(mappings: FlatMappingPaths[], options?: EngineOptions): string {
+    return this.reverseTranslate(this.parseMappingPaths(mappings, options), options);
+  }
+
   evaluate(data: unknown, bindings: Record<string, unknown> = {}): unknown {
     return this.fn(data ?? {}, bindings);
   }

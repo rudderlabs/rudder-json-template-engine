@@ -1,0 +1,10 @@
+[
+  {
+    "input": "$.events[0]",
+    "output": "$.events[0].name"
+  },
+  {
+    "input": "$.discount",
+    "output": "$.events[0].name[*].discount"
+  }
+]

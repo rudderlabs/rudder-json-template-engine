@@ -93,6 +93,10 @@ export class JsonTemplateLexer {
     return this.matchPathSelector() || this.matchID();
   }
 
+  matchObjectWildCardPropValue(): boolean {
+    return this.match('@') && this.matchID(1);
+  }
+
   matchSpread(): boolean {
     return this.match('...');
   }

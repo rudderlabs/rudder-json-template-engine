@@ -80,7 +80,7 @@ export class JsonTemplateEngine {
   }
 
   static convertMappingsToTemplate(mappings: FlatMappingPaths[], options?: EngineOptions): string {
-    return this.reverseTranslate(this.parseMappingPaths(mappings, options), options);
+    return this.reverseTranslate(this.parse(mappings, options), options);
   }
 
   evaluate(data: unknown, bindings: Record<string, unknown> = {}): unknown {

@@ -5,6 +5,14 @@ const input = {
   userId: 'u1',
   discount: 10,
   events: ['purchase', 'custom'],
+  context: {
+    traits: {
+      email: 'dummy@example.com',
+      first_name: 'John',
+      last_name: 'Doe',
+      phone: '1234567890',
+    },
+  },
   products: [
     {
       id: 1,
@@ -149,11 +157,19 @@ export const data: Scenario[] = [
   },
   {
     containsMappings: true,
-    templatePath: 'invalid_mappings.json',
+    templatePath: 'invalid_array_mappings.json',
     options: {
       defaultPathType: PathType.JSON,
     },
     error: 'Failed to process output mapping',
+  },
+  {
+    containsMappings: true,
+    templatePath: 'invalid_object_mappings.json',
+    options: {
+      defaultPathType: PathType.JSON,
+    },
+    error: 'Invalid object mapping',
   },
   {
     containsMappings: true,
@@ -184,7 +200,6 @@ export const data: Scenario[] = [
       ],
     },
   },
-
   {
     containsMappings: true,
     templatePath: 'nested_mappings.json',
@@ -234,6 +249,41 @@ export const data: Scenario[] = [
           ],
         },
       ],
+    },
+  },
+  {
+    containsMappings: true,
+    templatePath: 'object_mappings.json',
+    options: {
+      defaultPathType: PathType.JSON,
+    },
+    input: {
+      traits1: {
+        name: 'John Doe',
+        age: 30,
+      },
+      traits2: {
+        name: {
+          value: 'John Doe',
+        },
+        age: {
+          value: 30,
+        },
+      },
+    },
+    output: {
+      properties1: {
+        name: {
+          value: 'John Doe',
+        },
+        age: {
+          value: 30,
+        },
+      },
+      properties2: {
+        name: 'John Doe',
+        age: 30,
+      },
     },
   },
   {

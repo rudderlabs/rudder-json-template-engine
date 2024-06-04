@@ -9,10 +9,11 @@ import {
   Expression,
   IndexFilterExpression,
   BlockExpression,
+  ObjectWildcardValueExpression,
 } from '../types';
 import { createBlockExpression, getLastElement } from './common';
 
-function CreateObjectExpression(): ObjectExpression {
+function createObjectExpression(): ObjectExpression {
   return {
     type: SyntaxType.OBJECT_EXPR,
     props: [] as ObjectPropExpression[],
@@ -28,7 +29,7 @@ function findOrCreateObjectPropExpression(
     match = {
       type: SyntaxType.OBJECT_PROP_EXPR,
       key,
-      value: CreateObjectExpression(),
+      value: createObjectExpression(),
     };
     props.push(match);
   }
@@ -49,7 +50,7 @@ function processArrayIndexFilter(
     };
   } else if (!currrentOutputPropAST.value.elements[filterIndex]) {
     (currrentOutputPropAST.value as ArrayExpression).elements[filterIndex] =
-      CreateObjectExpression();
+      createObjectExpression();
   }
   return currrentOutputPropAST.value.elements[filterIndex];
 }
@@ -82,18 +83,75 @@ function processAllFilter(
   return blockExpr.statements[0] as ObjectExpression;
 }
 
+function isWildcardSelector(expr: Expression): boolean {
+  return expr.type === SyntaxType.SELECTOR && expr.prop?.value === '*';
+}
+
+function createWildcardObjectPropValueExpression(value: string): ObjectWildcardValueExpression {
+  return {
+    type: SyntaxType.OBJECT_PROP_WILD_CARD_VALUE_EXPR,
+    value,
+  };
+}
+
+function processWildCardSelector(
+  flatMapping: FlatMappingAST,
+  currentOutputPropAST: ObjectPropExpression,
+  isLastPart: boolean = false,
+): ObjectExpression {
+  const currentInputAST = flatMapping.inputExpr;
+  const filterIndex = currentInputAST.parts.findIndex(isWildcardSelector);
+
+  if (filterIndex === -1) {
+    throw new Error(
+      `Invalid object mapping: input=${flatMapping.input} and output=${flatMapping.output}`,
+    );
+  }
+  const matchedInputParts = currentInputAST.parts.splice(0, filterIndex);
+  currentInputAST.parts = currentInputAST.parts.slice(1);
+  if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
+    matchedInputParts.push(createBlockExpression(currentOutputPropAST.value));
+    currentOutputPropAST.value = {
+      type: SyntaxType.PATH,
+      root: currentInputAST.root,
+      pathType: currentInputAST.pathType,
+      parts: matchedInputParts,
+    } as PathExpression;
+  }
+  currentInputAST.root = createWildcardObjectPropValueExpression('value');
+
+  const blockExpr = getLastElement(currentOutputPropAST.value.parts) as BlockExpression;
+  const blockObjectExpr = blockExpr.statements[0] as ObjectExpression;
+  const objectExpr = createObjectExpression();
+  blockObjectExpr.props.push({
+    type: SyntaxType.OBJECT_PROP_EXPR,
+    key: createWildcardObjectPropValueExpression('key'),
+    value: isLastPart ? currentInputAST : objectExpr,
+    wildcard: true,
+  });
+  return objectExpr;
+}
+
 function handleNextPart(
-  nextOutputPart: Expression,
-  currentInputAST: PathExpression,
+  flatMapping: FlatMappingAST,
+  partNum: number,
   currentOutputPropAST: ObjectPropExpression,
 ): ObjectExpression {
+  const nextOutputPart = flatMapping.outputExpr.parts[partNum];
   if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
-    return processAllFilter(currentInputAST, currentOutputPropAST);
+    return processAllFilter(flatMapping.inputExpr, currentOutputPropAST);
   }
   if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
     return processArrayIndexFilter(
       currentOutputPropAST,
       nextOutputPart.filter as IndexFilterExpression,
+    );
+  }
+  if (isWildcardSelector(nextOutputPart)) {
+    return processWildCardSelector(
+      flatMapping,
+      currentOutputPropAST,
+      partNum === flatMapping.outputExpr.parts.length - 1,
     );
   }
   return currentOutputPropAST.value as ObjectExpression;
@@ -106,7 +164,11 @@ function processFlatMappingPart(
 ): ObjectPropExpression[] {
   const outputPart = flatMapping.outputExpr.parts[partNum];
 
-  if (outputPart.type !== SyntaxType.SELECTOR || !outputPart.prop?.value) {
+  if (
+    outputPart.type !== SyntaxType.SELECTOR ||
+    !outputPart.prop?.value ||
+    outputPart.prop.value === '*'
+  ) {
     return currentOutputPropsAST;
   }
   const key = outputPart.prop.value;
@@ -121,8 +183,7 @@ function processFlatMappingPart(
   }
 
   const currentOutputPropAST = findOrCreateObjectPropExpression(currentOutputPropsAST, key);
-  const nextOutputPart = flatMapping.outputExpr.parts[partNum + 1];
-  const objectExpr = handleNextPart(nextOutputPart, flatMapping.inputExpr, currentOutputPropAST);
+  const objectExpr = handleNextPart(flatMapping, partNum + 1, currentOutputPropAST);
   if (
     objectExpr.type !== SyntaxType.OBJECT_EXPR ||
     !objectExpr.props ||
@@ -137,7 +198,7 @@ function processFlatMappingPart(
  * Convert Flat to Object Mappings
  */
 export function convertToObjectMapping(flatMappingAST: FlatMappingAST[]): ObjectExpression {
-  const outputAST: ObjectExpression = CreateObjectExpression();
+  const outputAST: ObjectExpression = createObjectExpression();
 
   for (const flatMapping of flatMappingAST) {
     let currentOutputPropsAST = outputAST.props;

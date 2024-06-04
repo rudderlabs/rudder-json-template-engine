@@ -1,0 +1,9 @@
+{
+    user: {
+        props: .traits.({
+            @foo: {
+                value: @bar
+            }
+        })
+    }
+}

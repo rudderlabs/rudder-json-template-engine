@@ -21,7 +21,7 @@ export class ScenarioUtils {
   }
 
   static createTemplateEngine(scenarioDir: string, scenario: Scenario): JsonTemplateEngine {
-    this.initializeScenario(scenarioDir, scenario);
+    ScenarioUtils.initializeScenario(scenarioDir, scenario);
     return JsonTemplateEngine.create(scenario.template as string, scenario.options);
   }
 

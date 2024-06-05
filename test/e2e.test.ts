@@ -1,7 +1,7 @@
 import { glob } from 'glob';
 import path, { join } from 'path';
 import { Command } from 'commander';
-import { ScenarioUtils } from './utils';
+import * as ScenarioUtils from './utils';
 import { Scenario } from './types';
 
 const rootDirName = 'scenarios';

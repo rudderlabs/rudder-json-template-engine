@@ -1,5 +1,7 @@
 import { Scenario } from '../../types';
 
+class CustomError extends Error {}
+
 export const data: Scenario[] = [
   {
     templatePath: 'async.jt',
@@ -9,6 +11,11 @@ export const data: Scenario[] = [
     },
     input: [1, 2, 3],
     output: [1, 2, 3],
+  },
+  {
+    templatePath: 'new_operator.jt',
+    bindings: { CustomError },
+    output: new CustomError('some error'),
   },
   {
     bindings: {

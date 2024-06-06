@@ -286,10 +286,10 @@ export class JsonTemplateParser {
     if (root) {
       return root;
     }
-    if (this.lexer.matchID()) {
+    const nextToken = this.lexer.lookahead();
+    if (nextToken.type === TokenType.ID && nextToken.value !== '$') {
       return this.lexer.value();
     }
-    const nextToken = this.lexer.lookahead();
     const tokenReturnValues = {
       '^': DATA_PARAM_KEY,
       $: pathType.inferredPathType === PathType.JSON ? DATA_PARAM_KEY : BINDINGS_PARAM_KEY,

@@ -121,7 +121,7 @@ export class JsonTemplateLexer {
     const token = this.lookahead();
     if (token.type === TokenType.PUNCT) {
       const { value } = token;
-      return value === '.' || value === '..' || value === '^' || value === '$' || value === '@';
+      return value === '.' || value === '..' || value === '^' || value === '@';
     }
 
     return false;
@@ -359,7 +359,7 @@ export class JsonTemplateLexer {
   }
 
   private static isIdStart(ch: string) {
-    return ch === '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+    return ch === '_' || ch === '$' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
   }
 
   private static isIdPart(ch: string) {
@@ -607,7 +607,7 @@ export class JsonTemplateLexer {
     const start = this.idx;
     const ch1 = this.codeChars[this.idx];
 
-    if (',;:{}()[]^+-*/%!><|=@~$#?\n'.includes(ch1)) {
+    if (',;:{}()[]^+-*/%!><|=@~#?\n'.includes(ch1)) {
       return {
         type: TokenType.PUNCT,
         value: ch1,

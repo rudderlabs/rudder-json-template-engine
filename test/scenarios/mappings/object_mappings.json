@@ -1,0 +1,10 @@
+[
+  {
+    "input": "$.traits1.*",
+    "output": "$.properties1.*.value"
+  },
+  {
+    "input": "$.traits2.*.value",
+    "output": "$.properties2.*"
+  }
+]

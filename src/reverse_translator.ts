@@ -19,6 +19,7 @@ import {
   ObjectExpression,
   ObjectFilterExpression,
   ObjectPropExpression,
+  ObjectWildcardValueExpression,
   PathExpression,
   PathOptions,
   PathType,
@@ -110,9 +111,17 @@ export class JsonTemplateReverseTranslator {
         return this.translateArrayIndexFilterExpression(expr as IndexFilterExpression);
       case SyntaxType.RANGE_FILTER_EXPR:
         return this.translateRangeFilterExpression(expr as RangeFilterExpression);
+      case SyntaxType.OBJECT_PROP_WILD_CARD_VALUE_EXPR:
+        return this.translateWildcardObjectPropValueExpression(
+          expr as ObjectWildcardValueExpression,
+        );
       default:
         return '';
     }
+  }
+
+  translateWildcardObjectPropValueExpression(expr: ObjectWildcardValueExpression): string {
+    return `@${expr.value}`;
   }
 
   translateArrayFilterExpression(expr: ArrayFilterExpression): string {
@@ -440,7 +449,10 @@ export class JsonTemplateReverseTranslator {
     if (expr.key) {
       if (typeof expr.key === 'string') {
         code.push(expr.key);
-      } else if (expr.key.type === SyntaxType.LITERAL) {
+      } else if (
+        expr.key.type === SyntaxType.LITERAL ||
+        expr.key.type === SyntaxType.OBJECT_PROP_WILD_CARD_VALUE_EXPR
+      ) {
         code.push(this.translateExpression(expr.key));
       } else {
         code.push(this.translateWithWrapper(expr.key, '[', ']'));

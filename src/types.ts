@@ -84,6 +84,7 @@ export enum SyntaxType {
   ARRAY_FILTER_EXPR = 'array_filter_expr',
   DEFINITION_EXPR = 'definition_expr',
   ASSIGNMENT_EXPR = 'assignment_expr',
+  OBJECT_PROP_WILD_CARD_VALUE_EXPR = 'object_prop_wild_card_value_expr',
   OBJECT_PROP_EXPR = 'object_prop_expr',
   OBJECT_EXPR = 'object_expr',
   ARRAY_EXPR = 'array_expr',
@@ -147,9 +148,14 @@ export interface BlockExpression extends Expression {
   statements: Expression[];
 }
 
+export interface ObjectWildcardValueExpression extends Expression {
+  value: string;
+}
+
 export interface ObjectPropExpression extends Expression {
   key?: Expression | string;
   value: Expression;
+  wildcard?: boolean;
 }
 
 export interface ObjectExpression extends Expression {

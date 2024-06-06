@@ -19,14 +19,18 @@ export class JsonTemplateEngine {
     options?: EngineOptions,
   ): Function {
     // eslint-disable-next-line @typescript-eslint/no-implied-eval
-    return Function(DATA_PARAM_KEY, BINDINGS_PARAM_KEY, this.translate(templateOrExpr, options));
+    return Function(
+      DATA_PARAM_KEY,
+      BINDINGS_PARAM_KEY,
+      JsonTemplateEngine.translate(templateOrExpr, options),
+    );
   }
 
   private static compileAsAsync(templateOrExpr: TemplateInput, options?: EngineOptions): Function {
     return CreateAsyncFunction(
       DATA_PARAM_KEY,
       BINDINGS_PARAM_KEY,
-      this.translate(templateOrExpr, options),
+      JsonTemplateEngine.translate(templateOrExpr, options),
     );
   }
 
@@ -48,14 +52,14 @@ export class JsonTemplateEngine {
   }
 
   static create(templateOrExpr: TemplateInput, options?: EngineOptions): JsonTemplateEngine {
-    return new JsonTemplateEngine(this.compileAsAsync(templateOrExpr, options));
+    return new JsonTemplateEngine(JsonTemplateEngine.compileAsAsync(templateOrExpr, options));
   }
 
   static createAsSync(
     templateOrExpr: string | Expression,
     options?: EngineOptions,
   ): JsonTemplateEngine {
-    return new JsonTemplateEngine(this.compileAsSync(templateOrExpr, options));
+    return new JsonTemplateEngine(JsonTemplateEngine.compileAsSync(templateOrExpr, options));
   }
 
   static parse(template: TemplateInput, options?: EngineOptions): Expression {
@@ -67,11 +71,11 @@ export class JsonTemplateEngine {
       const parser = new JsonTemplateParser(lexer, options);
       return parser.parse();
     }
-    return this.parseMappingPaths(template as FlatMappingPaths[], options);
+    return JsonTemplateEngine.parseMappingPaths(template as FlatMappingPaths[], options);
   }
 
   static translate(template: TemplateInput, options?: EngineOptions): string {
-    return this.translateExpression(this.parse(template, options));
+    return JsonTemplateEngine.translateExpression(JsonTemplateEngine.parse(template, options));
   }
 
   static reverseTranslate(expr: Expression, options?: EngineOptions): string {
@@ -80,7 +84,10 @@ export class JsonTemplateEngine {
   }
 
   static convertMappingsToTemplate(mappings: FlatMappingPaths[], options?: EngineOptions): string {
-    return this.reverseTranslate(this.parseMappingPaths(mappings, options), options);
+    return JsonTemplateEngine.reverseTranslate(
+      JsonTemplateEngine.parse(mappings, options),
+      options,
+    );
   }
 
   evaluate(data: unknown, bindings: Record<string, unknown> = {}): unknown {

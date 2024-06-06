@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.1...v0.10.2) (2024-06-06)
+
+
+### Bug Fixes
+
+* binding param in new operator syntax ([#60](https://github.com/rudderlabs/rudder-json-template-engine/issues/60)) ([a5a998c](https://github.com/rudderlabs/rudder-json-template-engine/commit/a5a998c610f76bf01d50faaf50b536617a0a79ef))
+
 ## [0.10.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.0...v0.10.1) (2024-06-06)
 
 

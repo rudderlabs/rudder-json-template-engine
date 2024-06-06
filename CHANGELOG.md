@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.9.0...v0.10.0) (2024-06-06)
+
+
+### Features
+
+* add support wild card object props ([#56](https://github.com/rudderlabs/rudder-json-template-engine/issues/56)) ([b553782](https://github.com/rudderlabs/rudder-json-template-engine/commit/b55378286d5ed01840701d0d622c14d7b3ce00c9))
+
 ## [0.9.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.8.5...v0.9.0) (2024-06-04)
 
 

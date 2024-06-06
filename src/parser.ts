@@ -465,12 +465,11 @@ export class JsonTemplateParser {
 
   private parseObjectFilter(): IndexFilterExpression | ObjectFilterExpression {
     let exclude = false;
-    if (this.lexer.match('~') || this.lexer.match('!')) {
+    if ((this.lexer.match('~') || this.lexer.match('!')) && this.lexer.match('[', 1)) {
       this.lexer.ignoreTokens(1);
       exclude = true;
     }
-    // excluding is applicable only for index filters
-    if (exclude || this.lexer.match('[')) {
+    if (this.lexer.match('[')) {
       return {
         type: SyntaxType.OBJECT_INDEX_FILTER_EXPR,
         indexes: this.parseArrayExpr(),

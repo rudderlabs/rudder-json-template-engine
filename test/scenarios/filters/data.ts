@@ -40,11 +40,10 @@ export const data: Scenario[] = [
   },
   {
     templatePath: 'object_indexes.jt',
-    output: {
-      a: 1,
-      b: 2,
-      c: 3,
-      d: 4,
-    },
+    output: [
+      { a: 1, b: 2 },
+      { c: 3, d: 4 },
+      { a: 1, b: 2 },
+    ],
   },
 ];

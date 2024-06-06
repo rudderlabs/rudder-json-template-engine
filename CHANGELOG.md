@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.0...v0.10.1) (2024-06-06)
+
+
+### Bug Fixes
+
+* tokenize $ as id than punctuator ([#58](https://github.com/rudderlabs/rudder-json-template-engine/issues/58)) ([89a4dc7](https://github.com/rudderlabs/rudder-json-template-engine/commit/89a4dc77d2f49feab9c7ac597fef4ba382412023))
+
 ## [0.10.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.9.0...v0.10.0) (2024-06-06)
 
 

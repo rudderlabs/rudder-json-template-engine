@@ -975,7 +975,11 @@ export class JsonTemplateParser {
   private parseIDPath(): string {
     const idParts: string[] = [];
     while (this.lexer.matchID()) {
-      idParts.push(this.lexer.value());
+      let idValue = this.lexer.value();
+      if (idValue === '$') {
+        idValue = BINDINGS_PARAM_KEY;
+      }
+      idParts.push(idValue);
       if (this.lexer.match('.') && this.lexer.matchID(1)) {
         this.lexer.ignoreTokens(1);
       }

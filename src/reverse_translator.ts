@@ -273,7 +273,7 @@ export class JsonTemplateReverseTranslator {
         code.push(` .${expr.id}`);
       }
     } else if (expr.id) {
-      code.push(expr.id);
+      code.push(expr.id.replace(BINDINGS_PARAM_KEY, '$'));
     }
     code.push('(');
     if (expr.args) {

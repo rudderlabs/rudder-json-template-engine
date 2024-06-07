@@ -1,5 +1,6 @@
 const arr = .arr;
 const obj = .obj;
+const keys = obj.keys();
 {
     sum: .arr.sum(),
     sum2: (arr.index(0) + arr.index(-1)) * arr.length() / 2,
@@ -10,5 +11,5 @@ const obj = .obj;
     length: arr.length(),
     first: arr.first(),
     last: arr.last(),
-    keys: obj.keys(),
+    keys,
 }

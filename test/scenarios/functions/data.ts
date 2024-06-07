@@ -15,7 +15,7 @@ export const data: Scenario[] = [
   },
   {
     templatePath: 'js_date_function.jt',
-    output: [2022, 8, 19],
+    output: ['2022', 8, 19],
   },
   {
     templatePath: 'new_operator.jt',

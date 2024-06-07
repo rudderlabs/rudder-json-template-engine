@@ -7,7 +7,7 @@ import {
   VARS_PREFIX,
 } from './constants';
 import { JsonTemplateTranslatorError } from './errors';
-import { binaryOperators, standardFunctions } from './operators';
+import { binaryOperators, isStandardFunction, standardFunctions } from './operators';
 import {
   ArrayExpression,
   AssignmentExpression,
@@ -514,7 +514,7 @@ export class JsonTemplateTranslator {
     }
     const functionArgsStr = this.translateSpreadableExpressions(expr.args, result, code);
     const functionName = this.getFunctionName(expr, result);
-    if (expr.id && standardFunctions[expr.id]) {
+    if (expr.id && isStandardFunction(expr.id)) {
       this.standardFunctions[expr.id] = standardFunctions[expr.id];
       code.push(`if(${functionName} && typeof ${functionName} === 'function'){`);
       code.push(result, '=', functionName, '(', functionArgsStr, ');');

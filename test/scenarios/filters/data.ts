@@ -32,6 +32,10 @@ export const data: Scenario[] = [
     ],
   },
   {
+    templatePath: 'invalid_object_index_filters.jt',
+    error: 'Unexpected token',
+  },
+  {
     templatePath: 'object_filters.jt',
     output: {
       a: [3, 4],
@@ -40,11 +44,10 @@ export const data: Scenario[] = [
   },
   {
     templatePath: 'object_indexes.jt',
-    output: {
-      a: 1,
-      b: 2,
-      c: 3,
-      d: 4,
-    },
+    output: [
+      { a: 1, b: 2 },
+      { c: 3, d: 4 },
+      { a: 1, b: 2 },
+    ],
   },
 ];

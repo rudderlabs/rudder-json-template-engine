@@ -179,3 +179,7 @@ export const standardFunctions = {
    }`,
   keys: 'function keys(obj) { return Object.keys(obj); }',
 };
+
+export function isStandardFunction(name: string): boolean {
+  return Object.prototype.hasOwnProperty.call(standardFunctions, name);
+}

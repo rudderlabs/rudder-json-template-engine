@@ -519,7 +519,17 @@ export class JsonTemplateTranslator {
       code.push(`if(${functionName} && typeof ${functionName} === 'function'){`);
       code.push(result, '=', functionName, '(', functionArgsStr, ');');
       code.push('} else {');
-      code.push(result, '=', expr.id, '(', expr.parent ?? result, ',', functionArgsStr, ');');
+      code.push(
+        result,
+        '=',
+        VARS_PREFIX,
+        expr.id,
+        '(',
+        expr.parent ?? result,
+        ',',
+        functionArgsStr,
+        ');',
+      );
       code.push('}');
     } else {
       code.push(result, '=', functionName, '(', functionArgsStr, ');');

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.2...v0.10.3) (2024-06-07)
+
+
+### Bug Fixes
+
+* object index filters ([#62](https://github.com/rudderlabs/rudder-json-template-engine/issues/62)) ([e02b9e0](https://github.com/rudderlabs/rudder-json-template-engine/commit/e02b9e001573193eecfa79865d0609f33cd5da54))
+
 ## [0.10.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.1...v0.10.2) (2024-06-06)
 
 

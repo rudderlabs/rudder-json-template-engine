@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.4...v0.10.5) (2024-06-07)
+
+
+### Bug Fixes
+
+* standard function names in generating code ([#66](https://github.com/rudderlabs/rudder-json-template-engine/issues/66)) ([79269f3](https://github.com/rudderlabs/rudder-json-template-engine/commit/79269f3a5a607ce9c6484504ace5229c0931b0e5))
+
 ## [0.10.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.3...v0.10.4) (2024-06-07)
 
 

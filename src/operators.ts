@@ -1,3 +1,5 @@
+import { VARS_PREFIX } from './constants';
+
 function startsWithStrict(val1, val2): string {
   return `(typeof ${val1} === 'string' && ${val1}.startsWith(${val2}))`;
 }
@@ -118,57 +120,57 @@ export const binaryOperators = {
 };
 
 export const standardFunctions = {
-  sum: `function sum(arr) { 
+  sum: `function ${VARS_PREFIX}sum(arr) { 
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
     return arr.reduce((a, b) => a + b, 0); 
   }`,
-  max: `function max(arr) { 
+  max: `function ${VARS_PREFIX}max(arr) { 
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
     return Math.max(...arr); 
   }`,
-  min: `function min(arr) { 
+  min: `function ${VARS_PREFIX}min(arr) { 
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
     return Math.min(...arr); 
   }`,
-  avg: `function avg(arr) { 
+  avg: `function ${VARS_PREFIX}avg(arr) { 
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
-    return sum(arr) / arr.length; 
+    return ${VARS_PREFIX}sum(arr) / arr.length; 
   }`,
-  length: `function length(arr) {
+  length: `function ${VARS_PREFIX}length(arr) {
     if(!Array.isArray(arr) && typeof arr !== 'string') {
       throw new Error('Expected an array or string');
     }
      return arr.length; 
     }`,
-  stddev: `function stddev(arr) {
+  stddev: `function ${VARS_PREFIX}stddev(arr) {
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
-    const mu = avg(arr);
+    const mu = ${VARS_PREFIX}avg(arr);
     const diffSq = arr.map((el) => (el - mu) ** 2);
-    return Math.sqrt(avg(diffSq));
+    return Math.sqrt(${VARS_PREFIX}avg(diffSq));
   }`,
-  first: `function first(arr) { 
+  first: `function ${VARS_PREFIX}first(arr) { 
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
     return arr[0]; 
   }`,
-  last: `function last(arr) { 
+  last: `function ${VARS_PREFIX}last(arr) { 
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
     return arr[arr.length - 1]; 
   }`,
-  index: `function index(arr, i) { 
+  index: `function ${VARS_PREFIX}index(arr, i) { 
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
@@ -177,7 +179,7 @@ export const standardFunctions = {
     }
     return arr[i];
    }`,
-  keys: 'function keys(obj) { return Object.keys(obj); }',
+  keys: `function ${VARS_PREFIX}keys(obj) { return Object.keys(obj); }`,
 };
 
 export function isStandardFunction(name: string): boolean {

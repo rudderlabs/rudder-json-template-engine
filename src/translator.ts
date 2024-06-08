@@ -542,12 +542,19 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
+  private static translateObjectWildcardValue(expr: ObjectWildcardValueExpression) {
+    return `${VARS_PREFIX}${expr.value}`;
+  }
+
   private translateObjectWildcardValueExpr(
     expr: ObjectWildcardValueExpression,
     dest: string,
     _ctx: string,
   ): string {
-    return JsonTemplateTranslator.generateAssignmentCode(dest, expr.value);
+    return JsonTemplateTranslator.generateAssignmentCode(
+      dest,
+      JsonTemplateTranslator.translateObjectWildcardValue(expr),
+    );
   }
 
   private translateObjectWildcardProp(
@@ -557,13 +564,15 @@ export class JsonTemplateTranslator {
     vars: string[] = [],
   ): string {
     const code: string[] = [];
-    const keyExpr = expr.key as ObjectWildcardValueExpression;
+    const keyVar = JsonTemplateTranslator.translateObjectWildcardValue(
+      expr.key as ObjectWildcardValueExpression,
+    );
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, '{}'));
     const valueVar = this.acquireVar();
     vars.push(valueVar);
-    code.push(`for(let [key, value] of Object.entries(${ctx})){`);
+    code.push(`for(let [${VARS_PREFIX}key, ${VARS_PREFIX}value] of Object.entries(${ctx})){`);
     code.push(this.translateExpr(expr.value, valueVar, ctx));
-    code.push(`${dest}[${keyExpr.value}] = ${valueVar};`);
+    code.push(`${dest}[${keyVar}] = ${valueVar};`);
     code.push('}');
     return code.join('');
   }

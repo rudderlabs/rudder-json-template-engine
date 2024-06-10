@@ -2,18 +2,7 @@ import { Scenario } from '../../types';
 
 export const data: Scenario[] = [
   {
-    templatePath: 'invalid_wild_cards.jt',
-    error: 'Invalid object wildcard prop value',
-  },
-  {
-    output: {
-      a: 1,
-      b: 2,
-      d: 3,
-    },
-  },
-  {
-    templatePath: 'wild_cards.jt',
+    templatePath: 'context_props.jt',
     input: {
       traits: {
         name: 'John Doe',
@@ -33,12 +22,27 @@ export const data: Scenario[] = [
           age: {
             value: 30,
           },
+          someKey: {
+            value: 'someValue',
+          },
         },
         events: {
           bar: 'foo',
           'something else': 'something',
+          someEventValue: 'someEventName',
         },
       },
+    },
+  },
+  {
+    templatePath: 'invalid_context_prop.jt',
+    error: 'Context prop is should be used with key expression',
+  },
+  {
+    output: {
+      a: 1,
+      b: 2,
+      d: 3,
     },
   },
 ];

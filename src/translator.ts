@@ -40,7 +40,6 @@ import {
   IncrementExpression,
   LoopControlExpression,
   ObjectPropExpression,
-  ObjectWildcardValueExpression,
 } from './types';
 import { convertToStatementsExpr, escapeStr } from './utils/common';
 import { translateLiteral } from './utils/translator';
@@ -189,13 +188,6 @@ export class JsonTemplateTranslator {
 
       case SyntaxType.THROW_EXPR:
         return this.translateThrowExpr(expr as ThrowExpression, dest, ctx);
-
-      case SyntaxType.OBJECT_PROP_WILD_CARD_VALUE_EXPR:
-        return this.translateObjectWildcardValueExpr(
-          expr as ObjectWildcardValueExpression,
-          dest,
-          ctx,
-        );
 
       default:
         return '';
@@ -542,35 +534,25 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
-  private static translateObjectWildcardValue(expr: ObjectWildcardValueExpression) {
-    return `${VARS_PREFIX}${expr.value}`;
-  }
-
-  private translateObjectWildcardValueExpr(
-    expr: ObjectWildcardValueExpression,
-    dest: string,
-    _ctx: string,
-  ): string {
-    return JsonTemplateTranslator.generateAssignmentCode(
-      dest,
-      JsonTemplateTranslator.translateObjectWildcardValue(expr),
-    );
-  }
-
-  private translateObjectWildcardProp(
+  private translateObjectContextProp(
     expr: ObjectPropExpression,
     dest: string,
     ctx: string,
     vars: string[] = [],
   ): string {
     const code: string[] = [];
-    const keyVar = JsonTemplateTranslator.translateObjectWildcardValue(
-      expr.key as ObjectWildcardValueExpression,
-    );
     code.push(JsonTemplateTranslator.generateAssignmentCode(dest, '{}'));
+    const keyVar = this.acquireVar();
     const valueVar = this.acquireVar();
-    vars.push(valueVar);
+    vars.push(keyVar, valueVar);
     code.push(`for(let [${VARS_PREFIX}key, ${VARS_PREFIX}value] of Object.entries(${ctx})){`);
+    code.push(
+      JsonTemplateTranslator.generateAssignmentCode(
+        expr.contextVar as string,
+        `{key:${VARS_PREFIX}key,value:${VARS_PREFIX}value}`,
+      ),
+    );
+    code.push(this.translateExpr(expr.key as Expression, keyVar, ctx));
     code.push(this.translateExpr(expr.value, valueVar, ctx));
     code.push(`${dest}[${keyVar}] = ${valueVar};`);
     code.push('}');
@@ -583,10 +565,10 @@ export class JsonTemplateTranslator {
     const vars: string[] = [];
     for (const prop of expr.props) {
       const propParts: string[] = [];
-      if (prop.wildcard) {
-        const wildCardPropVar = this.acquireVar();
-        code.push(this.translateObjectWildcardProp(prop, wildCardPropVar, ctx));
-        propExprs.push(`...${wildCardPropVar}`);
+      if (prop.contextVar) {
+        const propWithContextVar = this.acquireVar();
+        code.push(this.translateObjectContextProp(prop, propWithContextVar, ctx));
+        propExprs.push(`...${propWithContextVar}`);
       } else {
         if (prop.key) {
           if (typeof prop.key !== 'string') {
@@ -595,7 +577,7 @@ export class JsonTemplateTranslator {
             propParts.push(`[${keyVar}]`);
             vars.push(keyVar);
           } else {
-            propParts.push(prop.key);
+            propParts.push(escapeStr(prop.key));
           }
           propParts.push(':');
         }

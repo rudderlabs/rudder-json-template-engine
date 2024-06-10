@@ -10,7 +10,6 @@ import {
   Expression,
   IndexFilterExpression,
   BlockExpression,
-  ObjectWildcardValueExpression,
 } from '../types';
 import { createBlockExpression, getLastElement } from './common';
 
@@ -91,13 +90,6 @@ function isWildcardSelector(expr: Expression): boolean {
   return expr.type === SyntaxType.SELECTOR && expr.prop?.value === '*';
 }
 
-function createWildcardObjectPropValueExpression(value: string): ObjectWildcardValueExpression {
-  return {
-    type: SyntaxType.OBJECT_PROP_WILD_CARD_VALUE_EXPR,
-    value,
-  };
-}
-
 function processWildCardSelector(
   flatMapping: FlatMappingAST,
   currentOutputPropAST: ObjectPropExpression,
@@ -122,16 +114,16 @@ function processWildCardSelector(
       parts: matchedInputParts,
     } as PathExpression;
   }
-  currentInputAST.root = createWildcardObjectPropValueExpression('value');
+  currentInputAST.root = `e.value`;
 
   const blockExpr = getLastElement(currentOutputPropAST.value.parts) as BlockExpression;
   const blockObjectExpr = blockExpr.statements[0] as ObjectExpression;
   const objectExpr = createObjectExpression();
   blockObjectExpr.props.push({
     type: SyntaxType.OBJECT_PROP_EXPR,
-    key: createWildcardObjectPropValueExpression('key'),
+    key: '[e.key]',
     value: isLastPart ? currentInputAST : objectExpr,
-    wildcard: true,
+    contextVar: 'e',
   });
   return objectExpr;
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.5...v0.11.0) (2024-06-10)
+
+
+### Bug Fixes
+
+* add prefix for wildcard prop values ([#68](https://github.com/rudderlabs/rudder-json-template-engine/issues/68)) ([c63d985](https://github.com/rudderlabs/rudder-json-template-engine/commit/c63d98570074d36acd7acad8e285f66b4533aaf9))
+
 ## [0.10.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.4...v0.10.5) (2024-06-07)
 
 

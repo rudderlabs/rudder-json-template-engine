@@ -1096,7 +1096,7 @@ export class JsonTemplateParser {
     } else if (this.lexer.matchID() || this.lexer.matchKeyword()) {
       key = this.lexer.value();
     } else if (this.lexer.matchLiteral() && !this.lexer.matchTokenType(TokenType.REGEXP)) {
-      key = this.parseLiteralExpr();
+      key = this.lexer.value().toString();
     } else {
       this.lexer.throwUnexpectedToken();
     }

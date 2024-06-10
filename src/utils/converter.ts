@@ -10,6 +10,7 @@ import {
   Expression,
   IndexFilterExpression,
   BlockExpression,
+  TokenType,
 } from '../types';
 import { createBlockExpression, getLastElement } from './common';
 
@@ -114,14 +115,27 @@ function processWildCardSelector(
       parts: matchedInputParts,
     } as PathExpression;
   }
-  currentInputAST.root = `e.value`;
+  currentInputAST.root = 'e.value';
 
   const blockExpr = getLastElement(currentOutputPropAST.value.parts) as BlockExpression;
   const blockObjectExpr = blockExpr.statements[0] as ObjectExpression;
   const objectExpr = createObjectExpression();
   blockObjectExpr.props.push({
     type: SyntaxType.OBJECT_PROP_EXPR,
-    key: '[e.key]',
+    key: {
+      type: SyntaxType.PATH,
+      root: 'e',
+      parts: [
+        {
+          type: SyntaxType.SELECTOR,
+          selector: '.',
+          prop: {
+            type: TokenType.ID,
+            value: 'key',
+          },
+        },
+      ],
+    },
     value: isLastPart ? currentInputAST : objectExpr,
     contextVar: 'e',
   });

@@ -442,9 +442,7 @@ export class JsonTemplateReverseTranslator {
     }
     if (expr.key) {
       if (typeof expr.key === 'string') {
-        code.push(expr.key);
-      } else if (expr.key.type === SyntaxType.LITERAL) {
-        code.push(this.translateExpression(expr.key));
+        code.push(escapeStr(expr.key));
       } else {
         code.push(this.translateWithWrapper(expr.key, '[', ']'));
       }

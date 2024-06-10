@@ -25,7 +25,6 @@ import {
   ObjectExpression,
   ObjectFilterExpression,
   ObjectPropExpression,
-  ObjectWildcardValueExpression,
   OperatorType,
   PathExpression,
   PathOptions,
@@ -1088,18 +1087,6 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseObjectPropWildcardValueExpr(): ObjectWildcardValueExpression {
-    const idToken = this.lexer.lookahead(1);
-    if (!['key', 'value'].includes(idToken.value)) {
-      throw new JsonTemplateParserError(`Invalid object wildcard prop value @${idToken.value}`);
-    }
-    this.lexer.ignoreTokens(2);
-    return {
-      type: SyntaxType.OBJECT_PROP_WILD_CARD_VALUE_EXPR,
-      value: idToken.value,
-    };
-  }
-
   private parseObjectKeyExpr(): Expression | string {
     let key: Expression | string;
     if (this.lexer.match('[')) {
@@ -1109,9 +1096,7 @@ export class JsonTemplateParser {
     } else if (this.lexer.matchID() || this.lexer.matchKeyword()) {
       key = this.lexer.value();
     } else if (this.lexer.matchLiteral() && !this.lexer.matchTokenType(TokenType.REGEXP)) {
-      key = this.parseLiteralExpr();
-    } else if (this.lexer.matchObjectWildCardPropValue()) {
-      key = this.parseObjectPropWildcardValueExpr();
+      key = this.lexer.value().toString();
     } else {
       this.lexer.throwUnexpectedToken();
     }
@@ -1142,19 +1127,26 @@ export class JsonTemplateParser {
     }
   }
 
-  private static isWildcardPropKey(expr: any): boolean {
-    return typeof expr === 'object' && expr?.type === SyntaxType.OBJECT_PROP_WILD_CARD_VALUE_EXPR;
+  private getObjectPropContextVar(): string | undefined {
+    if (this.lexer.matchObjectContextProp()) {
+      this.lexer.ignoreTokens(1);
+      return this.lexer.value();
+    }
   }
 
   private parseNormalObjectPropExpr(): ObjectPropExpression {
+    const contextVar = this.getObjectPropContextVar();
     const key = this.parseObjectKeyExpr();
+    if (contextVar && typeof key === 'string') {
+      throw new JsonTemplateParserError('Context prop should be used with a key expression');
+    }
     this.lexer.expect(':');
     const value = this.parseBaseExpr();
     return {
       type: SyntaxType.OBJECT_PROP_EXPR,
       key,
       value,
-      wildcard: JsonTemplateParser.isWildcardPropKey(key),
+      contextVar,
     };
   }
 
@@ -1390,9 +1382,6 @@ export class JsonTemplateParser {
       return this.parsePathTypeExpr();
     }
 
-    if (this.lexer.matchObjectWildCardPropValue()) {
-      return this.parseObjectPropWildcardValueExpr() as Expression;
-    }
     if (this.lexer.matchPath()) {
       return this.parsePath();
     }

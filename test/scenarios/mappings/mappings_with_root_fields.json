@@ -12,6 +12,10 @@
     "output": "$.items[*].product_name"
   },
   {
+    "input": "$.coupon",
+    "output": "$.items[*].coupon_code"
+  },
+  {
     "input": "$.products[*].category",
     "output": "$.items[*].product_category"
   }

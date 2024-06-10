@@ -1,0 +1,16 @@
+{
+    user: {
+        props: .traits.({
+            @e [e.key]: {
+                value: e.value
+            },
+            someKey: {
+                value: 'someValue'
+            }
+        }),
+        events: .events.({
+            @e [e.value]: e.key,
+            someEventValue: 'someEventName'
+        })
+    }
+}

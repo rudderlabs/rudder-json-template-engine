@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.10.6](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.5...v0.10.6) (2024-06-10)
+## [0.11.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.5...v0.11.0) (2024-06-10)
 
 
 ### Bug Fixes

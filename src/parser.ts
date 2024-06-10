@@ -1138,7 +1138,7 @@ export class JsonTemplateParser {
     const contextVar = this.getObjectPropContextVar();
     const key = this.parseObjectKeyExpr();
     if (contextVar && typeof key === 'string') {
-      throw new JsonTemplateParserError('Context prop is should be used with key expression');
+      throw new JsonTemplateParserError('Context prop should be used with a key expression');
     }
     this.lexer.expect(':');
     const value = this.parseBaseExpr();

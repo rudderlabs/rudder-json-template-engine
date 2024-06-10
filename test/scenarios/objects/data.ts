@@ -36,7 +36,7 @@ export const data: Scenario[] = [
   },
   {
     templatePath: 'invalid_context_prop.jt',
-    error: 'Context prop is should be used with key expression',
+    error: 'Context prop should be used with a key expression',
   },
   {
     output: {

@@ -1,7 +1,7 @@
 {
     user: {
         props: .traits.({
-            @foo: {
+            @e key: {
                 value: @bar
             }
         })

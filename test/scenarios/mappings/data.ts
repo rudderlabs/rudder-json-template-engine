@@ -4,6 +4,7 @@ import type { Scenario } from '../../types';
 const input = {
   userId: 'u1',
   discount: 10,
+  coupon: 'DISCOUNT',
   events: ['purchase', 'custom'],
   context: {
     traits: {
@@ -185,17 +186,20 @@ export const data: Scenario[] = [
           product_name: 'p1',
           product_category: 'baby',
           discount: 10,
+          coupon_code: 'DISCOUNT',
         },
         {
           product_id: 2,
           product_name: 'p2',
           discount: 10,
+          coupon_code: 'DISCOUNT',
         },
         {
           product_id: 3,
           product_name: 'p3',
           product_category: 'home',
           discount: 10,
+          coupon_code: 'DISCOUNT',
         },
       ],
     },

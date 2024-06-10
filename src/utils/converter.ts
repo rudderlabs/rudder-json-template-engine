@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+import { EMPTY_EXPR } from '../constants';
 import {
   SyntaxType,
   PathExpression,
@@ -9,7 +10,7 @@ import {
   Expression,
   IndexFilterExpression,
   BlockExpression,
-  ObjectWildcardValueExpression,
+  TokenType,
 } from '../types';
 import { createBlockExpression, getLastElement } from './common';
 
@@ -58,40 +59,36 @@ function processArrayIndexFilter(
 function processAllFilter(
   currentInputAST: PathExpression,
   currentOutputPropAST: ObjectPropExpression,
-): ObjectExpression {
+): Expression {
   const filterIndex = currentInputAST.parts.findIndex(
     (part) => part.type === SyntaxType.OBJECT_FILTER_EXPR,
   );
 
   if (filterIndex === -1) {
-    return currentOutputPropAST.value as ObjectExpression;
+    if (currentOutputPropAST.value.type === SyntaxType.OBJECT_EXPR) {
+      return currentOutputPropAST.value;
+    }
+  } else {
+    const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
+    if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
+      matchedInputParts.push(createBlockExpression(currentOutputPropAST.value));
+      currentOutputPropAST.value = {
+        type: SyntaxType.PATH,
+        root: currentInputAST.root,
+        pathType: currentInputAST.pathType,
+        parts: matchedInputParts,
+        returnAsArray: true,
+      } as PathExpression;
+    }
+    currentInputAST.root = undefined;
   }
-  const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
-  if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
-    matchedInputParts.push(createBlockExpression(currentOutputPropAST.value));
-    currentOutputPropAST.value = {
-      type: SyntaxType.PATH,
-      root: currentInputAST.root,
-      pathType: currentInputAST.pathType,
-      parts: matchedInputParts,
-      returnAsArray: true,
-    } as PathExpression;
-  }
-  currentInputAST.root = undefined;
 
-  const blockExpr = getLastElement(currentOutputPropAST.value.parts) as BlockExpression;
-  return blockExpr.statements[0] as ObjectExpression;
+  const blockExpr = getLastElement(currentOutputPropAST.value.parts) as Expression;
+  return blockExpr?.statements?.[0] || EMPTY_EXPR;
 }
 
 function isWildcardSelector(expr: Expression): boolean {
   return expr.type === SyntaxType.SELECTOR && expr.prop?.value === '*';
-}
-
-function createWildcardObjectPropValueExpression(value: string): ObjectWildcardValueExpression {
-  return {
-    type: SyntaxType.OBJECT_PROP_WILD_CARD_VALUE_EXPR,
-    value,
-  };
 }
 
 function processWildCardSelector(
@@ -118,16 +115,29 @@ function processWildCardSelector(
       parts: matchedInputParts,
     } as PathExpression;
   }
-  currentInputAST.root = createWildcardObjectPropValueExpression('value');
+  currentInputAST.root = 'e.value';
 
   const blockExpr = getLastElement(currentOutputPropAST.value.parts) as BlockExpression;
   const blockObjectExpr = blockExpr.statements[0] as ObjectExpression;
   const objectExpr = createObjectExpression();
   blockObjectExpr.props.push({
     type: SyntaxType.OBJECT_PROP_EXPR,
-    key: createWildcardObjectPropValueExpression('key'),
+    key: {
+      type: SyntaxType.PATH,
+      root: 'e',
+      parts: [
+        {
+          type: SyntaxType.SELECTOR,
+          selector: '.',
+          prop: {
+            type: TokenType.ID,
+            value: 'key',
+          },
+        },
+      ],
+    },
     value: isLastPart ? currentInputAST : objectExpr,
-    wildcard: true,
+    contextVar: 'e',
   });
   return objectExpr;
 }
@@ -136,7 +146,7 @@ function handleNextPart(
   flatMapping: FlatMappingAST,
   partNum: number,
   currentOutputPropAST: ObjectPropExpression,
-): ObjectExpression {
+): Expression {
   const nextOutputPart = flatMapping.outputExpr.parts[partNum];
   if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
     return processAllFilter(flatMapping.inputExpr, currentOutputPropAST);
@@ -154,7 +164,7 @@ function handleNextPart(
       partNum === flatMapping.outputExpr.parts.length - 1,
     );
   }
-  return currentOutputPropAST.value as ObjectExpression;
+  return currentOutputPropAST.value;
 }
 
 function processFlatMappingPart(

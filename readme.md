@@ -153,6 +153,7 @@ obj.({
   d: 16 // we can have other props also
 })  // { a: 1, b: 4, c: 9, d: 16}
 ```
+Refer this [example](test/scenarios/objects/context_props.jt) for more details.
 
 ### Functions
 

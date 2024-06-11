@@ -145,6 +145,15 @@ let d = obj{~["a", "b"]} // { "c": 3, "some key": 4}
 
 Refer this [example](test/scenarios/objects/template.jt) for more details.
 
+#### Object Context Props
+```js
+let obj = {a: 1, b: 2, c: 3 };
+obj.({
+  @e [e.key]: e.value * e.value, // @e refers to each key, value pairs,
+  d: 16 // we can have other props also
+})  // { a: 1, b: 4, c: 9, d: 16}
+```
+
 ### Functions
 
 #### Normal functions

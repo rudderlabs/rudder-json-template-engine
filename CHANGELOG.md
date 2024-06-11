@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.11.0...v0.11.1) (2024-06-11)
+
+
+### Miscellaneous
+
+* upgrade readme ([f6dcc6a](https://github.com/rudderlabs/rudder-json-template-engine/commit/f6dcc6a9a3bcd73d0cf1bdf99784c39bf6903d00))
+* upgrade readme ([a53ee78](https://github.com/rudderlabs/rudder-json-template-engine/commit/a53ee78fe8e5af2a713b0237a38d40b815a9df69))
+
 ## [0.11.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.10.5...v0.11.0) (2024-06-10)
 
 

@@ -68,7 +68,7 @@ jobs:
           role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
           role-duration-seconds: 900 # Adjust as needed
   
-      - name: Publish build artifacts to S3
+      - name: Publish build artifacts to S3 for CDN distribution
         run: |
           cd dist
           aws s3 sync . s3://transformers-workflow-engine/libs

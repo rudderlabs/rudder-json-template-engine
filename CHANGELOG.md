@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.11.5...v0.12.0) (2024-06-12)
+
+
+### Features
+
+* use jsdelivr cdn ([1c18170](https://github.com/rudderlabs/rudder-json-template-engine/commit/1c1817043fedbb4cc2f149008e448837d08286c7))
+
 ## [0.11.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.11.4...v0.11.5) (2024-06-12)
 
 

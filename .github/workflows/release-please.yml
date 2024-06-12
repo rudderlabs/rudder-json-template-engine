@@ -6,6 +6,10 @@ on:
 
 name: release-please
 
+permissions:
+  id-token: write # allows the JWT to be requested from GitHub's OIDC provider
+  contents: read # This is required for actions/checkout
+
 jobs:
   release-please:
     runs-on: ubuntu-latest
@@ -57,3 +61,16 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         if: ${{ steps.release.outputs.release_created }}
+      
+      - name: Assume IAM Role and Set AWS Credentials
+        id: assume-role
+        uses: aws-actions/configure-aws-credentials@v4.0.1
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_IAM_ROLE_ARN }}
+          role-duration-seconds: 900 # Adjust as needed
+  
+      - name: Publish build artifacts to S3
+        run: |
+          cd dist
+          aws s3 sync . s3://transformers-workflow-engine/libs

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.11.3...v0.11.4) (2024-06-12)
+
+
+### Bug Fixes
+
+* readme and commitlint ([1a5775d](https://github.com/rudderlabs/rudder-json-template-engine/commit/1a5775d7f9ca136fd6fc5971ab2297ac39567ac5))
+
 ## [0.11.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.11.2...v0.11.3) (2024-06-12)
 
 

@@ -26,16 +26,27 @@
         <pre id="output"></pre>
       </div>
     </div>
-    <script
-      type="module"
-      src="https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine/build/json-template.min.js"
-    ></script>
-    <script>
+ 
+    <script type="module">
+      import { JsonTemplateEngine } from 'https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine/build/json-template.min.js';
       const template = document.getElementById('template');
       const data = document.getElementById('data');
       const output = document.getElementById('output');
-      const result = JsonTemplateEngine.evaluateAsSync(template.value, {}, JSON.parse(data.value));
-      output.innerText = JSON.stringify(result, null, 2);
+      function updateOutput() {
+        try {
+          const result = JsonTemplateEngine.evaluateAsSync(template.value, {}, JSON.parse(data.value));
+          output.innerText = JSON.stringify(result, null, 2);
+        } catch (error) {
+          output.innerText = error.message;
+        }
+      }
+      template.addEventListener('input', () => {
+        updateOutput()
+      });
+      data.addEventListener('input', () => {
+        updateOutput()
+      });
+      updateOutput();
     </script>
   </body>
 </html>

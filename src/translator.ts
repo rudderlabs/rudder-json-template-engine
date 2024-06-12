@@ -96,7 +96,7 @@ export class JsonTemplateTranslator {
     const exprCode = this.translateExpr(this.expr, dest, ctx);
     const functions = Object.values(this.standardFunctions);
     if (functions.length > 0) {
-      code.push(functions.join('').replaceAll(/\s+/g, ' '));
+      code.push(functions.join('').replace(/\s+/g, ' '));
     }
     code.push(`let ${dest};`);
     code.push(this.vars.map((elm) => `let ${elm};`).join(''));

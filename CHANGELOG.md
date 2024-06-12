@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.0...v0.12.1) (2024-06-12)
+
+
+### Bug Fixes
+
+* vite config ([1cdd845](https://github.com/rudderlabs/rudder-json-template-engine/commit/1cdd84576f97aebd76e6dfb931dd70f129e1667f))
+
 ## [0.12.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.11.5...v0.12.0) (2024-06-12)
 
 

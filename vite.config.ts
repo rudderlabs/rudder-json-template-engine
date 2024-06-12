@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import { version } from './package.json';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -8,8 +7,9 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       formats: ['es'],
-      fileName: () => `rudder-json-template-engine.${version}.js`,
+      fileName: 'json-template.min.js',
     },
+    outDir: 'build',
   },
   resolve: { alias: { src: resolve('src/') } },
 });

@@ -27,17 +27,14 @@
       </div>
     </div>
     <script
-      src="https://transformers-workflow-engine.rudderstack.com/libs/rudder-json-template-engine.0.11.5.js"
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine/build/json-template.min.js"
     ></script>
     <script>
       const template = document.getElementById('template');
       const data = document.getElementById('data');
       const output = document.getElementById('output');
-      const result = JsonTemplateEngine.evaluateAsSync(
-        template.value,
-        {},
-        JSON.parse(data.value),
-      );
+      const result = JsonTemplateEngine.evaluateAsSync(template.value, {}, JSON.parse(data.value));
       output.innerText = JSON.stringify(result, null, 2);
     </script>
   </body>

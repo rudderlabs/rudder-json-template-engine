@@ -24,8 +24,7 @@ describe('Scenarios tests', () => {
       scenarios.forEach((scenario, index) => {
         it(`Scenario ${index}: ${Scenario.getTemplatePath(scenario)}`, async () => {
           try {
-            const templateEngine = ScenarioUtils.createTemplateEngine(scenarioDir, scenario);
-            const result = await ScenarioUtils.evaluateScenario(templateEngine, scenario);
+            const result = await ScenarioUtils.evaluateScenario(scenarioDir, scenario);
             expect(result).toEqual(scenario.output);
           } catch (error: any) {
             expect(error.message).toContain(scenario.error);

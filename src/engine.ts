@@ -1,5 +1,5 @@
 /* eslint-disable import/no-cycle */
-import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY } from './constants';
+import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR } from './constants';
 import { JsonTemplateLexer } from './lexer';
 import { JsonTemplateParser } from './parser';
 import { JsonTemplateReverseTranslator } from './reverse_translator';
@@ -14,15 +14,12 @@ export class JsonTemplateEngine {
     this.fn = fn;
   }
 
-  private static compileAsSync(
-    templateOrExpr: string | Expression,
-    options?: EngineOptions,
-  ): Function {
+  private static compileAsSync(template: TemplateInput, options?: EngineOptions): Function {
     // eslint-disable-next-line @typescript-eslint/no-implied-eval
     return Function(
       DATA_PARAM_KEY,
       BINDINGS_PARAM_KEY,
-      JsonTemplateEngine.translate(templateOrExpr, options),
+      JsonTemplateEngine.translate(template, options),
     );
   }
 
@@ -55,14 +52,14 @@ export class JsonTemplateEngine {
     return new JsonTemplateEngine(JsonTemplateEngine.compileAsAsync(templateOrExpr, options));
   }
 
-  static createAsSync(
-    templateOrExpr: string | Expression,
-    options?: EngineOptions,
-  ): JsonTemplateEngine {
-    return new JsonTemplateEngine(JsonTemplateEngine.compileAsSync(templateOrExpr, options));
+  static createAsSync(template: TemplateInput, options?: EngineOptions): JsonTemplateEngine {
+    return new JsonTemplateEngine(JsonTemplateEngine.compileAsSync(template, options));
   }
 
   static parse(template: TemplateInput, options?: EngineOptions): Expression {
+    if (!template) {
+      return EMPTY_EXPR;
+    }
     if (isExpression(template)) {
       return template as Expression;
     }
@@ -90,7 +87,25 @@ export class JsonTemplateEngine {
     );
   }
 
-  evaluate(data: unknown, bindings: Record<string, unknown> = {}): unknown {
-    return this.fn(data ?? {}, bindings);
+  static evaluateAsSync(
+    template: TemplateInput,
+    options: EngineOptions = {},
+    data: unknown = {},
+    bindings: Record<string, unknown> = {},
+  ): unknown {
+    return JsonTemplateEngine.createAsSync(template, options).evaluate(data, bindings);
+  }
+
+  static evaluate(
+    template: TemplateInput,
+    options: EngineOptions = {},
+    data: unknown = {},
+    bindings: Record<string, unknown> = {},
+  ): unknown {
+    return JsonTemplateEngine.create(template, options).evaluate(data, bindings);
+  }
+
+  evaluate(data: unknown = {}, bindings: Record<string, unknown> = {}): unknown {
+    return this.fn(data, bindings);
   }
 }

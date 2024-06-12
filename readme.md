@@ -59,6 +59,18 @@ This library generates a javascript function code from the template and then use
 
 [Engine](src/engine.ts) class abstracts the above steps and provides a convenient way to use the json templates to evaluate the inputs.
 
+## Getting started
+
+### Use npm package
+
+`npm install @rudderstack/json-template-engine`
+
+```ts
+const { JsonTemplateEngine } = require('@rudderstack/json-template-engine');
+const engine = JsonTemplateEngine.create(`'Hello ' + .name`);
+engine.evaluate({ name: 'World' }); // => 'Hello World'
+```
+
 ## Features
 
 Template is a set of statements and result the last statement is the output of the template.
@@ -376,22 +388,13 @@ JsonTemplateEngine.create(`let a = {{$.a.b.c}};`, {
 
 We can use compile time expressions to generate a template and then recompile it as expression. Refer these examples [simple compilation](test/scenarios/compile_time_expressions/template.jt) and [complex compilation](test/scenarios/compile_time_expressions/two_level_path_processing.jt) for more details.
 
+
 ### Comments
 
 Supports both c style single line (`//`) and block comments (`/* .. */`).
 Refer this [example](test/scenarios/comments/template.jt) for more details.
 
 For more examples, refer [Scenarios](test/scenarios)
-
-## Getting started
-
-`npm install @rudderstack/json-template-engine`
-
-```ts
-const { JsonTemplateEngine } = require('@rudderstack/json-template-engine');
-const engine = JsonTemplateEngine.create(`'Hello ' + .name`);
-engine.evaluate({ name: 'World' }); // => 'Hello World'
-```
 
 ## Testing
 

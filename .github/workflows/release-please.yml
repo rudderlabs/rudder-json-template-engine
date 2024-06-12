@@ -8,6 +8,8 @@ name: release-please
 
 permissions:
   id-token: write # allows the JWT to be requested from GitHub's OIDC provider
+  contents: write
+  pull-requests: write
 
 jobs:
   release-please:

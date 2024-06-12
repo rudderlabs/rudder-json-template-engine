@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.11.2...v0.11.3) (2024-06-12)
+
+
+### Miscellaneous
+
+* engine and add more utilites ([#73](https://github.com/rudderlabs/rudder-json-template-engine/issues/73)) ([3ea82ab](https://github.com/rudderlabs/rudder-json-template-engine/commit/3ea82ab2ff016e3497be4092c3d15e99c6baf7b1))
+
 ## [0.11.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.11.1...v0.11.2) (2024-06-11)
 
 

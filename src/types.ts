@@ -285,4 +285,4 @@ export type FlatMappingAST = FlatMappingPaths & {
   outputExpr: PathExpression;
 };
 
-export type TemplateInput = string | Expression | FlatMappingPaths[];
+export type TemplateInput = string | Expression | FlatMappingPaths[] | undefined;

@@ -27,8 +27,7 @@ describe(`${scenarioName}:`, () => {
           scenario.templatePath || 'template.jt'
         }`,
       );
-      const templateEngine = ScenarioUtils.createTemplateEngine(scenarioDir, scenario);
-      result = await ScenarioUtils.evaluateScenario(templateEngine, scenario);
+      result = await ScenarioUtils.evaluateScenario(scenarioDir, scenario);
       expect(result).toEqual(scenario.output);
     } catch (error: any) {
       console.error(error);

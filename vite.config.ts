@@ -7,7 +7,7 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       formats: ['es'],
-      fileName: 'json-template.min.js',
+      fileName: 'json-template',
     },
     outDir: 'build',
   },

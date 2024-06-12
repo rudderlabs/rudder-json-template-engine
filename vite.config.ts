@@ -6,7 +6,7 @@ import { version } from './package.json';
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(__dirname, 'test/app.ts'),
+      entry: resolve(__dirname, 'src/index.ts'),
       formats: ['es'],
       fileName: () => `rudder-json-template-engine.v${version}.js`,
     },

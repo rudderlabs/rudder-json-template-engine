@@ -8,7 +8,7 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       formats: ['es'],
-      fileName: () => `rudder-json-template-engine.v${version}.js`,
+      fileName: () => `rudder-json-template-engine.${version}.js`,
     },
   },
   resolve: { alias: { src: resolve('src/') } },

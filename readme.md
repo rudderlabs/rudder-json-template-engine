@@ -74,9 +74,11 @@ engine.evaluate({ name: 'World' }); // => 'Hello World'
 ### Use CDN directly in the browser
 [//]: <> (x-release-please-start-version)
 
-URL: https://transformers-workflow-engine.rudderstack.com/libs/rudder-json-template-engine.v0.11.4.js
+URL: https://transformers-workflow-engine.rudderstack.com/libs/rudder-json-template-engine.0.11.5.js
 
 [//]: <> (x-release-please-end)
+
+Refer this [example](public/cdn-sample.html) for more details.
 
 ## Features
 

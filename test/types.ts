@@ -4,8 +4,8 @@ export type Scenario = {
   description?: string;
   input?: unknown;
   templatePath?: string;
+  mappingsPath?: string;
   template?: string;
-  containsMappings?: true;
   options?: EngineOptions;
   bindings?: Record<string, unknown> | undefined;
   output?: unknown;
@@ -17,8 +17,8 @@ export namespace Scenario {
     if (scenario.templatePath) {
       return scenario.templatePath;
     }
-    if (scenario.containsMappings) {
-      return 'mappings.json';
+    if (scenario.mappingsPath) {
+      return scenario.mappingsPath;
     }
     return 'template.jt';
   }

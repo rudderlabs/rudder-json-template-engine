@@ -64,11 +64,7 @@ const input = {
 };
 export const data: Scenario[] = [
   {
-    containsMappings: true,
-    templatePath: 'all_features.json',
-    options: {
-      defaultPathType: PathType.JSON,
-    },
+    mappingsPath: 'all_features.json',
     input,
     output: {
       events: [
@@ -115,11 +111,8 @@ export const data: Scenario[] = [
     },
   },
   {
-    containsMappings: true,
-    templatePath: 'filters.json',
-    options: {
-      defaultPathType: PathType.JSON,
-    },
+    mappingsPath: 'filters.json',
+
     input,
     output: {
       items: [
@@ -137,11 +130,7 @@ export const data: Scenario[] = [
     },
   },
   {
-    containsMappings: true,
-    templatePath: 'index_mappings.json',
-    options: {
-      defaultPathType: PathType.JSON,
-    },
+    mappingsPath: 'index_mappings.json',
     input,
     output: {
       events: [
@@ -157,27 +146,25 @@ export const data: Scenario[] = [
     },
   },
   {
-    containsMappings: true,
-    templatePath: 'invalid_array_mappings.json',
-    options: {
-      defaultPathType: PathType.JSON,
-    },
+    mappingsPath: 'invalid_array_mappings.json',
     error: 'Failed to process output mapping',
   },
   {
-    containsMappings: true,
-    templatePath: 'invalid_object_mappings.json',
-    options: {
-      defaultPathType: PathType.JSON,
-    },
+    mappingsPath: 'invalid_object_mappings.json',
     error: 'Invalid object mapping',
   },
   {
-    containsMappings: true,
-    templatePath: 'mappings_with_root_fields.json',
-    options: {
-      defaultPathType: PathType.JSON,
-    },
+    description: 'Root mapping is used after other mappings',
+    mappingsPath: 'invalid_root_mapping1.json',
+    error: 'Invalid output mapping',
+  },
+  {
+    description: 'Root mapping is used before other mappings',
+    mappingsPath: 'invalid_root_mapping2.json',
+    error: 'Invalid output mapping',
+  },
+  {
+    mappingsPath: 'mappings_with_root_fields.json',
     input,
     output: {
       items: [
@@ -205,11 +192,7 @@ export const data: Scenario[] = [
     },
   },
   {
-    containsMappings: true,
-    templatePath: 'nested_mappings.json',
-    options: {
-      defaultPathType: PathType.JSON,
-    },
+    mappingsPath: 'nested_mappings.json',
     input,
     output: {
       items: [
@@ -256,11 +239,8 @@ export const data: Scenario[] = [
     },
   },
   {
-    containsMappings: true,
-    templatePath: 'object_mappings.json',
-    options: {
-      defaultPathType: PathType.JSON,
-    },
+    mappingsPath: 'object_mappings.json',
+
     input: {
       traits1: {
         name: 'John Doe',
@@ -291,11 +271,12 @@ export const data: Scenario[] = [
     },
   },
   {
-    containsMappings: true,
-    templatePath: 'transformations.json',
-    options: {
-      defaultPathType: PathType.JSON,
-    },
+    mappingsPath: 'only_root_mapping.json',
+    input: { a: 1 },
+    output: { a: 1 },
+  },
+  {
+    mappingsPath: 'transformations.json',
     input,
     output: {
       items: [

@@ -5,7 +5,6 @@
   "description": "A library for evaluating JSON template expressions.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
-  "type": "module",
   "keywords": [
     "json",
     "jsonpath",
@@ -25,8 +24,8 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.19.1",
-    "@commitlint/cli": "^17.4.4",
-    "@commitlint/config-conventional": "^17.4.4",
+    "@commitlint/cli": "^17.8.1",
+    "@commitlint/config-conventional": "^17.8.1",
     "@types/jest": "^29.4.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.14.6",

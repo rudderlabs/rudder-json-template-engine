@@ -204,17 +204,28 @@ function processFlatMappingPart(
   return objectExpr.props;
 }
 
+function processFlatMapping(flatMapping, currentOutputPropsAST) {
+  for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
+    currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
+  }
+}
 /**
  * Convert Flat to Object Mappings
  */
-export function convertToObjectMapping(flatMappingAST: FlatMappingAST[]): ObjectExpression {
+export function convertToObjectMapping(
+  flatMappingASTs: FlatMappingAST[],
+): ObjectExpression | PathExpression {
   const outputAST: ObjectExpression = createObjectExpression();
 
-  for (const flatMapping of flatMappingAST) {
-    let currentOutputPropsAST = outputAST.props;
-    for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
-      currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
+  for (let i = 0; i < flatMappingASTs.length; i++) {
+    const flatMapping = flatMappingASTs[i];
+    if (flatMapping.outputExpr.parts.length === 0) {
+      if (outputAST.props.length === 0 && i === flatMappingASTs.length - 1) {
+        return flatMapping.inputExpr;
+      }
+      throw new Error(`Invalid output mapping: ${flatMapping.output}`);
     }
+    processFlatMapping(flatMapping, outputAST.props);
   }
 
   return outputAST;

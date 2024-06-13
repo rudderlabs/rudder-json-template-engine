@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.2...v0.12.3) (2024-06-13)
+
+
+### Bug Fixes
+
+* cdn urls in html files ([08146e6](https://github.com/rudderlabs/rudder-json-template-engine/commit/08146e6d563f215d28bfab4bd8561c5e00cf0590))
+
 ## [0.12.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.1...v0.12.2) (2024-06-12)
 
 

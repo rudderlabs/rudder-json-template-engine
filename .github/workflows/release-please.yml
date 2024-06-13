@@ -22,7 +22,6 @@ jobs:
         with:
           token: ${{ github.token }}
           release-type: node
-          config-file: release-please-config.json
   
   publish:
     runs-on: ubuntu-latest

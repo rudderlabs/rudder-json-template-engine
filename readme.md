@@ -71,17 +71,24 @@ const engine = JsonTemplateEngine.create(`'Hello ' + .name`);
 engine.evaluate({ name: 'World' }); // => 'Hello World'
 ```
 
-### Use CDN directly in the browser
-URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine/build/json-template.min.js
+### Use CDN URL directly in the browser
+Latest URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine/build/json-template.min.js
+
+<!-- x-release-please-start-version -->
+Versioned URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.12.2/build/json-template.min.js
+
 ```html
 <script type="module">
-      import { JsonTemplateEngine } from 'https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine/build/json-template.min.js';
+      import { JsonTemplateEngine } from 'https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.12.2/build/json-template.min.js';
       const engine = JsonTemplateEngine.createAsSync(`'Hello ' + .name`);
       engine.evaluate({ name: 'World' });
 </script>
 ```
+<!-- x-release-please-end -->
 
-Refer this [example](public/cdn-sample.html) for more details.
+Refer this [example](/index.html) for more details.
+
+Demo: https://cdn.jsdelivr.net/gh/rudderlabs/rudder-json-template-engine/
 
 ## Features
 

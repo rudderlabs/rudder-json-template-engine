@@ -1,13 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rudder Json Template Engine Test</title>
-</head>
-<body>
-  <div id="app"></div>
-  <script type="module" src="/test/app.ts"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="https://cdn.jsdelivr.net/gh/rudderlabs/rudder-json-template-engine/public/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rudder Json Template Engine</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Rudder Json Template Engine</h1>
+      <div>
+        <h2>Template:</h2>
+        <textarea id="template" placeholder="Enter JSON Template" rows="10" cols="50">
+.a + .b + .c</textarea
+        >
+      </div>
+      <div>
+        <h2>Data:</h2>
+        <textarea id="data" placeholder="Enter JSON data" rows="10" cols="50">
+{"a": 1, "b": 2, "c": 3}</textarea
+        >
+      </div>
+      <div>
+        <h2>Output:</h2>
+        <pre id="output"></pre>
+      </div>
+    </div>
+ 
+    <script type="module">
+      import { JsonTemplateEngine } from 'https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine/build/json-template.min.js';
+ 
+      const template = document.getElementById('template');
+      const data = document.getElementById('data');
+      const output = document.getElementById('output');
+      function updateOutput() {
+        try {
+          const result = JsonTemplateEngine.evaluateAsSync(template.value, {}, JSON.parse(data.value));
+          output.innerText = JSON.stringify(result, null, 2);
+        } catch (error) {
+          output.innerText = error.message;
+        }
+      }
+      template.addEventListener('input', () => {
+        updateOutput()
+      });
+      data.addEventListener('input', () => {
+        updateOutput()
+      });
+      updateOutput();
+    </script>
+  </body>
 </html>

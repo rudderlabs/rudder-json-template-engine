@@ -276,6 +276,7 @@ export interface ThrowExpression extends Expression {
 }
 
 export type FlatMappingPaths = {
+  description?: string;
   input: string;
   output: string;
 };

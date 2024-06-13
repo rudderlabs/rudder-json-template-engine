@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.7](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.6...v0.12.7) (2024-06-13)
+
+
+### Bug Fixes
+
+* tsconfig ([152eb39](https://github.com/rudderlabs/rudder-json-template-engine/commit/152eb39efdb3950aacb6c0ca00e6adb5c54ccbee))
+
 ## [0.12.6](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.5...v0.12.6) (2024-06-13)
 
 

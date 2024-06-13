@@ -4,7 +4,12 @@
   "include-component-in-tag": false,
   "packages": {
     ".": {
-      "extra-files": ["readme.md"]
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "readme.md"
+        }
+      ]
     }
   }
 }

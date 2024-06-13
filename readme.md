@@ -404,6 +404,61 @@ JsonTemplateEngine.create(`let a = {{$.a.b.c}};`, {
 
 We can use compile time expressions to generate a template and then recompile it as expression. Refer these examples [simple compilation](test/scenarios/compile_time_expressions/template.jt) and [complex compilation](test/scenarios/compile_time_expressions/two_level_path_processing.jt) for more details.
 
+### Mappings
+If you are familiar with [JSON Paths](https://goessner.net/articles/JsonPath/index.html#), you can easily begin working with JSON templates by leveraging your existing knowledge through the mappings feature.
+
+**Example:**
+* Let's say we want to tranform the following data.
+* Input:
+```json
+{
+  "a": {
+    "foo": 1,
+    "bar": 2
+  },
+  "b": [
+    {
+      "firstName": "foo",
+      "lastName": "bar"
+    },
+    {
+      "firstName": "fizz",
+      "lastName": "buzz"
+    }
+  ]
+}
+```
+* Output:
+```json
+{
+  "foo": 1,
+  "bar": 2,
+  "items":[
+    {
+      "name": "foo bar"
+    },
+    {
+      "name": "fizz buzz" 
+    }
+  ] 
+}
+```
+* Mappings:
+```json
+[
+  {
+    "description": "Copies properties of a to root level in the output",
+    "input": "$.a",
+    "output": "$",
+  },
+  {
+    "description": "Combines first and last name in the output",
+    "input": "$.b[*].(@.firstName + ' ' + @.lastName)",
+    "output": "$.items[*].name"
+  }
+]
+```
+For more examples, refer [Mappings](test/scenarios/mappings/)
 
 ### Comments
 

@@ -1,0 +1,14 @@
+[
+  {
+    "input": "$.context",
+    "output": "$"
+  },
+  {
+    "input": "$.events",
+    "output": "$.event_names"
+  },
+  {
+    "input": "$.details",
+    "output": "$"
+  }
+]

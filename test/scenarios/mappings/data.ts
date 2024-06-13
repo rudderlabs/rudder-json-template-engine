@@ -1,4 +1,3 @@
-import { PathType } from '../../../src';
 import type { Scenario } from '../../types';
 
 const input = {
@@ -6,6 +5,10 @@ const input = {
   discount: 10,
   coupon: 'DISCOUNT',
   events: ['purchase', 'custom'],
+  details: {
+    name: 'Purchase',
+    timestamp: 1630000000,
+  },
   context: {
     traits: {
       email: 'dummy@example.com',
@@ -154,16 +157,6 @@ export const data: Scenario[] = [
     error: 'Invalid object mapping',
   },
   {
-    description: 'Root mapping is used after other mappings',
-    mappingsPath: 'invalid_root_mapping1.json',
-    error: 'Invalid output mapping',
-  },
-  {
-    description: 'Root mapping is used before other mappings',
-    mappingsPath: 'invalid_root_mapping2.json',
-    error: 'Invalid output mapping',
-  },
-  {
     mappingsPath: 'mappings_with_root_fields.json',
     input,
     output: {
@@ -271,9 +264,19 @@ export const data: Scenario[] = [
     },
   },
   {
-    mappingsPath: 'only_root_mapping.json',
-    input: { a: 1 },
-    output: { a: 1 },
+    mappingsPath: 'root_mappings.json',
+    input,
+    output: {
+      traits: {
+        email: 'dummy@example.com',
+        first_name: 'John',
+        last_name: 'Doe',
+        phone: '1234567890',
+      },
+      event_names: ['purchase', 'custom'],
+      name: 'Purchase',
+      timestamp: 1630000000,
+    },
   },
   {
     mappingsPath: 'transformations.json',

@@ -74,8 +74,7 @@ engine.evaluate({ name: 'World' }); // => 'Hello World'
 ### Use CDN URL directly in the browser
 Latest URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine/build/json-template.min.js
 
-<!-- x-release-please-start-version -->
-Versioned URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.12.4/build/json-template.min.js
+Versioned URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.12.4/build/json-template.min.js <!-- x-release-please-version -->
 
 ```html
 <script type="module">
@@ -84,8 +83,6 @@ Versioned URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.
       engine.evaluate({ name: 'World' });
 </script>
 ```
-<!-- x-release-please-end -->
-
 Refer this [example](/index.html) for more details.
 
 [Demo](https://rudderlabs.github.io/rudder-json-template-engine/)

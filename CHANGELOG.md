@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.6](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.5...v0.12.6) (2024-06-13)
+
+
+### Bug Fixes
+
+* release-please-config.json ([76fa8cc](https://github.com/rudderlabs/rudder-json-template-engine/commit/76fa8cc7188f129e44e029f41a0ffabe8187a508))
+* root mappings ([#86](https://github.com/rudderlabs/rudder-json-template-engine/issues/86)) ([cc4893f](https://github.com/rudderlabs/rudder-json-template-engine/commit/cc4893f601b25aa1b7ec2c612d17dbb32d265676))
+
 ## [0.12.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.4...v0.12.5) (2024-06-13)
 
 

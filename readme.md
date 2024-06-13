@@ -88,7 +88,7 @@ Versioned URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.
 
 Refer this [example](/index.html) for more details.
 
-[Demo](https://rudderlabs.github.io/rudder-json-template-engine/index.html)
+[Demo](https://rudderlabs.github.io/rudder-json-template-engine/)
 
 ## Features
 

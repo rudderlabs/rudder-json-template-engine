@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.8...v0.13.0) (2024-06-13)
+
+
+### Features
+
+* refine root mappings ([#90](https://github.com/rudderlabs/rudder-json-template-engine/issues/90)) ([f84aac6](https://github.com/rudderlabs/rudder-json-template-engine/commit/f84aac62dd0cddc5940c46c2d2ddc58ede129fa3))
+
 ## [0.12.8](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.7...v0.12.8) (2024-06-13)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.8](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.7...v0.12.8) (2024-06-13)
+
+
+### Bug Fixes
+
+* package.json type ([0fb17da](https://github.com/rudderlabs/rudder-json-template-engine/commit/0fb17da412ec9d7d6a8000bea87a15ef25281142))
+
 ## [0.12.7](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.6...v0.12.7) (2024-06-13)
 
 

@@ -7,13 +7,20 @@ function getTemplate(scenarioDir: string, scenario: Scenario): string {
   const templatePath = join(scenarioDir, Scenario.getTemplatePath(scenario));
   return readFileSync(templatePath, 'utf-8');
 }
+
+function getDefaultPathType(scenario: Scenario): PathType {
+  return scenario.mappingsPath ? PathType.JSON : PathType.SIMPLE;
+}
+
 function initializeScenario(scenarioDir: string, scenario: Scenario) {
   scenario.options = scenario.options || {};
-  scenario.options.defaultPathType = scenario.options.defaultPathType || PathType.SIMPLE;
+  scenario.options.defaultPathType =
+    scenario.options.defaultPathType || getDefaultPathType(scenario);
   let template = scenario.template ?? getTemplate(scenarioDir, scenario);
-  if (scenario.containsMappings) {
+  if (scenario.mappingsPath) {
     template = JsonTemplateEngine.convertMappingsToTemplate(
       JSON.parse(template) as FlatMappingPaths[],
+      scenario.options,
     );
   }
   scenario.template = JsonTemplateEngine.reverseTranslate(
@@ -24,7 +31,7 @@ function initializeScenario(scenarioDir: string, scenario: Scenario) {
 
 export function evaluateScenario(scenarioDir: string, scenario: Scenario): any {
   initializeScenario(scenarioDir, scenario);
-  if (scenario.containsMappings) {
+  if (scenario.mappingsPath) {
     return JsonTemplateEngine.evaluateAsSync(
       scenario.template,
       scenario.options,

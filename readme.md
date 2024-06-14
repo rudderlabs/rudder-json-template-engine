@@ -22,7 +22,7 @@
 
 ## Overview
 
-Welcome to our JSON Template Engine! This powerful tool simplifies transforming JSON data from one format to another, making it easier to manage and maintain complex integrations.
+Welcome to our JSON Template Engine! This powerful tool simplifies transforming JSON data from one format to another, making managing and maintaining complex integrations easier.
 
 ### Why JSON Template Engine?
 
@@ -89,9 +89,12 @@ Refer this [example](/index.html) for more details.
 
 [Demo](https://rudderlabs.github.io/rudder-json-template-engine/)
 
+### Playground
+Give the JSON template engine a try in our [playground](https://transformers-workflow-engine.rudderstack.com/#/json-template) without needing to install anything.
+
 ## Features
 
-Template is a set of statements and result the last statement is the output of the template.
+The template consists of multiple statements, with the output being the result of the final statement.
 
 ### Variables
 
@@ -410,7 +413,7 @@ We can use compile time expressions to generate a template and then recompile it
 If you are familiar with [JSON Paths](https://goessner.net/articles/JsonPath/index.html#), you can easily begin working with JSON templates by leveraging your existing knowledge through the mappings feature.
 
 **Example:**
-* Let's say we want to tranform the following data.
+* Let's say we want to transform the following data.
 * Input:
 ```json
 {
@@ -451,7 +454,7 @@ If you are familiar with [JSON Paths](https://goessner.net/articles/JsonPath/ind
   {
     "description": "Copies properties of a to root level in the output",
     "input": "$.a",
-    "output": "$",
+    "output": "$"
   },
   {
     "description": "Combines first and last name in the output",
@@ -460,6 +463,8 @@ If you are familiar with [JSON Paths](https://goessner.net/articles/JsonPath/ind
   }
 ]
 ```
+* Try this example in our [playground](https://transformers-workflow-engine.rudderstack.com/#/mappings](https://transformers-workflow-engine.rudderstack.com/#/mappings?gist=e25a6ac769ee5719e928720f5c439169).
+
 For more examples, refer [Mappings](test/scenarios/mappings/)
 
 ### Comments

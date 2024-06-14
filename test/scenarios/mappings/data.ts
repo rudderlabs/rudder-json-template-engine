@@ -239,14 +239,18 @@ export const data: Scenario[] = [
         name: 'John Doe',
         age: 30,
       },
-      traits2: {
-        name: {
-          value: 'John Doe',
+      traits2: [
+        {
+          name: {
+            value: 'John Doe',
+          },
         },
-        age: {
-          value: 30,
+        {
+          age: {
+            value: 30,
+          },
         },
-      },
+      ],
     },
     output: {
       properties1: {
@@ -257,10 +261,14 @@ export const data: Scenario[] = [
           value: 30,
         },
       },
-      properties2: {
-        name: 'John Doe',
-        age: 30,
-      },
+      properties2: [
+        {
+          name: 'John Doe',
+        },
+        {
+          age: 30,
+        },
+      ],
     },
   },
   {

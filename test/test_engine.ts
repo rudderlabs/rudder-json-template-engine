@@ -242,40 +242,42 @@ const address = {
 //   ),
 // );
 
-console.log(
-  JsonTemplateEngine.evaluateAsSync(
-    [
-      {
-        description: 'Copies properties of a to root level in the output',
-        input: '$.a',
-        output: '$',
-      },
-      {
-        description: 'Combines first and last name in the output',
-        input: "$.b[*].(@.firstName + ' ' + @.lastName)",
-        output: '$.items[*].name',
-      },
-      {
-        input: "'buzz'",
-        output: '$.fizz',
-      },
-    ],
-    { defaultPathType: PathType.JSON },
-    {
-      a: {
-        foo: 1,
-        bar: 2,
-      },
-      b: [
-        {
-          firstName: 'foo',
-          lastName: 'bar',
-        },
-        {
-          firstName: 'fizz',
-          lastName: 'buzz',
-        },
-      ],
-    },
-  ),
-);
+// console.log(
+//   JsonTemplateEngine.evaluateAsSync(
+//     [
+//       {
+//         description: 'Copies properties of a to root level in the output',
+//         input: '$.a',
+//         output: '$',
+//       },
+//       {
+//         description: 'Combines first and last name in the output',
+//         input: "$.b[*].(@.firstName + ' ' + @.lastName)",
+//         output: '$.items[*].name',
+//       },
+//       {
+//         input: "'buzz'",
+//         output: '$.fizz',
+//       },
+//     ],
+//     { defaultPathType: PathType.JSON },
+//     {
+//       a: {
+//         foo: 1,
+//         bar: 2,
+//       },
+//       b: [
+//         {
+//           firstName: 'foo',
+//           lastName: 'bar',
+//         },
+//         {
+//           firstName: 'fizz',
+//           lastName: 'buzz',
+//         },
+//       ],
+//     },
+//   ),
+// );
+
+console.log(JsonTemplateEngine.reverseTranslate(JsonTemplateEngine.parse('$.traits.*')));

@@ -147,24 +147,29 @@ function handleNextPart(
   partNum: number,
   currentOutputPropAST: ObjectPropExpression,
 ): Expression {
-  const nextOutputPart = flatMapping.outputExpr.parts[partNum];
-  if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
-    return processAllFilter(flatMapping.inputExpr, currentOutputPropAST);
+  let objectExpr = currentOutputPropAST.value;
+  let newPartNum = partNum;
+  while (newPartNum < flatMapping.outputExpr.parts.length) {
+    const nextOutputPart = flatMapping.outputExpr.parts[newPartNum];
+    if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
+      objectExpr = processAllFilter(flatMapping.inputExpr, currentOutputPropAST);
+    } else if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
+      objectExpr = processArrayIndexFilter(
+        currentOutputPropAST,
+        nextOutputPart.filter as IndexFilterExpression,
+      );
+    } else if (isWildcardSelector(nextOutputPart)) {
+      objectExpr = processWildCardSelector(
+        flatMapping,
+        currentOutputPropAST,
+        newPartNum === flatMapping.outputExpr.parts.length - 1,
+      );
+    } else {
+      break;
+    }
+    newPartNum++;
   }
-  if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
-    return processArrayIndexFilter(
-      currentOutputPropAST,
-      nextOutputPart.filter as IndexFilterExpression,
-    );
-  }
-  if (isWildcardSelector(nextOutputPart)) {
-    return processWildCardSelector(
-      flatMapping,
-      currentOutputPropAST,
-      partNum === flatMapping.outputExpr.parts.length - 1,
-    );
-  }
-  return currentOutputPropAST.value;
+  return objectExpr;
 }
 
 function processFlatMappingPart(

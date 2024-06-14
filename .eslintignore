@@ -4,5 +4,5 @@ coverage
 test
 commitlint.config.js
 jest.config.ts
-vite.config.ts
+vite.config.*ts
 app.ts

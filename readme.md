@@ -463,7 +463,7 @@ If you are familiar with [JSON Paths](https://goessner.net/articles/JsonPath/ind
   }
 ]
 ```
-* Try this example in our [playground](https://transformers-workflow-engine.rudderstack.com/#/mappings](https://transformers-workflow-engine.rudderstack.com/#/mappings?gist=e25a6ac769ee5719e928720f5c439169).
+* Try this example in our [playground](https://transformers-workflow-engine.rudderstack.com/#/mappings?gist=e25a6ac769ee5719e928720f5c439169).
 
 For more examples, refer [Mappings](test/scenarios/mappings/)
 

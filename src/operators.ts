@@ -119,13 +119,27 @@ export const binaryOperators = {
   '**': (val1, val2): string => `${val1}**${val2}`,
 };
 
-export const standardFunctions = {
-  sum: `function ${VARS_PREFIX}sum(arr) { 
+function getSumFn(prefix: string = ''): string {
+  return `function ${prefix}sum(arr) { 
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
     return arr.reduce((a, b) => a + b, 0); 
-  }`,
+  }`;
+}
+
+function getAvgFn(prefix: string = ''): string {
+  return `function ${prefix}avg(arr) { 
+    if(!Array.isArray(arr)) {
+      throw new Error('Expected an array');
+    }
+    ${getSumFn()}
+    return sum(arr) / arr.length; 
+  }`;
+}
+
+export const standardFunctions = {
+  sum: getSumFn(VARS_PREFIX),
   max: `function ${VARS_PREFIX}max(arr) { 
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
@@ -138,12 +152,7 @@ export const standardFunctions = {
     }
     return Math.min(...arr); 
   }`,
-  avg: `function ${VARS_PREFIX}avg(arr) { 
-    if(!Array.isArray(arr)) {
-      throw new Error('Expected an array');
-    }
-    return ${VARS_PREFIX}sum(arr) / arr.length; 
-  }`,
+  avg: getAvgFn(VARS_PREFIX),
   length: `function ${VARS_PREFIX}length(arr) {
     if(!Array.isArray(arr) && typeof arr !== 'string') {
       throw new Error('Expected an array or string');
@@ -154,9 +163,10 @@ export const standardFunctions = {
     if(!Array.isArray(arr)) {
       throw new Error('Expected an array');
     }
-    const mu = ${VARS_PREFIX}avg(arr);
+    ${getAvgFn()}
+    const mu = avg(arr);
     const diffSq = arr.map((el) => (el - mu) ** 2);
-    return Math.sqrt(${VARS_PREFIX}avg(diffSq));
+    return Math.sqrt(avg(diffSq));
   }`,
   first: `function ${VARS_PREFIX}first(arr) { 
     if(!Array.isArray(arr)) {

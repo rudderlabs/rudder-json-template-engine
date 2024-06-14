@@ -14,12 +14,6 @@ export type Scenario = {
 
 export namespace Scenario {
   export function getTemplatePath(scenario: Scenario): string {
-    if (scenario.templatePath) {
-      return scenario.templatePath;
-    }
-    if (scenario.mappingsPath) {
-      return scenario.mappingsPath;
-    }
-    return 'template.jt';
+    return scenario.templatePath || scenario.mappingsPath || scenario.template || 'template.jt';
   }
 }

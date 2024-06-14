@@ -3,6 +3,7 @@ import {
   JsonTemplateTranslator,
   JsonTemplateEngine,
   JsonTemplateLexer,
+  PathType,
 } from '../src/';
 
 const data = [
@@ -231,12 +232,50 @@ const address = {
 //       `),
 // );
 
+// console.log(
+//   JSON.stringify(
+//     JsonTemplateEngine.parse(`
+//     ~j $.foo
+//       `),
+//     //   null,
+//     //   2,
+//   ),
+// );
+
 console.log(
-  JSON.stringify(
-    JsonTemplateEngine.parse(`
-    ~j $.foo
-      `),
-    //   null,
-    //   2,
+  JsonTemplateEngine.evaluateAsSync(
+    [
+      {
+        description: 'Copies properties of a to root level in the output',
+        input: '$.a',
+        output: '$',
+      },
+      {
+        description: 'Combines first and last name in the output',
+        input: "$.b[*].(@.firstName + ' ' + @.lastName)",
+        output: '$.items[*].name',
+      },
+      {
+        input: "'buzz'",
+        output: '$.fizz',
+      },
+    ],
+    { defaultPathType: PathType.JSON },
+    {
+      a: {
+        foo: 1,
+        bar: 2,
+      },
+      b: [
+        {
+          firstName: 'foo',
+          lastName: 'bar',
+        },
+        {
+          firstName: 'fizz',
+          lastName: 'buzz',
+        },
+      ],
+    },
   ),
 );

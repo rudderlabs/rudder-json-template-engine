@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.1...v0.13.2) (2024-06-14)
+
+
+### Bug Fixes
+
+* package.json remove type module ([#93](https://github.com/rudderlabs/rudder-json-template-engine/issues/93)) ([8849705](https://github.com/rudderlabs/rudder-json-template-engine/commit/88497050bf444b49c2b33d203d5d8d34b6f9ba07))
+
 ## [0.13.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.0...v0.13.1) (2024-06-14)
 
 

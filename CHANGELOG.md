@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.0...v0.13.1) (2024-06-14)
+
+
+### Bug Fixes
+
+* add release-please manifest ([f9319e7](https://github.com/rudderlabs/rudder-json-template-engine/commit/f9319e713d62340a0e712aba8a75657d6bad3a7e))
+* readme to have updated versions ([50ba297](https://github.com/rudderlabs/rudder-json-template-engine/commit/50ba297bdea24864fd8d574fbb69bf55ff3e93cf))
+* release-please workflows ([f3e918e](https://github.com/rudderlabs/rudder-json-template-engine/commit/f3e918e4cd0da0a78f489c348715dcea56a3bc6f))
+* release-please-config.json ([438062f](https://github.com/rudderlabs/rudder-json-template-engine/commit/438062f624072815e982390ccf236b93ed081011))
+
 ## [0.13.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.12.8...v0.13.0) (2024-06-13)
 
 

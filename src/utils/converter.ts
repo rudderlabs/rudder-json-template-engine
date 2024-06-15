@@ -146,28 +146,40 @@ function handleNextPart(
   flatMapping: FlatMappingAST,
   partNum: number,
   currentOutputPropAST: ObjectPropExpression,
+): Expression | undefined {
+  const nextOutputPart = flatMapping.outputExpr.parts[partNum];
+  if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
+    return processAllFilter(flatMapping.inputExpr, currentOutputPropAST);
+  }
+  if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
+    return processArrayIndexFilter(
+      currentOutputPropAST,
+      nextOutputPart.filter as IndexFilterExpression,
+    );
+  }
+  if (isWildcardSelector(nextOutputPart)) {
+    return processWildCardSelector(
+      flatMapping,
+      currentOutputPropAST,
+      partNum === flatMapping.outputExpr.parts.length - 1,
+    );
+  }
+}
+
+function handleNextParts(
+  flatMapping: FlatMappingAST,
+  partNum: number,
+  currentOutputPropAST: ObjectPropExpression,
 ): Expression {
   let objectExpr = currentOutputPropAST.value;
   let newPartNum = partNum;
   while (newPartNum < flatMapping.outputExpr.parts.length) {
-    const nextOutputPart = flatMapping.outputExpr.parts[newPartNum];
-    if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
-      objectExpr = processAllFilter(flatMapping.inputExpr, currentOutputPropAST);
-    } else if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
-      objectExpr = processArrayIndexFilter(
-        currentOutputPropAST,
-        nextOutputPart.filter as IndexFilterExpression,
-      );
-    } else if (isWildcardSelector(nextOutputPart)) {
-      objectExpr = processWildCardSelector(
-        flatMapping,
-        currentOutputPropAST,
-        newPartNum === flatMapping.outputExpr.parts.length - 1,
-      );
-    } else {
+    const nextObjectExpr = handleNextPart(flatMapping, newPartNum, currentOutputPropAST);
+    if (!nextObjectExpr) {
       break;
     }
     newPartNum++;
+    objectExpr = nextObjectExpr;
   }
   return objectExpr;
 }
@@ -198,7 +210,7 @@ function processFlatMappingPart(
   }
 
   const currentOutputPropAST = findOrCreateObjectPropExpression(currentOutputPropsAST, key);
-  const objectExpr = handleNextPart(flatMapping, partNum + 1, currentOutputPropAST);
+  const objectExpr = handleNextParts(flatMapping, partNum + 1, currentOutputPropAST);
   if (
     objectExpr.type !== SyntaxType.OBJECT_EXPR ||
     !objectExpr.props ||

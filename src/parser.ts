@@ -1345,16 +1345,15 @@ export class JsonTemplateParser {
 
   private static convertMappingsToFlatPaths(mappings: ObjectExpression): FlatMappingPaths {
     const flatPaths: Record<string, string> = {};
-    for (const prop of mappings.props) {
-      const objectProp = prop as ObjectPropExpression;
-      if (!JsonTemplateParser.isValidMapping(objectProp)) {
+    for (const mappingProp of mappings.props) {
+      if (!JsonTemplateParser.isValidMapping(mappingProp)) {
         throw new JsonTemplateParserError(
-          `Invalid mapping key=${JSON.stringify(objectProp.key)} or value=${JSON.stringify(
-            objectProp.value,
+          `Invalid mapping key=${JSON.stringify(mappingProp.key)} or value=${JSON.stringify(
+            mappingProp.value,
           )}, expected string key and string value`,
         );
       }
-      flatPaths[objectProp.key as string] = objectProp.value.value;
+      flatPaths[mappingProp.key as string] = mappingProp.value.value;
     }
     if (!flatPaths.input || !flatPaths.output) {
       throw new JsonTemplateParserError(

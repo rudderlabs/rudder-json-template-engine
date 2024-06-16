@@ -231,13 +231,6 @@ function handleRootOnlyOutputMapping(flatMapping: FlatMappingAST, outputAST: Obj
   } as ObjectPropExpression);
 }
 
-function processFlatMapping(flatMapping, outputAST: ObjectExpression) {
-  let currentOutputPropsAST = outputAST.props;
-  for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
-    currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
-  }
-}
-
 function validateMapping(flatMapping: FlatMappingAST) {
   if (flatMapping.outputExpr.type !== SyntaxType.PATH) {
     throw new Error(
@@ -255,7 +248,10 @@ export function convertToObjectMapping(
   for (const flatMapping of flatMappingASTs) {
     validateMapping(flatMapping);
     if (flatMapping.outputExpr.parts.length > 0) {
-      processFlatMapping(flatMapping, outputAST);
+      let currentOutputPropsAST = outputAST.props;
+      for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
+        currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
+      }
     } else {
       handleRootOnlyOutputMapping(flatMapping, outputAST);
     }

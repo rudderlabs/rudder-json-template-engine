@@ -190,7 +190,6 @@ function processFlatMappingPart(
   currentOutputPropsAST: ObjectPropExpression[],
 ): ObjectPropExpression[] {
   const outputPart = flatMapping.outputExpr.parts[partNum];
-
   if (
     outputPart.type !== SyntaxType.SELECTOR ||
     !outputPart.prop?.value ||
@@ -222,33 +221,44 @@ function processFlatMappingPart(
   return objectExpr.props;
 }
 
-function processFlatMapping(flatMapping, currentOutputPropsAST) {
+function handleRootOnlyOutputMapping(flatMapping: FlatMappingAST, outputAST: ObjectExpression) {
+  outputAST.props.push({
+    type: SyntaxType.OBJECT_PROP_EXPR,
+    value: {
+      type: SyntaxType.SPREAD_EXPR,
+      value: flatMapping.inputExpr,
+    },
+  } as ObjectPropExpression);
+}
+
+function processFlatMapping(flatMapping, outputAST: ObjectExpression) {
+  let currentOutputPropsAST = outputAST.props;
+  for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
+    currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
+  }
+}
+
+function validateMapping(flatMapping: FlatMappingAST) {
   if (flatMapping.outputExpr.type !== SyntaxType.PATH) {
     throw new Error(
       `Invalid object mapping: output=${flatMapping.output} should be a path expression`,
     );
   }
-  if (flatMapping.outputExpr.parts.length === 0) {
-    currentOutputPropsAST.push({
-      type: SyntaxType.OBJECT_PROP_EXPR,
-      value: {
-        type: SyntaxType.SPREAD_EXPR,
-        value: flatMapping.inputExpr,
-      },
-    } as ObjectPropExpression);
-    return;
-  }
-  for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
-    currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
-  }
 }
 /**
  * Convert Flat to Object Mappings
  */
-export function convertToObjectMapping(flatMappingASTs: FlatMappingAST[]): ObjectExpression {
+export function convertToObjectMapping(
+  flatMappingASTs: FlatMappingAST[],
+): ObjectExpression | PathExpression {
   const outputAST: ObjectExpression = createObjectExpression();
   for (const flatMapping of flatMappingASTs) {
-    processFlatMapping(flatMapping, outputAST.props);
+    validateMapping(flatMapping);
+    if (flatMapping.outputExpr.parts.length > 0) {
+      processFlatMapping(flatMapping, outputAST);
+    } else {
+      handleRootOnlyOutputMapping(flatMapping, outputAST);
+    }
   }
 
   return outputAST;

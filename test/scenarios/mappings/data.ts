@@ -275,6 +275,46 @@ export const data: Scenario[] = [
     },
   },
   {
+    mappingsPath: 'root_array_mappings.json',
+    input: [
+      {
+        user_id: 1,
+        user_name: 'John Doe',
+      },
+      {
+        user_id: 2,
+        user_name: 'Jane Doe',
+      },
+    ],
+    output: [
+      {
+        user: {
+          id: 1,
+          name: 'John Doe',
+        },
+      },
+      {
+        user: {
+          id: 2,
+          name: 'Jane Doe',
+        },
+      },
+    ],
+  },
+  {
+    mappingsPath: 'root_index_mappings.json',
+    input: {
+      id: 1,
+      name: 'John Doe',
+    },
+    output: [
+      {
+        user_id: 1,
+        user_name: 'John Doe',
+      },
+    ],
+  },
+  {
     mappingsPath: 'root_mappings.json',
     input,
     output: {
@@ -287,6 +327,52 @@ export const data: Scenario[] = [
       event_names: ['purchase', 'custom'],
       name: 'Purchase',
       timestamp: 1630000000,
+    },
+  },
+  {
+    mappingsPath: 'root_nested_mappings.json',
+    input: [
+      {
+        user_id: 1,
+        user_name: 'John Doe',
+      },
+      {
+        user_id: 2,
+        user_name: 'Jane Doe',
+      },
+    ],
+    output: [
+      {
+        user_id: {
+          value: 1,
+        },
+        user_name: {
+          value: 'John Doe',
+        },
+      },
+      {
+        user_id: {
+          value: 2,
+        },
+        user_name: {
+          value: 'Jane Doe',
+        },
+      },
+    ],
+  },
+  {
+    mappingsPath: 'root_object_mappings.json',
+    input: {
+      user_id: 1,
+      user_name: 'John Doe',
+    },
+    output: {
+      user_id: {
+        value: 1,
+      },
+      user_name: {
+        value: 'John Doe',
+      },
     },
   },
   {

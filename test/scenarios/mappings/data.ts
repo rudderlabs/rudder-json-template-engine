@@ -238,6 +238,7 @@ export const data: Scenario[] = [
   {
     mappingsPath: 'object_mappings.json',
     input: {
+      user_id: 1,
       traits1: {
         name: 'John Doe',
         age: 30,
@@ -256,6 +257,29 @@ export const data: Scenario[] = [
       ],
     },
     output: {
+      user_id: {
+        value: 1,
+      },
+      traits1: {
+        value: {
+          name: 'John Doe',
+          age: 30,
+        },
+      },
+      traits2: {
+        value: [
+          {
+            name: {
+              value: 'John Doe',
+            },
+          },
+          {
+            age: {
+              value: 30,
+            },
+          },
+        ],
+      },
       properties1: {
         name: {
           value: 'John Doe',

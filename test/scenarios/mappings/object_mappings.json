@@ -1,5 +1,9 @@
 [
   {
+    "input": "$.*",
+    "output": "$.*.value"
+  },
+  {
     "input": "$.traits1.*",
     "output": "$.properties1.*.value"
   },

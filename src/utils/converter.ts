@@ -243,6 +243,14 @@ function validateMapping(flatMapping: FlatMappingAST) {
     );
   }
 }
+
+function processFlatMappingParts(flatMapping: FlatMappingAST, objectExpr: ObjectExpression) {
+  let currentOutputPropsAST = objectExpr.props;
+  for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
+    currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
+  }
+}
+
 /**
  * Convert Flat to Object Mappings
  */
@@ -264,10 +272,7 @@ export function convertToObjectMapping(
         objectExpr = handleNextParts(flatMapping, 0, objectPropExpr);
         pathAST = objectPropExpr.value as PathExpression;
       }
-      let currentOutputPropsAST = objectExpr.props;
-      for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
-        currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
-      }
+      processFlatMappingParts(flatMapping, objectExpr);
     } else {
       handleRootOnlyOutputMapping(flatMapping, outputAST);
     }

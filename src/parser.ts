@@ -14,6 +14,7 @@ import {
   DefinitionExpression,
   EngineOptions,
   Expression,
+  FlatMappingPaths,
   FunctionCallExpression,
   FunctionExpression,
   IncrementExpression,
@@ -1334,6 +1335,50 @@ export class JsonTemplateParser {
     }
   }
 
+  private static isValidMapping(mapping: ObjectPropExpression): boolean {
+    return (
+      typeof mapping.key === 'string' &&
+      mapping.value.type === SyntaxType.LITERAL &&
+      mapping.value.tokenType === TokenType.STR
+    );
+  }
+
+  private static convertMappingsToFlatPaths(mappings: ObjectExpression): FlatMappingPaths {
+    const flatPaths: Record<string, string> = {};
+    for (const prop of mappings.props) {
+      const objectProp = prop as ObjectPropExpression;
+      if (!JsonTemplateParser.isValidMapping(objectProp)) {
+        throw new JsonTemplateParserError(
+          `Invalid mapping key=${JSON.stringify(objectProp.key)} or value=${JSON.stringify(
+            objectProp.value,
+          )}, expected string key and string value`,
+        );
+      }
+      flatPaths[objectProp.key as string] = objectProp.value.value;
+    }
+    if (!flatPaths.input || !flatPaths.output) {
+      throw new JsonTemplateParserError(
+        `Invalid mapping: ${JSON.stringify(flatPaths)}, missing input or output`,
+      );
+    }
+    return flatPaths as FlatMappingPaths;
+  }
+
+  private parseMappings(): Expression {
+    this.lexer.expect('~m');
+    const mappings: ArrayExpression = this.parseArrayExpr();
+    const flatMappings: FlatMappingPaths[] = [];
+    for (const mapping of mappings.elements) {
+      if (mapping.type !== SyntaxType.OBJECT_EXPR) {
+        throw new JsonTemplateParserError(
+          `Invalid mapping=${JSON.stringify(mapping)}, expected object`,
+        );
+      }
+      flatMappings.push(JsonTemplateParser.convertMappingsToFlatPaths(mapping as ObjectExpression));
+    }
+    return JsonTemplateEngine.parseMappingPaths(flatMappings);
+  }
+
   private parsePrimaryExpr(): Expression {
     if (this.lexer.match(';')) {
       return EMPTY_EXPR;
@@ -1380,6 +1425,10 @@ export class JsonTemplateParser {
 
     if (this.lexer.matchPathType()) {
       return this.parsePathTypeExpr();
+    }
+
+    if (this.lexer.matchMappings()) {
+      return this.parseMappings();
     }
 
     if (this.lexer.matchPath()) {

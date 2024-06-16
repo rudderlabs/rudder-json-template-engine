@@ -210,6 +210,7 @@ function processFlatMappingPart(
   }
 
   const currentOutputPropAST = findOrCreateObjectPropExpression(currentOutputPropsAST, key);
+
   const objectExpr = handleNextParts(flatMapping, partNum + 1, currentOutputPropAST);
   if (
     objectExpr.type !== SyntaxType.OBJECT_EXPR ||
@@ -222,6 +223,11 @@ function processFlatMappingPart(
 }
 
 function processFlatMapping(flatMapping, currentOutputPropsAST) {
+  if (flatMapping.outputExpr.type !== SyntaxType.PATH) {
+    throw new Error(
+      `Invalid object mapping: output=${flatMapping.output} should be a path expression`,
+    );
+  }
   if (flatMapping.outputExpr.parts.length === 0) {
     currentOutputPropsAST.push({
       type: SyntaxType.OBJECT_PROP_EXPR,
@@ -239,9 +245,7 @@ function processFlatMapping(flatMapping, currentOutputPropsAST) {
 /**
  * Convert Flat to Object Mappings
  */
-export function convertToObjectMapping(
-  flatMappingASTs: FlatMappingAST[],
-): ObjectExpression | PathExpression {
+export function convertToObjectMapping(flatMappingASTs: FlatMappingAST[]): ObjectExpression {
   const outputAST: ObjectExpression = createObjectExpression();
   for (const flatMapping of flatMappingASTs) {
     processFlatMapping(flatMapping, outputAST.props);

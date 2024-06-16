@@ -36,17 +36,12 @@ export class JsonTemplateEngine {
     return translator.translate();
   }
 
-  private static parseMappingPaths(
-    mappings: FlatMappingPaths[],
-    options?: EngineOptions,
-  ): Expression {
-    const flatMappingAST = mappings
-      .filter((mapping) => mapping.skip !== true)
-      .map((mapping) => ({
-        ...mapping,
-        inputExpr: JsonTemplateEngine.parse(mapping.input, options).statements[0],
-        outputExpr: JsonTemplateEngine.parse(mapping.output, options).statements[0],
-      }));
+  static parseMappingPaths(mappings: FlatMappingPaths[], options?: EngineOptions): Expression {
+    const flatMappingAST = mappings.map((mapping) => ({
+      ...mapping,
+      inputExpr: JsonTemplateEngine.parse(mapping.input, options).statements[0],
+      outputExpr: JsonTemplateEngine.parse(mapping.output, options).statements[0],
+    }));
     return convertToObjectMapping(flatMappingAST);
   }
 

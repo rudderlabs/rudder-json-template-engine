@@ -157,6 +157,10 @@ export const data: Scenario[] = [
     error: 'Invalid object mapping',
   },
   {
+    mappingsPath: 'invalid_output_mapping.json',
+    error: 'Invalid object mapping',
+  },
+  {
     mappingsPath: 'mappings_with_root_fields.json',
     input,
     output: {
@@ -233,7 +237,6 @@ export const data: Scenario[] = [
   },
   {
     mappingsPath: 'object_mappings.json',
-
     input: {
       traits1: {
         name: 'John Doe',
@@ -285,6 +288,31 @@ export const data: Scenario[] = [
       name: 'Purchase',
       timestamp: 1630000000,
     },
+  },
+  {
+    input: {
+      a: [
+        {
+          a: 1,
+        },
+        {
+          a: 2,
+        },
+      ],
+    },
+    output: 3,
+  },
+  {
+    template: '~m[1, 2]',
+    error: 'Invalid mapping',
+  },
+  {
+    template: '~m[{}]',
+    error: 'Invalid mapping',
+  },
+  {
+    template: '~m[{input: 1, output: 2}]',
+    error: 'Invalid mapping',
   },
   {
     mappingsPath: 'transformations.json',

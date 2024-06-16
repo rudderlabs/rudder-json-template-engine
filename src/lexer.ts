@@ -73,6 +73,10 @@ export class JsonTemplateLexer {
     return this.match('{') && this.match('{', 1);
   }
 
+  matchMappings(): boolean {
+    return this.match('~m');
+  }
+
   matchSimplePath(): boolean {
     return this.match('~s');
   }
@@ -636,7 +640,7 @@ export class JsonTemplateLexer {
     const ch1 = this.codeChars[this.idx];
     const ch2 = this.codeChars[this.idx + 1];
 
-    if (ch1 === '~' && 'rsj'.includes(ch2)) {
+    if (ch1 === '~' && 'rsjm'.includes(ch2)) {
       this.idx += 2;
       return {
         type: TokenType.PUNCT,

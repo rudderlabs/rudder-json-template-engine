@@ -49,5 +49,5 @@ export function escapeStr(s?: string): string {
   if (typeof s !== 'string') {
     return '';
   }
-  return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  return `"${s.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 }

@@ -157,6 +157,10 @@ export const data: Scenario[] = [
     error: 'Invalid object mapping',
   },
   {
+    mappingsPath: 'invalid_output_mapping.json',
+    error: 'Invalid object mapping',
+  },
+  {
     mappingsPath: 'mappings_with_root_fields.json',
     input,
     output: {
@@ -233,22 +237,49 @@ export const data: Scenario[] = [
   },
   {
     mappingsPath: 'object_mappings.json',
-
     input: {
+      user_id: 1,
       traits1: {
         name: 'John Doe',
         age: 30,
       },
-      traits2: {
-        name: {
-          value: 'John Doe',
+      traits2: [
+        {
+          name: {
+            value: 'John Doe',
+          },
         },
-        age: {
-          value: 30,
+        {
+          age: {
+            value: 30,
+          },
         },
-      },
+      ],
     },
     output: {
+      user_id: {
+        value: 1,
+      },
+      traits1: {
+        value: {
+          name: 'John Doe',
+          age: 30,
+        },
+      },
+      traits2: {
+        value: [
+          {
+            name: {
+              value: 'John Doe',
+            },
+          },
+          {
+            age: {
+              value: 30,
+            },
+          },
+        ],
+      },
       properties1: {
         name: {
           value: 'John Doe',
@@ -257,11 +288,55 @@ export const data: Scenario[] = [
           value: 30,
         },
       },
-      properties2: {
-        name: 'John Doe',
-        age: 30,
-      },
+      properties2: [
+        {
+          name: 'John Doe',
+        },
+        {
+          age: 30,
+        },
+      ],
     },
+  },
+  {
+    mappingsPath: 'root_array_mappings.json',
+    input: [
+      {
+        user_id: 1,
+        user_name: 'John Doe',
+      },
+      {
+        user_id: 2,
+        user_name: 'Jane Doe',
+      },
+    ],
+    output: [
+      {
+        user: {
+          id: 1,
+          name: 'John Doe',
+        },
+      },
+      {
+        user: {
+          id: 2,
+          name: 'Jane Doe',
+        },
+      },
+    ],
+  },
+  {
+    mappingsPath: 'root_index_mappings.json',
+    input: {
+      id: 1,
+      name: 'John Doe',
+    },
+    output: [
+      {
+        user_id: 1,
+        user_name: 'John Doe',
+      },
+    ],
   },
   {
     mappingsPath: 'root_mappings.json',
@@ -277,6 +352,77 @@ export const data: Scenario[] = [
       name: 'Purchase',
       timestamp: 1630000000,
     },
+  },
+  {
+    mappingsPath: 'root_nested_mappings.json',
+    input: [
+      {
+        user_id: 1,
+        user_name: 'John Doe',
+      },
+      {
+        user_id: 2,
+        user_name: 'Jane Doe',
+      },
+    ],
+    output: [
+      {
+        user_id: {
+          value: 1,
+        },
+        user_name: {
+          value: 'John Doe',
+        },
+      },
+      {
+        user_id: {
+          value: 2,
+        },
+        user_name: {
+          value: 'Jane Doe',
+        },
+      },
+    ],
+  },
+  {
+    mappingsPath: 'root_object_mappings.json',
+    input: {
+      user_id: 1,
+      user_name: 'John Doe',
+    },
+    output: {
+      user_id: {
+        value: 1,
+      },
+      user_name: {
+        value: 'John Doe',
+      },
+    },
+  },
+  {
+    input: {
+      a: [
+        {
+          a: 1,
+        },
+        {
+          a: 2,
+        },
+      ],
+    },
+    output: 3,
+  },
+  {
+    template: '~m[1, 2]',
+    error: 'Invalid mapping',
+  },
+  {
+    template: '~m[{}]',
+    error: 'Invalid mapping',
+  },
+  {
+    template: '~m[{input: 1, output: 2}]',
+    error: 'Invalid mapping',
   },
   {
     mappingsPath: 'transformations.json',

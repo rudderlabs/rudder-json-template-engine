@@ -1,0 +1,8 @@
+const temp = ~m[
+{
+    input: '^.a[*].a',
+    output: '^.b[*].b',
+}
+];
+
+~r temp.b.b.sum();

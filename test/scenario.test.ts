@@ -19,14 +19,11 @@ describe(`${scenarioName}:`, () => {
   const scenarioDir = join(__dirname, 'scenarios', scenarioName);
   const scenarios = ScenarioUtils.extractScenarios(scenarioDir);
   const scenario: Scenario = scenarios[index] || scenarios[0];
-  it(`Scenario ${index}: ${Scenario.getTemplatePath(scenario)}`, async () => {
+  const templatePath = Scenario.getTemplatePath(scenario);
+  it(`Scenario ${index}: ${templatePath}`, async () => {
     let result;
     try {
-      console.log(
-        `Executing scenario: ${scenarioName}, test: ${index}, template: ${
-          scenario.templatePath || 'template.jt'
-        }`,
-      );
+      console.log(`Executing scenario: ${scenarioName}, test: ${index}, template: ${templatePath}`);
       result = await ScenarioUtils.evaluateScenario(scenarioDir, scenario);
       expect(result).toEqual(scenario.output);
     } catch (error: any) {

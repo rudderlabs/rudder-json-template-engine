@@ -1,0 +1,10 @@
+[
+  {
+    "input": "$[*].user_id",
+    "output": "$[*].user.id"
+  },
+  {
+    "input": "$[*].user_name",
+    "output": "$[*].user.name"
+  }
+]

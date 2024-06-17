@@ -1,10 +1,14 @@
 [
   {
+    "input": "$.*",
+    "output": "$.*.value"
+  },
+  {
     "input": "$.traits1.*",
     "output": "$.properties1.*.value"
   },
   {
-    "input": "$.traits2.*.value",
-    "output": "$.properties2.*"
+    "input": "$.traits2[*].*.value",
+    "output": "$.properties2[*].*"
   }
 ]

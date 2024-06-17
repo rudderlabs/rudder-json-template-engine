@@ -57,16 +57,17 @@ function processArrayIndexFilter(
 }
 
 function processAllFilter(
-  currentInputAST: PathExpression,
+  flatMapping: FlatMappingAST,
   currentOutputPropAST: ObjectPropExpression,
-): Expression {
+): ObjectExpression {
+  const currentInputAST = flatMapping.inputExpr;
   const filterIndex = currentInputAST.parts.findIndex(
     (part) => part.type === SyntaxType.OBJECT_FILTER_EXPR,
   );
 
   if (filterIndex === -1) {
     if (currentOutputPropAST.value.type === SyntaxType.OBJECT_EXPR) {
-      return currentOutputPropAST.value;
+      return currentOutputPropAST.value as ObjectExpression;
     }
   } else {
     const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
@@ -84,7 +85,15 @@ function processAllFilter(
   }
 
   const blockExpr = getLastElement(currentOutputPropAST.value.parts) as Expression;
-  return blockExpr?.statements?.[0] || EMPTY_EXPR;
+  const objectExpr = blockExpr?.statements?.[0] || EMPTY_EXPR;
+  if (
+    objectExpr.type !== SyntaxType.OBJECT_EXPR ||
+    !objectExpr.props ||
+    !Array.isArray(objectExpr.props)
+  ) {
+    throw new Error(`Failed to process output mapping: ${flatMapping.output}`);
+  }
+  return objectExpr;
 }
 
 function isWildcardSelector(expr: Expression): boolean {
@@ -146,10 +155,10 @@ function handleNextPart(
   flatMapping: FlatMappingAST,
   partNum: number,
   currentOutputPropAST: ObjectPropExpression,
-): Expression {
+): ObjectExpression | undefined {
   const nextOutputPart = flatMapping.outputExpr.parts[partNum];
   if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
-    return processAllFilter(flatMapping.inputExpr, currentOutputPropAST);
+    return processAllFilter(flatMapping, currentOutputPropAST);
   }
   if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
     return processArrayIndexFilter(
@@ -164,7 +173,32 @@ function handleNextPart(
       partNum === flatMapping.outputExpr.parts.length - 1,
     );
   }
-  return currentOutputPropAST.value;
+}
+
+function handleNextParts(
+  flatMapping: FlatMappingAST,
+  partNum: number,
+  currentOutputPropAST: ObjectPropExpression,
+): ObjectExpression {
+  let objectExpr = currentOutputPropAST.value as ObjectExpression;
+  let newPartNum = partNum;
+  while (newPartNum < flatMapping.outputExpr.parts.length) {
+    const nextObjectExpr = handleNextPart(flatMapping, newPartNum, currentOutputPropAST);
+    if (!nextObjectExpr) {
+      break;
+    }
+    newPartNum++;
+    objectExpr = nextObjectExpr;
+  }
+  return objectExpr;
+}
+
+function isOutputPartRegularSelector(outputPart: Expression) {
+  return (
+    outputPart.type === SyntaxType.SELECTOR &&
+    outputPart.prop?.value &&
+    outputPart.prop.value !== '*'
+  );
 }
 
 function processFlatMappingPart(
@@ -173,12 +207,7 @@ function processFlatMappingPart(
   currentOutputPropsAST: ObjectPropExpression[],
 ): ObjectPropExpression[] {
   const outputPart = flatMapping.outputExpr.parts[partNum];
-
-  if (
-    outputPart.type !== SyntaxType.SELECTOR ||
-    !outputPart.prop?.value ||
-    outputPart.prop.value === '*'
-  ) {
+  if (!isOutputPartRegularSelector(outputPart)) {
     return currentOutputPropsAST;
   }
   const key = outputPart.prop.value;
@@ -193,32 +222,35 @@ function processFlatMappingPart(
   }
 
   const currentOutputPropAST = findOrCreateObjectPropExpression(currentOutputPropsAST, key);
-  const objectExpr = handleNextPart(flatMapping, partNum + 1, currentOutputPropAST);
-  if (
-    objectExpr.type !== SyntaxType.OBJECT_EXPR ||
-    !objectExpr.props ||
-    !Array.isArray(objectExpr.props)
-  ) {
-    throw new Error(`Failed to process output mapping: ${flatMapping.output}`);
-  }
+  const objectExpr = handleNextParts(flatMapping, partNum + 1, currentOutputPropAST);
   return objectExpr.props;
 }
 
-function processFlatMapping(flatMapping, currentOutputPropsAST) {
-  if (flatMapping.outputExpr.parts.length === 0) {
-    currentOutputPropsAST.push({
-      type: SyntaxType.OBJECT_PROP_EXPR,
-      value: {
-        type: SyntaxType.SPREAD_EXPR,
-        value: flatMapping.inputExpr,
-      },
-    } as ObjectPropExpression);
-    return;
+function handleRootOnlyOutputMapping(flatMapping: FlatMappingAST, outputAST: ObjectExpression) {
+  outputAST.props.push({
+    type: SyntaxType.OBJECT_PROP_EXPR,
+    value: {
+      type: SyntaxType.SPREAD_EXPR,
+      value: flatMapping.inputExpr,
+    },
+  } as ObjectPropExpression);
+}
+
+function validateMapping(flatMapping: FlatMappingAST) {
+  if (flatMapping.outputExpr.type !== SyntaxType.PATH) {
+    throw new Error(
+      `Invalid object mapping: output=${flatMapping.output} should be a path expression`,
+    );
   }
+}
+
+function processFlatMappingParts(flatMapping: FlatMappingAST, objectExpr: ObjectExpression) {
+  let currentOutputPropsAST = objectExpr.props;
   for (let i = 0; i < flatMapping.outputExpr.parts.length; i++) {
     currentOutputPropsAST = processFlatMappingPart(flatMapping, i, currentOutputPropsAST);
   }
 }
+
 /**
  * Convert Flat to Object Mappings
  */
@@ -226,9 +258,24 @@ export function convertToObjectMapping(
   flatMappingASTs: FlatMappingAST[],
 ): ObjectExpression | PathExpression {
   const outputAST: ObjectExpression = createObjectExpression();
+  let pathAST: PathExpression | undefined;
   for (const flatMapping of flatMappingASTs) {
-    processFlatMapping(flatMapping, outputAST.props);
+    validateMapping(flatMapping);
+    let objectExpr = outputAST;
+    if (flatMapping.outputExpr.parts.length > 0) {
+      if (!isOutputPartRegularSelector(flatMapping.outputExpr.parts[0])) {
+        const objectPropExpr = {
+          type: SyntaxType.OBJECT_PROP_EXPR,
+          key: '',
+          value: objectExpr as Expression,
+        };
+        objectExpr = handleNextParts(flatMapping, 0, objectPropExpr);
+        pathAST = objectPropExpr.value as PathExpression;
+      }
+      processFlatMappingParts(flatMapping, objectExpr);
+    } else {
+      handleRootOnlyOutputMapping(flatMapping, outputAST);
+    }
   }
-
-  return outputAST;
+  return pathAST ?? outputAST;
 }

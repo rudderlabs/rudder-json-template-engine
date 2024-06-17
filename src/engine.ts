@@ -36,10 +36,7 @@ export class JsonTemplateEngine {
     return translator.translate();
   }
 
-  private static parseMappingPaths(
-    mappings: FlatMappingPaths[],
-    options?: EngineOptions,
-  ): Expression {
+  static parseMappingPaths(mappings: FlatMappingPaths[], options?: EngineOptions): Expression {
     const flatMappingAST = mappings.map((mapping) => ({
       ...mapping,
       inputExpr: JsonTemplateEngine.parse(mapping.input, options).statements[0],

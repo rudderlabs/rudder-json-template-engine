@@ -77,6 +77,7 @@ function processAllFilter(
         type: SyntaxType.PATH,
         root: currentInputAST.root,
         pathType: currentInputAST.pathType,
+        inferredPathType: currentInputAST.inferredPathType,
         parts: matchedInputParts,
         returnAsArray: true,
       } as PathExpression;
@@ -121,6 +122,7 @@ function processWildCardSelector(
       type: SyntaxType.PATH,
       root: currentInputAST.root,
       pathType: currentInputAST.pathType,
+      inferredPathType: currentInputAST.inferredPathType,
       parts: matchedInputParts,
     } as PathExpression;
   }

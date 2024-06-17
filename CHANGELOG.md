@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.4...v0.13.5) (2024-06-17)
+
+
+### Bug Fixes
+
+* array and object mappings ([#99](https://github.com/rudderlabs/rudder-json-template-engine/issues/99)) ([5245753](https://github.com/rudderlabs/rudder-json-template-engine/commit/5245753cdbeff1bc94026886f7881f0ed615abeb))
+
 ## [0.13.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.3...v0.13.4) (2024-06-17)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.3...v0.13.4) (2024-06-17)
+
+
+### Bug Fixes
+
+* object mappings nested filters ([#97](https://github.com/rudderlabs/rudder-json-template-engine/issues/97)) ([f7e7bee](https://github.com/rudderlabs/rudder-json-template-engine/commit/f7e7bee3b9c8a84cfdb1225ff66f7d0cdbe8937b))
+
 ## [0.13.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.2...v0.13.3) (2024-06-14)
 
 

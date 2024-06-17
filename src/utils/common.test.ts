@@ -48,11 +48,11 @@ describe('Common Utils tests', () => {
       expect(CommonUtils.escapeStr(undefined)).toEqual('');
     });
     it('should return escaped string for simple string input', () => {
-      expect(CommonUtils.escapeStr('aabc')).toEqual(`'aabc'`);
+      expect(CommonUtils.escapeStr('aabc')).toEqual(`"aabc"`);
     });
 
     it('should return escaped string for string with escape characters', () => {
-      expect(CommonUtils.escapeStr(`a\nb'c`)).toEqual(`'a\nb\\'c'`);
+      expect(CommonUtils.escapeStr(`a\nb'"c`)).toEqual(`"a\nb'\\"c"`);
     });
   });
   describe('CreateAsyncFunction', () => {

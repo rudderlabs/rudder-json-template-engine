@@ -39,6 +39,8 @@ import { escapeStr } from './utils';
 export class JsonTemplateReverseTranslator {
   private options?: EngineOptions;
 
+  private level = 0;
+
   constructor(options?: EngineOptions) {
     this.options = options;
   }
@@ -429,9 +431,14 @@ export class JsonTemplateReverseTranslator {
 
   translateObjectExpression(expr: ObjectExpression): string {
     const code: string[] = [];
-    code.push('{\n\t');
-    code.push(this.translateExpressions(expr.props, ',\n\t'));
-    code.push('\n}');
+    const prevIndentation = '  '.repeat(this.level);
+    code.push('{\n');
+    this.level++;
+    const currIndentation = '  '.repeat(this.level);
+    code.push(currIndentation);
+    code.push(this.translateExpressions(expr.props, `,\n${currIndentation}`));
+    this.level--;
+    code.push(`\n${prevIndentation}}`);
     return code.join('');
   }
 

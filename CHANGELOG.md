@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.13.8](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.7...v0.13.8) (2024-06-18)
+
+
+### Bug Fixes
+
+* reverse translator json paths ([5543edd](https://github.com/rudderlabs/rudder-json-template-engine/commit/5543edd319295f48b54c7fbe6299767b173fe238))
+* reverse translator json paths ([a6b5c2b](https://github.com/rudderlabs/rudder-json-template-engine/commit/a6b5c2b6c9fb753cfc26aa2003828b14c2d21b3e))
+
 ## [0.13.7](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.6...v0.13.7) (2024-06-18)
 
 

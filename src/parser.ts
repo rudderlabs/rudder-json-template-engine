@@ -352,7 +352,9 @@ export class JsonTemplateParser {
       ...pathTypeResult,
     };
     if (!expr.parts.length) {
-      expr.inferredPathType = PathType.SIMPLE;
+      if (expr.inferredPathType !== PathType.JSON) {
+        expr.inferredPathType = PathType.SIMPLE;
+      }
       return expr;
     }
     return JsonTemplateParser.updatePathExpr(expr);

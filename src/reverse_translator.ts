@@ -33,7 +33,7 @@ import {
   UnaryExpression,
 } from './types';
 import { translateLiteral } from './utils/translator';
-import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR } from './constants';
+import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR, INDENTATION_SPACES } from './constants';
 import { escapeStr } from './utils';
 
 export class JsonTemplateReverseTranslator {
@@ -215,8 +215,8 @@ export class JsonTemplateReverseTranslator {
     return `throw ${this.translateExpression(expr.value)}`;
   }
 
-  translateExpressions(exprs: Expression[], sep: string): string {
-    return exprs.map((expr) => this.translateExpression(expr)).join(sep);
+  translateExpressions(exprs: Expression[], sep: string, prefix: string = ''): string {
+    return exprs.map((expr) => `${prefix}${this.translateExpression(expr)}`).join(sep);
   }
 
   translateLambdaFunctionExpression(expr: FunctionExpression): string {
@@ -429,16 +429,17 @@ export class JsonTemplateReverseTranslator {
     return `...${this.translateExpression(expr.value)}`;
   }
 
+  getIndentation(): string {
+    return ' '.repeat(this.level * INDENTATION_SPACES);
+  }
+
   translateObjectExpression(expr: ObjectExpression): string {
     const code: string[] = [];
-    const prevIndentation = '  '.repeat(this.level);
-    code.push('{\n');
+    code.push('{');
     this.level++;
-    const currIndentation = '  '.repeat(this.level);
-    code.push(currIndentation);
-    code.push(this.translateExpressions(expr.props, `,\n${currIndentation}`));
+    code.push(this.translateExpressions(expr.props, ',', `\n${this.getIndentation()}`));
     this.level--;
-    code.push(`\n${prevIndentation}}`);
+    code.push(`\n${this.getIndentation()}}`);
     return code.join('');
   }
 

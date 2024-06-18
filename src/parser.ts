@@ -1535,10 +1535,11 @@ export class JsonTemplateParser {
     pathExpr: PathExpression,
     pathType: PathType,
   ): PathExpression {
+    const newPathExpr = pathExpr;
     if (pathExpr.inferredPathType !== PathType.JSON) {
-      pathExpr.inferredPathType = pathType;
+      newPathExpr.inferredPathType = pathType;
     }
-    return pathExpr;
+    return newPathExpr;
   }
 
   private static updatePathExpr(pathExpr: PathExpression): Expression {

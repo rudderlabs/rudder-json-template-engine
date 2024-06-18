@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.7](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.6...v0.13.7) (2024-06-18)
+
+
+### Bug Fixes
+
+* inferredPathType logic ([5784e7a](https://github.com/rudderlabs/rudder-json-template-engine/commit/5784e7ae543a77055df10886abf516cd1a9a6880))
+
 ## [0.13.6](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.5...v0.13.6) (2024-06-18)
 
 

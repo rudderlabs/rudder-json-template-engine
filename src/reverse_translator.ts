@@ -430,7 +430,7 @@ export class JsonTemplateReverseTranslator {
   }
 
   getIndentation(): string {
-    return '  '.repeat(this.level);
+    return '    '.repeat(this.level);
   }
 
   translateObjectExpression(expr: ObjectExpression): string {

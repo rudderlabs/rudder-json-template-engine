@@ -203,6 +203,18 @@ function isOutputPartRegularSelector(outputPart: Expression) {
   );
 }
 
+function refineLeafOutputPropAST(inputExpr: Expression): Expression {
+  if (
+    inputExpr.type === SyntaxType.PATH &&
+    inputExpr.root === undefined &&
+    inputExpr.parts.length === 1 &&
+    inputExpr.parts[0].type === SyntaxType.BLOCK_EXPR
+  ) {
+    return inputExpr.parts[0].statements[0];
+  }
+  return inputExpr;
+}
+
 function processFlatMappingPart(
   flatMapping: FlatMappingAST,
   partNum: number,
@@ -218,7 +230,7 @@ function processFlatMappingPart(
     currentOutputPropsAST.push({
       type: SyntaxType.OBJECT_PROP_EXPR,
       key,
-      value: flatMapping.inputExpr,
+      value: refineLeafOutputPropAST(flatMapping.inputExpr),
     } as ObjectPropExpression);
     return currentOutputPropsAST;
   }

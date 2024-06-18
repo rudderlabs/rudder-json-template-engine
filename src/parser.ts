@@ -352,10 +352,7 @@ export class JsonTemplateParser {
       ...pathTypeResult,
     };
     if (!expr.parts.length) {
-      if (expr.inferredPathType !== PathType.JSON) {
-        expr.inferredPathType = PathType.SIMPLE;
-      }
-      return expr;
+      return JsonTemplateParser.setPathTypeIfNotJSON(expr, PathType.SIMPLE);
     }
     return JsonTemplateParser.updatePathExpr(expr);
   }
@@ -603,7 +600,9 @@ export class JsonTemplateParser {
 
   private parseJSONObjectFilter(): ObjectFilterExpression {
     this.lexer.expect('?');
+    this.lexer.expect('(');
     const filter = this.parseBaseExpr();
+    this.lexer.expect(')');
     return {
       type: SyntaxType.OBJECT_FILTER_EXPR,
       filter,
@@ -1532,6 +1531,16 @@ export class JsonTemplateParser {
     return !this.isSimplePath(pathExpr);
   }
 
+  private static setPathTypeIfNotJSON(
+    pathExpr: PathExpression,
+    pathType: PathType,
+  ): PathExpression {
+    if (pathExpr.inferredPathType !== PathType.JSON) {
+      pathExpr.inferredPathType = pathType;
+    }
+    return pathExpr;
+  }
+
   private static updatePathExpr(pathExpr: PathExpression): Expression {
     const newPathExpr = pathExpr;
     if (newPathExpr.parts.length > 1 && newPathExpr.parts[0].type === SyntaxType.PATH_OPTIONS) {
@@ -1559,9 +1568,9 @@ export class JsonTemplateParser {
     }
     if (shouldConvertAsBlock) {
       expr = JsonTemplateParser.convertToBlockExpr(expr);
-      newPathExpr.inferredPathType = PathType.RICH;
+      JsonTemplateParser.setPathTypeIfNotJSON(newPathExpr, PathType.RICH);
     } else if (this.isRichPath(newPathExpr)) {
-      newPathExpr.inferredPathType = PathType.RICH;
+      JsonTemplateParser.setPathTypeIfNotJSON(newPathExpr, PathType.RICH);
     }
     return expr;
   }

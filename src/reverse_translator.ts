@@ -33,7 +33,7 @@ import {
   UnaryExpression,
 } from './types';
 import { translateLiteral } from './utils/translator';
-import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR } from './constants';
+import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR, INDENTATION_SPACES } from './constants';
 import { escapeStr } from './utils';
 
 export class JsonTemplateReverseTranslator {
@@ -430,7 +430,7 @@ export class JsonTemplateReverseTranslator {
   }
 
   getIndentation(): string {
-    return '    '.repeat(this.level);
+    return ' '.repeat(this.level * INDENTATION_SPACES);
   }
 
   translateObjectExpression(expr: ObjectExpression): string {

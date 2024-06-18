@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.6](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.5...v0.13.6) (2024-06-18)
+
+
+### Bug Fixes
+
+* indentation for objects ([#101](https://github.com/rudderlabs/rudder-json-template-engine/issues/101)) ([b7ca7be](https://github.com/rudderlabs/rudder-json-template-engine/commit/b7ca7be53b8c33c25305157208311a78fb1b955e))
+
 ## [0.13.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.4...v0.13.5) (2024-06-17)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.8...v0.14.0) (2024-06-19)
+
+
+### Features
+
+* add support for from and to in mappings ([76788e8](https://github.com/rudderlabs/rudder-json-template-engine/commit/76788e8502d0b6e37c73c518aa1ca4ed5ee681e0))
+
 ## [0.13.8](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.7...v0.13.8) (2024-06-18)
 
 

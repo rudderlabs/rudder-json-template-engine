@@ -37,11 +37,18 @@ export class JsonTemplateEngine {
   }
 
   static parseMappingPaths(mappings: FlatMappingPaths[], options?: EngineOptions): Expression {
-    const flatMappingAST = mappings.map((mapping) => ({
-      ...mapping,
-      inputExpr: JsonTemplateEngine.parse(mapping.input, options).statements[0],
-      outputExpr: JsonTemplateEngine.parse(mapping.output, options).statements[0],
-    }));
+    const flatMappingAST = mappings
+      .map((mapping) => ({
+        ...mapping,
+        input: mapping.input ?? mapping.from,
+        output: mapping.output ?? mapping.to,
+      }))
+      .filter((mapping) => mapping.input && mapping.output)
+      .map((mapping) => ({
+        ...mapping,
+        inputExpr: JsonTemplateEngine.parse(mapping.input, options).statements[0],
+        outputExpr: JsonTemplateEngine.parse(mapping.output, options).statements[0],
+      }));
     return convertToObjectMapping(flatMappingAST);
   }
 

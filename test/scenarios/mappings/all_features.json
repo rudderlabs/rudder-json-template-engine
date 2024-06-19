@@ -20,8 +20,8 @@
     "output": "$.events[0].items[*].product_name"
   },
   {
-    "input": "$.products[?(@.category)].category",
-    "output": "$.events[0].items[*].product_category"
+    "from": "$.products[?(@.category)].category",
+    "to": "$.events[0].items[*].product_category"
   },
   {
     "input": "$.products[?(@.category)].variations[*].size",

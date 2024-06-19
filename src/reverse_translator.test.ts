@@ -44,7 +44,7 @@ describe('reverse_translator', () => {
       ]),
     );
     expect(template).toEqual(
-      '{\n    "user": {\n        "id": $.userId\n    },\n    "events": [{\n        "items": $.products{.category}.({\n            "discount": $.discount,\n            "product_id":.id,\n            "options":.variations[*].({\n                "s":.size\n            })[],\n            "value":.price *.quantity * (1 - $.discount / 100)\n        })[],\n        "name": $.events[0],\n        "revenue": $.products{.category}.(.price *.quantity * (1 - $.discount / 100)).sum()\n    }]\n}',
+      '{\n    "user": {\n        "id": $.userId\n    },\n    "events": [{\n        "items": $.products{.category}.({\n            "discount": $.discount,\n            "product_id": .id,\n            "options": .variations[*].({\n                "s": .size\n            })[],\n            "value": .price * .quantity * (1 - $.discount / 100)\n        })[],\n        "name": $.events[0],\n        "revenue": $.products{.category}.(.price * .quantity * (1 - $.discount / 100)).sum()\n    }]\n}',
     );
   });
 });

@@ -48,7 +48,7 @@ export class JsonTemplateReverseTranslator {
   translate(expr: Expression): string {
     let code: string = this.translateExpression(expr);
     code = code.replace(/\.\s+\./g, '.');
-    code = code.replace(/\s+\./g, '.');
+    // code = code.replace(/\s+\./g, '.');
     if (this.options?.defaultPathType === PathType.JSON) {
       code = code.replace(/\^/g, '$');
     }
@@ -262,12 +262,12 @@ export class JsonTemplateReverseTranslator {
     if (expr.object) {
       code.push(this.translateExpression(expr.object));
       if (expr.id) {
-        code.push(` .${expr.id}`);
+        code.push(`.${expr.id}`);
       }
     } else if (expr.parent) {
       code.push(this.translatePathRootString(expr.parent, PathType.SIMPLE));
       if (expr.id) {
-        code.push(` .${expr.id}`);
+        code.push(`.${expr.id}`);
       }
     } else if (expr.id) {
       code.push(expr.id.replace(BINDINGS_PARAM_KEY, '$'));

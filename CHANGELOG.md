@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.14.0...v0.14.1) (2024-06-19)
+
+
+### Bug Fixes
+
+* reverse translator ([6d91b87](https://github.com/rudderlabs/rudder-json-template-engine/commit/6d91b871d21b0a574ae3159f7d2528fd5c2c9162))
+
 ## [0.14.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.13.8...v0.14.0) (2024-06-19)
 
 

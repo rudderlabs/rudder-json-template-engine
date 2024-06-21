@@ -82,6 +82,7 @@ function processAllFilter(
 
     if (
       currentOutputPropAST.value.type === SyntaxType.PATH &&
+      currentOutputPropAST.value.parts.length === 0 &&
       currentOutputPropAST.value.root?.type === SyntaxType.OBJECT_EXPR
     ) {
       return currentOutputPropAST.value.root as ObjectExpression;

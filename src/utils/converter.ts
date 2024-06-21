@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+import { JsonTemplateMappingError } from '../errors/mapping';
 import { EMPTY_EXPR } from '../constants';
 import {
   SyntaxType,
@@ -67,10 +68,34 @@ function processAllFilter(
 
   if (filterIndex === -1) {
     if (currentOutputPropAST.value.type === SyntaxType.OBJECT_EXPR) {
-      return currentOutputPropAST.value as ObjectExpression;
+      const currObjectExpr = currentOutputPropAST.value as ObjectExpression;
+      currentOutputPropAST.value = {
+        type: SyntaxType.PATH,
+        root: currObjectExpr,
+        pathType: currentInputAST.pathType,
+        inferredPathType: currentInputAST.inferredPathType,
+        parts: [],
+        returnAsArray: true,
+      } as PathExpression;
+      return currObjectExpr;
+    }
+
+    if (
+      currentOutputPropAST.value.type === SyntaxType.PATH &&
+      currentOutputPropAST.value.root?.type === SyntaxType.OBJECT_EXPR
+    ) {
+      return currentOutputPropAST.value.root as ObjectExpression;
     }
   } else {
     const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
+    if (
+      currentOutputPropAST.value.type === SyntaxType.PATH &&
+      currentOutputPropAST.value.parts.length === 0 &&
+      currentOutputPropAST.value.root?.type === SyntaxType.OBJECT_EXPR
+    ) {
+      currentOutputPropAST.value = currentOutputPropAST.value.root;
+    }
+
     if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
       matchedInputParts.push(createBlockExpression(currentOutputPropAST.value));
       currentOutputPropAST.value = {
@@ -92,7 +117,11 @@ function processAllFilter(
     !objectExpr.props ||
     !Array.isArray(objectExpr.props)
   ) {
-    throw new Error(`Failed to process output mapping: ${flatMapping.output}`);
+    throw new JsonTemplateMappingError(
+      'Invalid mapping',
+      flatMapping.input as string,
+      flatMapping.output as string,
+    );
   }
   return objectExpr;
 }
@@ -110,8 +139,10 @@ function processWildCardSelector(
   const filterIndex = currentInputAST.parts.findIndex(isWildcardSelector);
 
   if (filterIndex === -1) {
-    throw new Error(
-      `Invalid object mapping: input=${flatMapping.input} and output=${flatMapping.output}`,
+    throw new JsonTemplateMappingError(
+      'Invalid mapping',
+      flatMapping.input as string,
+      flatMapping.output as string,
     );
   }
   const matchedInputParts = currentInputAST.parts.splice(0, filterIndex);
@@ -252,8 +283,10 @@ function handleRootOnlyOutputMapping(flatMapping: FlatMappingAST, outputAST: Obj
 
 function validateMapping(flatMapping: FlatMappingAST) {
   if (flatMapping.outputExpr.type !== SyntaxType.PATH) {
-    throw new Error(
-      `Invalid object mapping: output=${flatMapping.output} should be a path expression`,
+    throw new JsonTemplateMappingError(
+      'Invalid mapping: should be a path expression',
+      flatMapping.input as string,
+      flatMapping.output as string,
     );
   }
 }

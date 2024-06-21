@@ -1,5 +1,5 @@
 import { VARS_PREFIX } from './constants';
-import { JsonTemplateLexerError } from './errors';
+import { JsonTemplateLexerError } from './errors/lexer';
 import { Keyword, Token, TokenType } from './types';
 
 const MESSAGES = {

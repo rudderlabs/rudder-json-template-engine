@@ -1,10 +1,18 @@
 /* eslint-disable import/no-cycle */
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR } from './constants';
+import { JsonTemplateMappingError } from './errors/mapping';
 import { JsonTemplateLexer } from './lexer';
 import { JsonTemplateParser } from './parser';
 import { JsonTemplateReverseTranslator } from './reverse_translator';
 import { JsonTemplateTranslator } from './translator';
-import { EngineOptions, Expression, FlatMappingPaths, TemplateInput } from './types';
+import {
+  EngineOptions,
+  Expression,
+  FlatMappingPaths,
+  PathType,
+  SyntaxType,
+  TemplateInput,
+} from './types';
 import { CreateAsyncFunction, convertToObjectMapping, isExpression } from './utils';
 
 export class JsonTemplateEngine {
@@ -36,13 +44,46 @@ export class JsonTemplateEngine {
     return translator.translate();
   }
 
+  static isValidJSONPath(path: string = ''): boolean {
+    try {
+      const expression = JsonTemplateEngine.parse(path, { defaultPathType: PathType.JSON });
+      const statement = expression.statements?.[0];
+      return (
+        statement &&
+        statement.type === SyntaxType.PATH &&
+        (!statement.root || statement.root === DATA_PARAM_KEY)
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+
+  private static prepareMappings(mappings: FlatMappingPaths[]): FlatMappingPaths[] {
+    return mappings.map((mapping) => ({
+      ...mapping,
+      input: mapping.input ?? mapping.from,
+      output: mapping.output ?? mapping.to,
+    }));
+  }
+
+  static validateMappings(mappings: FlatMappingPaths[]) {
+    JsonTemplateEngine.prepareMappings(mappings).forEach((mapping) => {
+      if (
+        !JsonTemplateEngine.isValidJSONPath(mapping.input) ||
+        !JsonTemplateEngine.isValidJSONPath(mapping.output)
+      ) {
+        throw new JsonTemplateMappingError(
+          'Invalid mapping',
+          mapping.input as string,
+          mapping.output as string,
+        );
+      }
+    });
+    JsonTemplateEngine.parseMappingPaths(mappings);
+  }
+
   static parseMappingPaths(mappings: FlatMappingPaths[], options?: EngineOptions): Expression {
-    const flatMappingAST = mappings
-      .map((mapping) => ({
-        ...mapping,
-        input: mapping.input ?? mapping.from,
-        output: mapping.output ?? mapping.to,
-      }))
+    const flatMappingAST = JsonTemplateEngine.prepareMappings(mappings)
       .filter((mapping) => mapping.input && mapping.output)
       .map((mapping) => ({
         ...mapping,

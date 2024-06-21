@@ -6,7 +6,7 @@ import {
   RESULT_KEY,
   VARS_PREFIX,
 } from './constants';
-import { JsonTemplateTranslatorError } from './errors';
+import { JsonTemplateTranslatorError } from './errors/translator';
 import { binaryOperators, isStandardFunction, standardFunctions } from './operators';
 import {
   ArrayExpression,

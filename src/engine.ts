@@ -73,7 +73,7 @@ export class JsonTemplateEngine {
         !JsonTemplateEngine.isValidJSONPath(mapping.output)
       ) {
         throw new JsonTemplateMappingError(
-          'Invalid mapping',
+          'Invalid mapping: invalid JSON path',
           mapping.input as string,
           mapping.output as string,
         );

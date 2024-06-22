@@ -57,62 +57,30 @@ function processArrayIndexFilter(
   return currrentOutputPropAST.value.elements[filterIndex];
 }
 
-function processAllFilter(
-  flatMapping: FlatMappingAST,
-  currentOutputPropAST: ObjectPropExpression,
-): ObjectExpression {
-  const currentInputAST = flatMapping.inputExpr;
-  const filterIndex = currentInputAST.parts.findIndex(
-    (part) => part.type === SyntaxType.OBJECT_FILTER_EXPR,
+function isPathWithEmptyPartsAndObjectRoot(expr: Expression) {
+  return (
+    expr.type === SyntaxType.PATH &&
+    expr.parts.length === 0 &&
+    expr.root?.type === SyntaxType.OBJECT_EXPR
   );
+}
 
-  if (filterIndex === -1) {
-    if (currentOutputPropAST.value.type === SyntaxType.OBJECT_EXPR) {
-      const currObjectExpr = currentOutputPropAST.value as ObjectExpression;
-      currentOutputPropAST.value = {
-        type: SyntaxType.PATH,
-        root: currObjectExpr,
-        pathType: currentInputAST.pathType,
-        inferredPathType: currentInputAST.inferredPathType,
-        parts: [],
-        returnAsArray: true,
-      } as PathExpression;
-      return currObjectExpr;
-    }
+function getPathExpressionForAllFilter(
+  currentInputAST: PathExpression,
+  root: any,
+  parts: Expression[] = [],
+): PathExpression {
+  return {
+    type: SyntaxType.PATH,
+    root,
+    pathType: currentInputAST.pathType,
+    inferredPathType: currentInputAST.inferredPathType,
+    parts,
+    returnAsArray: true,
+  } as PathExpression;
+}
 
-    if (
-      currentOutputPropAST.value.type === SyntaxType.PATH &&
-      currentOutputPropAST.value.parts.length === 0 &&
-      currentOutputPropAST.value.root?.type === SyntaxType.OBJECT_EXPR
-    ) {
-      return currentOutputPropAST.value.root as ObjectExpression;
-    }
-  } else {
-    const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
-    if (
-      currentOutputPropAST.value.type === SyntaxType.PATH &&
-      currentOutputPropAST.value.parts.length === 0 &&
-      currentOutputPropAST.value.root?.type === SyntaxType.OBJECT_EXPR
-    ) {
-      currentOutputPropAST.value = currentOutputPropAST.value.root;
-    }
-
-    if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
-      matchedInputParts.push(createBlockExpression(currentOutputPropAST.value));
-      currentOutputPropAST.value = {
-        type: SyntaxType.PATH,
-        root: currentInputAST.root,
-        pathType: currentInputAST.pathType,
-        inferredPathType: currentInputAST.inferredPathType,
-        parts: matchedInputParts,
-        returnAsArray: true,
-      } as PathExpression;
-    }
-    currentInputAST.root = undefined;
-  }
-
-  const blockExpr = getLastElement(currentOutputPropAST.value.parts) as Expression;
-  const objectExpr = blockExpr?.statements?.[0] || EMPTY_EXPR;
+function validateResultOfAllFilter(objectExpr: Expression, flatMapping: FlatMappingAST) {
   if (
     objectExpr.type !== SyntaxType.OBJECT_EXPR ||
     !objectExpr.props ||
@@ -124,6 +92,46 @@ function processAllFilter(
       flatMapping.output as string,
     );
   }
+}
+
+function processAllFilter(
+  flatMapping: FlatMappingAST,
+  currentOutputPropAST: ObjectPropExpression,
+): ObjectExpression {
+  const { inputExpr: currentInputAST } = flatMapping;
+  const filterIndex = currentInputAST.parts.findIndex(
+    (part) => part.type === SyntaxType.OBJECT_FILTER_EXPR,
+  );
+
+  if (filterIndex === -1) {
+    if (currentOutputPropAST.value.type === SyntaxType.OBJECT_EXPR) {
+      const currObjectExpr = currentOutputPropAST.value as ObjectExpression;
+      currentOutputPropAST.value = getPathExpressionForAllFilter(currentInputAST, currObjectExpr);
+      return currObjectExpr;
+    }
+    if (isPathWithEmptyPartsAndObjectRoot(currentOutputPropAST.value)) {
+      return currentOutputPropAST.value.root as ObjectExpression;
+    }
+  } else {
+    const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
+    if (isPathWithEmptyPartsAndObjectRoot(currentOutputPropAST.value)) {
+      currentOutputPropAST.value = currentOutputPropAST.value.root;
+    }
+
+    if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
+      matchedInputParts.push(createBlockExpression(currentOutputPropAST.value));
+      currentOutputPropAST.value = getPathExpressionForAllFilter(
+        currentInputAST,
+        currentInputAST.root,
+        matchedInputParts,
+      );
+    }
+    currentInputAST.root = undefined;
+  }
+
+  const blockExpr = getLastElement(currentOutputPropAST.value.parts) as Expression;
+  const objectExpr = blockExpr?.statements?.[0] || EMPTY_EXPR;
+  validateResultOfAllFilter(objectExpr, flatMapping);
   return objectExpr;
 }
 

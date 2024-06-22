@@ -119,7 +119,7 @@ function processAllFilter(
     !Array.isArray(objectExpr.props)
   ) {
     throw new JsonTemplateMappingError(
-      'Invalid mapping',
+      'Invalid mapping: invalid array mapping',
       flatMapping.input as string,
       flatMapping.output as string,
     );
@@ -141,7 +141,7 @@ function processWildCardSelector(
 
   if (filterIndex === -1) {
     throw new JsonTemplateMappingError(
-      'Invalid mapping',
+      'Invalid mapping: input should have wildcard selector',
       flatMapping.input as string,
       flatMapping.output as string,
     );
@@ -285,7 +285,7 @@ function handleRootOnlyOutputMapping(flatMapping: FlatMappingAST, outputAST: Obj
 function validateMapping(flatMapping: FlatMappingAST) {
   if (flatMapping.outputExpr.type !== SyntaxType.PATH) {
     throw new JsonTemplateMappingError(
-      'Invalid mapping: should be a path expression',
+      'Invalid mapping: output should be a path expression',
       flatMapping.input as string,
       flatMapping.output as string,
     );

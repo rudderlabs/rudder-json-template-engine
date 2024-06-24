@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.14.1...v0.15.0) (2024-06-24)
+
+
+### Features
+
+* add validator utils ([#107](https://github.com/rudderlabs/rudder-json-template-engine/issues/107)) ([db1260d](https://github.com/rudderlabs/rudder-json-template-engine/commit/db1260dd6bd98adfe4b52015f4b1ef89c52a788b))
+
 ## [0.14.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.14.0...v0.14.1) (2024-06-19)
 
 

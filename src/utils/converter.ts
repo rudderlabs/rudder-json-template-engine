@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+import { JsonTemplateMappingError } from '../errors/mapping';
 import { EMPTY_EXPR } from '../constants';
 import {
   SyntaxType,
@@ -56,44 +57,81 @@ function processArrayIndexFilter(
   return currrentOutputPropAST.value.elements[filterIndex];
 }
 
+function isPathWithEmptyPartsAndObjectRoot(expr: Expression) {
+  return (
+    expr.type === SyntaxType.PATH &&
+    expr.parts.length === 0 &&
+    expr.root?.type === SyntaxType.OBJECT_EXPR
+  );
+}
+
+function getPathExpressionForAllFilter(
+  currentInputAST: PathExpression,
+  root: any,
+  parts: Expression[] = [],
+): PathExpression {
+  return {
+    type: SyntaxType.PATH,
+    root,
+    pathType: currentInputAST.pathType,
+    inferredPathType: currentInputAST.inferredPathType,
+    parts,
+    returnAsArray: true,
+  } as PathExpression;
+}
+
+function validateResultOfAllFilter(objectExpr: Expression, flatMapping: FlatMappingAST) {
+  if (
+    objectExpr.type !== SyntaxType.OBJECT_EXPR ||
+    !objectExpr.props ||
+    !Array.isArray(objectExpr.props)
+  ) {
+    throw new JsonTemplateMappingError(
+      'Invalid mapping: invalid array mapping',
+      flatMapping.input as string,
+      flatMapping.output as string,
+    );
+  }
+}
+
 function processAllFilter(
   flatMapping: FlatMappingAST,
   currentOutputPropAST: ObjectPropExpression,
 ): ObjectExpression {
-  const currentInputAST = flatMapping.inputExpr;
+  const { inputExpr: currentInputAST } = flatMapping;
   const filterIndex = currentInputAST.parts.findIndex(
     (part) => part.type === SyntaxType.OBJECT_FILTER_EXPR,
   );
 
   if (filterIndex === -1) {
     if (currentOutputPropAST.value.type === SyntaxType.OBJECT_EXPR) {
-      return currentOutputPropAST.value as ObjectExpression;
+      const currObjectExpr = currentOutputPropAST.value as ObjectExpression;
+      currentOutputPropAST.value = getPathExpressionForAllFilter(currentInputAST, currObjectExpr);
+      return currObjectExpr;
+    }
+    if (isPathWithEmptyPartsAndObjectRoot(currentOutputPropAST.value)) {
+      return currentOutputPropAST.value.root as ObjectExpression;
     }
   } else {
     const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
+    if (isPathWithEmptyPartsAndObjectRoot(currentOutputPropAST.value)) {
+      currentOutputPropAST.value = currentOutputPropAST.value.root;
+    }
+
     if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
       matchedInputParts.push(createBlockExpression(currentOutputPropAST.value));
-      currentOutputPropAST.value = {
-        type: SyntaxType.PATH,
-        root: currentInputAST.root,
-        pathType: currentInputAST.pathType,
-        inferredPathType: currentInputAST.inferredPathType,
-        parts: matchedInputParts,
-        returnAsArray: true,
-      } as PathExpression;
+      currentOutputPropAST.value = getPathExpressionForAllFilter(
+        currentInputAST,
+        currentInputAST.root,
+        matchedInputParts,
+      );
     }
     currentInputAST.root = undefined;
   }
 
   const blockExpr = getLastElement(currentOutputPropAST.value.parts) as Expression;
   const objectExpr = blockExpr?.statements?.[0] || EMPTY_EXPR;
-  if (
-    objectExpr.type !== SyntaxType.OBJECT_EXPR ||
-    !objectExpr.props ||
-    !Array.isArray(objectExpr.props)
-  ) {
-    throw new Error(`Failed to process output mapping: ${flatMapping.output}`);
-  }
+  validateResultOfAllFilter(objectExpr, flatMapping);
   return objectExpr;
 }
 
@@ -110,8 +148,10 @@ function processWildCardSelector(
   const filterIndex = currentInputAST.parts.findIndex(isWildcardSelector);
 
   if (filterIndex === -1) {
-    throw new Error(
-      `Invalid object mapping: input=${flatMapping.input} and output=${flatMapping.output}`,
+    throw new JsonTemplateMappingError(
+      'Invalid mapping: input should have wildcard selector',
+      flatMapping.input as string,
+      flatMapping.output as string,
     );
   }
   const matchedInputParts = currentInputAST.parts.splice(0, filterIndex);
@@ -252,8 +292,10 @@ function handleRootOnlyOutputMapping(flatMapping: FlatMappingAST, outputAST: Obj
 
 function validateMapping(flatMapping: FlatMappingAST) {
   if (flatMapping.outputExpr.type !== SyntaxType.PATH) {
-    throw new Error(
-      `Invalid object mapping: output=${flatMapping.output} should be a path expression`,
+    throw new JsonTemplateMappingError(
+      'Invalid mapping: output should be a path expression',
+      flatMapping.input as string,
+      flatMapping.output as string,
     );
   }
 }

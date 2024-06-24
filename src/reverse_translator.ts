@@ -48,7 +48,6 @@ export class JsonTemplateReverseTranslator {
   translate(expr: Expression): string {
     let code: string = this.translateExpression(expr);
     code = code.replace(/\.\s+\./g, '.');
-    // code = code.replace(/\s+\./g, '.');
     if (this.options?.defaultPathType === PathType.JSON) {
       code = code.replace(/\^/g, '$');
     }

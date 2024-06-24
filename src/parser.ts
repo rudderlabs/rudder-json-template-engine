@@ -1,7 +1,8 @@
 /* eslint-disable import/no-cycle */
 import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR } from './constants';
 import { JsonTemplateEngine } from './engine';
-import { JsonTemplateLexerError, JsonTemplateParserError } from './errors';
+import { JsonTemplateParserError } from './errors/parser';
+import { JsonTemplateLexerError } from './errors/lexer';
 import { JsonTemplateLexer } from './lexer';
 import {
   ArrayExpression,

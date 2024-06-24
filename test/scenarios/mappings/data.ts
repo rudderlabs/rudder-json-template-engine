@@ -76,6 +76,7 @@ export const data: Scenario[] = [
             {
               discount: 10,
               product_id: 1,
+              coupon_code: 'DISCOUNT',
               product_name: 'p1',
               product_category: 'baby',
               options: [
@@ -92,6 +93,7 @@ export const data: Scenario[] = [
             {
               discount: 10,
               product_id: 3,
+              coupon_code: 'DISCOUNT',
               product_name: 'p3',
               product_category: 'home',
               options: [
@@ -150,15 +152,15 @@ export const data: Scenario[] = [
   },
   {
     mappingsPath: 'invalid_array_mappings.json',
-    error: 'Failed to process output mapping',
+    error: 'Invalid mapping',
   },
   {
     mappingsPath: 'invalid_object_mappings.json',
-    error: 'Invalid object mapping',
+    error: 'Invalid mapping',
   },
   {
     mappingsPath: 'invalid_output_mapping.json',
-    error: 'Invalid object mapping',
+    error: 'Invalid mapping',
   },
   {
     mappingsPath: 'mappings_with_root_fields.json',
@@ -397,6 +399,21 @@ export const data: Scenario[] = [
       user_name: {
         value: 'John Doe',
       },
+    },
+  },
+  {
+    mappingsPath: 'simple_array_mappings.json',
+    input: {
+      user_id: 1,
+      user_name: 'John Doe',
+    },
+    output: {
+      users: [
+        {
+          id: 1,
+          name: 'John Doe',
+        },
+      ],
     },
   },
   {

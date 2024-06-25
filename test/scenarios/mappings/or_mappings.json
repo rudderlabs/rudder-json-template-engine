@@ -1,0 +1,18 @@
+[
+  {
+    "input": "$.properties.name",
+    "output": "$.user.name"
+  },
+  {
+    "input": "$.properties.age",
+    "output": "$.user.age"
+  },
+  {
+    "input": "$.context.properties.name",
+    "output": "$.user.name"
+  },
+  {
+    "input": "$.context.properties.age",
+    "output": "$.user.age"
+  }
+]

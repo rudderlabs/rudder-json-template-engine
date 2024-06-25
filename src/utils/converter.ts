@@ -12,6 +12,7 @@ import {
   IndexFilterExpression,
   BlockExpression,
   TokenType,
+  BinaryExpression,
 } from '../types';
 import { createBlockExpression, getLastElement } from './common';
 
@@ -255,6 +256,27 @@ function refineLeafOutputPropAST(inputExpr: Expression): Expression {
   return inputExpr;
 }
 
+function handleLastOutputPart(
+  flatMapping: FlatMappingAST,
+  currentOutputPropsAST: ObjectPropExpression[],
+  key: string,
+) {
+  const outputPropAST = currentOutputPropsAST.find((prop) => prop.key === key);
+  if (!outputPropAST) {
+    currentOutputPropsAST.push({
+      type: SyntaxType.OBJECT_PROP_EXPR,
+      key,
+      value: refineLeafOutputPropAST(flatMapping.inputExpr),
+    } as ObjectPropExpression);
+  } else {
+    outputPropAST.value = {
+      type: SyntaxType.LOGICAL_OR_EXPR,
+      op: '||',
+      args: [outputPropAST.value, refineLeafOutputPropAST(flatMapping.inputExpr)],
+    } as BinaryExpression;
+  }
+}
+
 function processFlatMappingPart(
   flatMapping: FlatMappingAST,
   partNum: number,
@@ -267,11 +289,7 @@ function processFlatMappingPart(
   const key = outputPart.prop.value;
 
   if (partNum === flatMapping.outputExpr.parts.length - 1) {
-    currentOutputPropsAST.push({
-      type: SyntaxType.OBJECT_PROP_EXPR,
-      key,
-      value: refineLeafOutputPropAST(flatMapping.inputExpr),
-    } as ObjectPropExpression);
+    handleLastOutputPart(flatMapping, currentOutputPropsAST, key);
     return currentOutputPropsAST;
   }
 

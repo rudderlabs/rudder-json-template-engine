@@ -301,6 +301,59 @@ export const data: Scenario[] = [
     },
   },
   {
+    mappingsPath: 'or_mappings.json',
+    input: {
+      context: {
+        properties: {
+          name: 'John',
+          age: 30,
+        },
+      },
+    },
+    output: {
+      user: {
+        name: 'John',
+        age: 30,
+      },
+    },
+  },
+  {
+    mappingsPath: 'or_mappings.json',
+    input: {
+      properties: {
+        name: 'John Doe',
+        age: 30,
+      },
+      context: {
+        properties: {
+          name: 'John',
+          age: 30,
+        },
+      },
+    },
+    output: {
+      user: {
+        name: 'John Doe',
+        age: 30,
+      },
+    },
+  },
+  {
+    mappingsPath: 'or_mappings.json',
+    input: {
+      properties: {
+        name: 'John Doe',
+        age: 30,
+      },
+    },
+    output: {
+      user: {
+        name: 'John Doe',
+        age: 30,
+      },
+    },
+  },
+  {
     mappingsPath: 'root_array_mappings.json',
     input: [
       {

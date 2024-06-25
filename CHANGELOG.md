@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.15.0...v0.16.0) (2024-06-25)
+
+
+### Features
+
+* add support for or mappings ([#109](https://github.com/rudderlabs/rudder-json-template-engine/issues/109)) ([0e45680](https://github.com/rudderlabs/rudder-json-template-engine/commit/0e45680eb43e56e4ee2b62fd783fddc4842abde8))
+
 ## [0.15.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.14.1...v0.15.0) (2024-06-24)
 
 

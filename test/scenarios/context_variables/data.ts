@@ -2,6 +2,23 @@ import { Scenario } from '../../types';
 
 export const data: Scenario[] = [
   {
+    template: '.a.b@b[]',
+    description: 'context variable in last part',
+    input: {
+      a: {
+        b: [
+          {
+            c: 1,
+          },
+          {
+            c: 2,
+          },
+        ],
+      },
+    },
+    output: [{ c: 1 }, { c: 2 }],
+  },
+  {
     templatePath: 'filter.jt',
     input: [[{ a: 1 }], [{ a: 2 }, { a: 3 }], [{ a: 4 }, { a: 5 }, { a: 6 }]],
     output: [

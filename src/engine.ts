@@ -120,9 +120,13 @@ export class JsonTemplateEngine {
     return JsonTemplateEngine.translateExpression(JsonTemplateEngine.parse(template, options));
   }
 
-  static reverseTranslate(expr: Expression, options?: EngineOptions): string {
+  static reverseTranslate(expr: Expression | FlatMappingPaths[], options?: EngineOptions): string {
     const translator = new JsonTemplateReverseTranslator(options);
-    return translator.translate(expr);
+    let newExpr = expr;
+    if (Array.isArray(expr)) {
+      newExpr = JsonTemplateEngine.parseMappingPaths(expr as FlatMappingPaths[], options);
+    }
+    return translator.translate(newExpr as Expression);
   }
 
   static convertMappingsToTemplate(mappings: FlatMappingPaths[], options?: EngineOptions): string {

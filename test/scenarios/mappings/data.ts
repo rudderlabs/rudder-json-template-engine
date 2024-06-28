@@ -116,6 +116,25 @@ export const data: Scenario[] = [
     },
   },
   {
+    mappingsPath: 'context_vars_mapping.json',
+    input: {
+      a: [
+        {
+          foo: 1,
+        },
+        {
+          foo: 2,
+        },
+      ],
+    },
+    output: {
+      b: [
+        { bar: 1, index: 0 },
+        { bar: 2, index: 1 },
+      ],
+    },
+  },
+  {
     mappingsPath: 'filters.json',
 
     input,
@@ -149,6 +168,21 @@ export const data: Scenario[] = [
         },
       ],
     },
+  },
+  {
+    description: 'Index mappings in last part',
+    mappings: [
+      {
+        from: '$.a[0]',
+        to: '$.b[0]',
+      },
+      {
+        from: '$.a[1]',
+        to: '$.b[1]',
+      },
+    ],
+    input: { a: [1, 2, 3] },
+    output: { b: [1, 2] },
   },
   {
     mappingsPath: 'invalid_array_mappings.json',
@@ -453,6 +487,37 @@ export const data: Scenario[] = [
         value: 'John Doe',
       },
     },
+  },
+  {
+    description: 'array mappings in last part',
+    mappings: [
+      {
+        from: '$.a[*]',
+        to: '$.b[*]',
+      },
+    ],
+    input: { a: [1, 2, 3] },
+    output: { b: [1, 2, 3] },
+  },
+  {
+    description: 'array mappings to scalar value',
+    mappings: [
+      {
+        from: '1',
+        to: '$.a[*].b',
+      },
+    ],
+    output: { a: [{ b: 1 }] },
+  },
+  {
+    description: 'array mappings to scalar value',
+    mappings: [
+      {
+        from: '1',
+        to: '$.a[*]',
+      },
+    ],
+    output: { a: [1] },
   },
   {
     mappingsPath: 'simple_array_mappings.json',

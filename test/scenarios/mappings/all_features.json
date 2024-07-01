@@ -20,19 +20,19 @@
     "output": "$.events[0].name"
   },
   {
-    "input": "$.products[?(@.category)].name",
+    "input": "$.products[*].name",
     "output": "$.events[0].items[*].product_name"
   },
   {
-    "from": "$.products[?(@.category)].category",
+    "from": "$.products[*].category",
     "to": "$.events[0].items[*].product_category"
   },
   {
-    "input": "$.products[?(@.category)].variations[*].size",
+    "input": "$.products[*].variations[*].size",
     "output": "$.events[0].items[*].options[*].s"
   },
   {
-    "input": "$.products[?(@.category)].(@.price * @.quantity * (1 - $.discount / 100))",
+    "input": "$.products[*].(@.price * @.quantity * (1 - $.discount / 100))",
     "output": "$.events[0].items[*].value"
   },
   {
@@ -40,19 +40,19 @@
     "output": "$.events[0].revenue"
   },
   {
-    "input": "$.products[?(@.category)].variations[*].length",
+    "input": "$.products[*].variations[*].length",
     "output": "$.events[0].items[*].options[*].l"
   },
   {
-    "input": "$.products[?(@.category)].variations[*].width",
+    "input": "$.products[*].variations[*].width",
     "output": "$.events[0].items[*].options[*].w"
   },
   {
-    "input": "$.products[?(@.category)].variations[*].color",
+    "input": "$.products[*].variations[*].color",
     "output": "$.events[0].items[*].options[*].c"
   },
   {
-    "input": "$.products[?(@.category)].variations[*].height",
+    "input": "$.products[*].variations[*].height",
     "output": "$.events[0].items[*].options[*].h"
   }
 ]

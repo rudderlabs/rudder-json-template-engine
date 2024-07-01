@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
 import { JsonTemplateMappingError } from '../errors/mapping';
-import { EMPTY_EXPR } from '../constants';
 import {
   SyntaxType,
   PathExpression,
@@ -13,6 +12,7 @@ import {
   BlockExpression,
   TokenType,
   BinaryExpression,
+  PathType,
 } from '../types';
 import { createBlockExpression, getLastElement } from './common';
 
@@ -40,20 +40,23 @@ function findOrCreateObjectPropExpression(
 }
 
 function processArrayIndexFilter(
+  flatMapping: FlatMappingAST,
   currrentOutputPropAST: ObjectPropExpression,
   filter: IndexFilterExpression,
+  isLastPart: boolean,
 ): ObjectExpression {
   const filterIndex = filter.indexes.elements[0].value;
   if (currrentOutputPropAST.value.type !== SyntaxType.ARRAY_EXPR) {
     const elements: Expression[] = [];
-    elements[filterIndex] = currrentOutputPropAST.value;
+    elements[filterIndex] = isLastPart ? flatMapping.inputExpr : currrentOutputPropAST.value;
     currrentOutputPropAST.value = {
       type: SyntaxType.ARRAY_EXPR,
       elements,
     };
   } else if (!currrentOutputPropAST.value.elements[filterIndex]) {
-    (currrentOutputPropAST.value as ArrayExpression).elements[filterIndex] =
-      createObjectExpression();
+    (currrentOutputPropAST.value as ArrayExpression).elements[filterIndex] = isLastPart
+      ? flatMapping.inputExpr
+      : createObjectExpression();
   }
   return currrentOutputPropAST.value.elements[filterIndex];
 }
@@ -67,24 +70,27 @@ function isPathWithEmptyPartsAndObjectRoot(expr: Expression) {
 }
 
 function getPathExpressionForAllFilter(
-  currentInputAST: PathExpression,
+  currentInputAST: Expression,
   root: any,
   parts: Expression[] = [],
 ): PathExpression {
   return {
     type: SyntaxType.PATH,
     root,
-    pathType: currentInputAST.pathType,
-    inferredPathType: currentInputAST.inferredPathType,
+    pathType: currentInputAST.pathType || PathType.UNKNOWN,
+    inferredPathType: currentInputAST.inferredPathType || PathType.UNKNOWN,
     parts,
     returnAsArray: true,
   } as PathExpression;
 }
 
-function validateResultOfAllFilter(objectExpr: Expression, flatMapping: FlatMappingAST) {
+function validateResultOfAllFilter(
+  objectExpr: Expression | undefined,
+  flatMapping: FlatMappingAST,
+) {
   if (
+    !objectExpr?.props ||
     objectExpr.type !== SyntaxType.OBJECT_EXPR ||
-    !objectExpr.props ||
     !Array.isArray(objectExpr.props)
   ) {
     throw new JsonTemplateMappingError(
@@ -95,45 +101,95 @@ function validateResultOfAllFilter(objectExpr: Expression, flatMapping: FlatMapp
   }
 }
 
+function addToArrayToExpression(expr: Expression) {
+  return {
+    type: SyntaxType.PATH,
+    root: expr,
+    returnAsArray: true,
+    parts: [],
+  };
+}
+
+function handleAllFilterIndexFound(
+  currentInputAST: Expression,
+  currentOutputPropAST: ObjectPropExpression,
+  filterIndex: number,
+  isLastPart: boolean,
+) {
+  const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
+  if (isPathWithEmptyPartsAndObjectRoot(currentOutputPropAST.value)) {
+    currentOutputPropAST.value = currentOutputPropAST.value.root;
+  }
+
+  if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
+    matchedInputParts.push(
+      createBlockExpression(isLastPart ? currentInputAST : currentOutputPropAST.value),
+    );
+    currentOutputPropAST.value = getPathExpressionForAllFilter(
+      currentInputAST,
+      currentInputAST.root,
+      matchedInputParts,
+    );
+  }
+  currentInputAST.root = undefined;
+}
+
+function findAllFilterIndex(expr: Expression): number {
+  let filterIndex = -1;
+  if (expr.type === SyntaxType.PATH) {
+    filterIndex = expr.parts.findIndex((part) => part.type === SyntaxType.OBJECT_FILTER_EXPR);
+  }
+  return filterIndex;
+}
+
+function handleAllFilterIndexNotFound(
+  currentInputAST: Expression,
+  currentOutputPropAST: ObjectPropExpression,
+  isLastPart: boolean,
+): ObjectExpression | undefined {
+  if (currentOutputPropAST.value.type === SyntaxType.OBJECT_EXPR) {
+    const currObjectExpr = currentOutputPropAST.value as ObjectExpression;
+    currentOutputPropAST.value = isLastPart
+      ? addToArrayToExpression(currentInputAST)
+      : getPathExpressionForAllFilter(currentInputAST, currObjectExpr);
+    return currObjectExpr;
+  }
+  if (isPathWithEmptyPartsAndObjectRoot(currentOutputPropAST.value)) {
+    return currentOutputPropAST.value.root as ObjectExpression;
+  }
+}
+
+function getNextObjectExpressionForAllFilter(
+  flatMapping: FlatMappingAST,
+  currentOutputPropAST: ObjectPropExpression,
+  isLastPart: boolean,
+) {
+  const blockExpr = getLastElement(currentOutputPropAST.value.parts) as Expression;
+  const objectExpr = isLastPart ? createObjectExpression() : blockExpr?.statements?.[0];
+  validateResultOfAllFilter(objectExpr, flatMapping);
+  return objectExpr;
+}
+
 function processAllFilter(
   flatMapping: FlatMappingAST,
   currentOutputPropAST: ObjectPropExpression,
+  isLastPart: boolean,
 ): ObjectExpression {
   const { inputExpr: currentInputAST } = flatMapping;
-  const filterIndex = currentInputAST.parts.findIndex(
-    (part) => part.type === SyntaxType.OBJECT_FILTER_EXPR,
-  );
-
+  const filterIndex = findAllFilterIndex(currentInputAST);
   if (filterIndex === -1) {
-    if (currentOutputPropAST.value.type === SyntaxType.OBJECT_EXPR) {
-      const currObjectExpr = currentOutputPropAST.value as ObjectExpression;
-      currentOutputPropAST.value = getPathExpressionForAllFilter(currentInputAST, currObjectExpr);
-      return currObjectExpr;
-    }
-    if (isPathWithEmptyPartsAndObjectRoot(currentOutputPropAST.value)) {
-      return currentOutputPropAST.value.root as ObjectExpression;
+    const objectExpr = handleAllFilterIndexNotFound(
+      currentInputAST,
+      currentOutputPropAST,
+      isLastPart,
+    );
+    if (objectExpr) {
+      return objectExpr;
     }
   } else {
-    const matchedInputParts = currentInputAST.parts.splice(0, filterIndex + 1);
-    if (isPathWithEmptyPartsAndObjectRoot(currentOutputPropAST.value)) {
-      currentOutputPropAST.value = currentOutputPropAST.value.root;
-    }
-
-    if (currentOutputPropAST.value.type !== SyntaxType.PATH) {
-      matchedInputParts.push(createBlockExpression(currentOutputPropAST.value));
-      currentOutputPropAST.value = getPathExpressionForAllFilter(
-        currentInputAST,
-        currentInputAST.root,
-        matchedInputParts,
-      );
-    }
-    currentInputAST.root = undefined;
+    handleAllFilterIndexFound(currentInputAST, currentOutputPropAST, filterIndex, isLastPart);
   }
-
-  const blockExpr = getLastElement(currentOutputPropAST.value.parts) as Expression;
-  const objectExpr = blockExpr?.statements?.[0] || EMPTY_EXPR;
-  validateResultOfAllFilter(objectExpr, flatMapping);
-  return objectExpr;
+  return getNextObjectExpressionForAllFilter(flatMapping, currentOutputPropAST, isLastPart);
 }
 
 function isWildcardSelector(expr: Expression): boolean {
@@ -201,12 +257,30 @@ function handleNextPart(
 ): ObjectExpression | undefined {
   const nextOutputPart = flatMapping.outputExpr.parts[partNum];
   if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
-    return processAllFilter(flatMapping, currentOutputPropAST);
+    const objectExpr = processAllFilter(
+      flatMapping,
+      currentOutputPropAST,
+      partNum === flatMapping.outputExpr.parts.length - 1 && !nextOutputPart.options?.index,
+    );
+    if (nextOutputPart.options?.index) {
+      objectExpr.props.push({
+        type: SyntaxType.OBJECT_PROP_EXPR,
+        key: nextOutputPart.options?.index,
+        value: {
+          type: SyntaxType.PATH,
+          root: nextOutputPart.options?.index,
+          parts: [],
+        },
+      });
+    }
+    return objectExpr;
   }
   if (nextOutputPart.filter?.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR) {
     return processArrayIndexFilter(
+      flatMapping,
       currentOutputPropAST,
       nextOutputPart.filter as IndexFilterExpression,
+      partNum === flatMapping.outputExpr.parts.length - 1,
     );
   }
   if (isWildcardSelector(nextOutputPart)) {
@@ -308,6 +382,29 @@ function handleRootOnlyOutputMapping(flatMapping: FlatMappingAST, outputAST: Obj
   } as ObjectPropExpression);
 }
 
+function validateMappingsForIndexVar(flatMapping: FlatMappingAST, indexVar: string) {
+  if (flatMapping.inputExpr.type !== SyntaxType.PATH) {
+    throw new JsonTemplateMappingError(
+      'Invalid mapping: input should be path expression',
+      flatMapping.input as string,
+      flatMapping.output as string,
+    );
+  }
+  const foundIndexVar = flatMapping.inputExpr.parts.some(
+    (item) =>
+      item?.type === SyntaxType.OBJECT_FILTER_EXPR &&
+      item.filter.type === SyntaxType.ALL_FILTER_EXPR &&
+      item.options?.index === indexVar,
+  );
+  if (!foundIndexVar) {
+    throw new JsonTemplateMappingError(
+      `Invalid mapping: index variable:${indexVar} not found in input path`,
+      flatMapping.input as string,
+      flatMapping.output as string,
+    );
+  }
+}
+
 function validateMapping(flatMapping: FlatMappingAST) {
   if (flatMapping.outputExpr.type !== SyntaxType.PATH) {
     throw new JsonTemplateMappingError(
@@ -315,6 +412,10 @@ function validateMapping(flatMapping: FlatMappingAST) {
       flatMapping.input as string,
       flatMapping.output as string,
     );
+  }
+  const lastPart = getLastElement(flatMapping.outputExpr.parts);
+  if (lastPart?.options?.index) {
+    validateMappingsForIndexVar(flatMapping, lastPart.options.index);
   }
 }
 
@@ -341,7 +442,7 @@ export function convertToObjectMapping(
         const objectPropExpr = {
           type: SyntaxType.OBJECT_PROP_EXPR,
           key: '',
-          value: objectExpr as Expression,
+          value: pathAST || objectExpr,
         };
         objectExpr = handleNextParts(flatMapping, 0, objectPropExpr);
         pathAST = objectPropExpr.value as PathExpression;

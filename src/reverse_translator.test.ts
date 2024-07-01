@@ -1,4 +1,5 @@
 import { JsonTemplateEngine } from './engine';
+import { PathType } from './types';
 
 describe('reverse_translator', () => {
   it('should reverse translate with indentation', () => {
@@ -12,7 +13,7 @@ describe('reverse_translator', () => {
 
   it('should reverse translate json mappings', () => {
     const template = JsonTemplateEngine.reverseTranslate(
-      JsonTemplateEngine.parse([
+      [
         {
           input: '$.userId',
           output: '$.user.id',
@@ -41,10 +42,11 @@ describe('reverse_translator', () => {
           input: '$.products[?(@.category)].(@.price * @.quantity * (1 - $.discount / 100)).sum()',
           output: '$.events[0].revenue',
         },
-      ]),
+      ],
+      { defaultPathType: PathType.JSON },
     );
     expect(template).toEqual(
-      '{\n    "user": {\n        "id": $.userId\n    },\n    "events": [{\n        "items": $.products{.category}.({\n            "discount": $.discount,\n            "product_id": .id,\n            "options": .variations[*].({\n                "s": .size\n            })[],\n            "value": .price * .quantity * (1 - $.discount / 100)\n        })[],\n        "name": $.events[0],\n        "revenue": $.products{.category}.(.price * .quantity * (1 - $.discount / 100)).sum()\n    }]\n}',
+      '{\n    "user": {\n        "id": $.userId\n    },\n    "events": [{\n        "items": $.products[?(@.category)].({\n            "discount": $.discount,\n            "product_id": @.id,\n            "options": @.variations[*].({\n                "s": @.size\n            })[],\n            "value": @.price * @.quantity * (1 - $.discount / 100)\n        })[],\n        "name": $.events[0],\n        "revenue": $.products[?(@.category)].(@.price * @.quantity * (1 - $.discount / 100)).sum()\n    }]\n}',
     );
   });
 });

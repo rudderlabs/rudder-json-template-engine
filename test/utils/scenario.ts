@@ -9,22 +9,28 @@ function getTemplate(scenarioDir: string, scenario: Scenario): string {
 }
 
 function getDefaultPathType(scenario: Scenario): PathType {
-  return scenario.mappingsPath ? PathType.JSON : PathType.SIMPLE;
+  return scenario.mappingsPath || scenario.mappings ? PathType.JSON : PathType.SIMPLE;
 }
 
 function initializeScenario(scenarioDir: string, scenario: Scenario) {
   scenario.options = scenario.options || {};
   scenario.options.defaultPathType =
     scenario.options.defaultPathType || getDefaultPathType(scenario);
-  let template = scenario.template ?? getTemplate(scenarioDir, scenario);
+
   if (scenario.mappingsPath) {
-    template = JsonTemplateEngine.convertMappingsToTemplate(
-      JSON.parse(template) as FlatMappingPaths[],
+    scenario.mappings = JSON.parse(getTemplate(scenarioDir, scenario)) as FlatMappingPaths[];
+  }
+  if (scenario.mappings) {
+    scenario.template = JsonTemplateEngine.convertMappingsToTemplate(
+      scenario.mappings as FlatMappingPaths[],
       scenario.options,
     );
   }
+  if (scenario.template === undefined) {
+    scenario.template = getTemplate(scenarioDir, scenario);
+  }
   scenario.template = JsonTemplateEngine.reverseTranslate(
-    JsonTemplateEngine.parse(template, scenario.options),
+    JsonTemplateEngine.parse(scenario.template, scenario.options),
     scenario.options,
   );
 }

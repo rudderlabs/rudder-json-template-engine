@@ -1443,9 +1443,9 @@ export class JsonTemplateParser {
     return this.lexer.throwUnexpectedToken();
   }
 
-  private static pathContainsVariables(parts: Expression[]): boolean {
+  private static shouldPathBeConvertedAsBlock(parts: Expression[]): boolean {
     return parts
-      .filter((part) => part.type === SyntaxType.PATH_OPTIONS)
+      .filter((part, index) => part.type === SyntaxType.PATH_OPTIONS && index < parts.length - 1)
       .some((part) => part.options?.index ?? part.options?.item);
   }
 
@@ -1550,7 +1550,7 @@ export class JsonTemplateParser {
       newPathExpr.parts.shift();
     }
 
-    const shouldConvertAsBlock = JsonTemplateParser.pathContainsVariables(newPathExpr.parts);
+    const shouldConvertAsBlock = JsonTemplateParser.shouldPathBeConvertedAsBlock(newPathExpr.parts);
     let lastPart = getLastElement(newPathExpr.parts);
     let fnExpr: FunctionCallExpression | undefined;
     if (lastPart?.type === SyntaxType.FUNCTION_CALL_EXPR) {
@@ -1558,9 +1558,13 @@ export class JsonTemplateParser {
     }
 
     lastPart = getLastElement(newPathExpr.parts);
-    if (lastPart?.type === SyntaxType.PATH_OPTIONS) {
-      newPathExpr.parts.pop();
+    if (lastPart?.type === SyntaxType.PATH_OPTIONS && lastPart.options?.toArray) {
       newPathExpr.returnAsArray = lastPart.options?.toArray;
+      if (!lastPart.options.item && !lastPart.options.index) {
+        newPathExpr.parts.pop();
+      } else {
+        lastPart.options.toArray = false;
+      }
     }
     newPathExpr.parts = JsonTemplateParser.combinePathOptionParts(newPathExpr.parts);
 

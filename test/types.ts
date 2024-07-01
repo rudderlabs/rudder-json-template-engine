@@ -1,9 +1,10 @@
-import type { EngineOptions } from '../src';
+import type { EngineOptions, FlatMappingPaths } from '../src';
 
 export type Scenario = {
   description?: string;
   input?: unknown;
   templatePath?: string;
+  mappings?: FlatMappingPaths[];
   mappingsPath?: string;
   template?: string;
   options?: EngineOptions;

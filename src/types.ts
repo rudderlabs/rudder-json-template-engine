@@ -284,7 +284,7 @@ export type FlatMappingPaths = {
 };
 
 export type FlatMappingAST = FlatMappingPaths & {
-  inputExpr: PathExpression;
+  inputExpr: Expression;
   outputExpr: PathExpression;
 };
 

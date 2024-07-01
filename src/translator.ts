@@ -310,6 +310,7 @@ export class JsonTemplateTranslator {
     code.push(JsonTemplateTranslator.covertToArrayValue(data));
     if (
       JsonTemplateTranslator.isArrayFilterExpr(expr.parts[partNum]) ||
+      JsonTemplateTranslator.isAllFilterExpr(expr.parts[partNum]) ||
       JsonTemplateTranslator.isToArray(expr, partNum)
     ) {
       code.push(`${data} = [${data}];`);
@@ -317,10 +318,13 @@ export class JsonTemplateTranslator {
     return code.join('');
   }
 
+  static isAllFilterExpr(expr: Expression): boolean {
+    return (
+      expr.type === SyntaxType.OBJECT_FILTER_EXPR && expr.filter.type === SyntaxType.ALL_FILTER_EXPR
+    );
+  }
+
   private translatePathParts(expr: PathExpression, dest: string): string {
-    if (!expr.parts.length) {
-      return '';
-    }
     const { parts } = expr;
     const code: string[] = [];
     const numParts = parts.length;
@@ -384,8 +388,9 @@ export class JsonTemplateTranslator {
     }
     const code: string[] = [];
     code.push(this.translatePathRoot(expr, dest, ctx));
-    code.push(this.translatePathParts(expr, dest));
-    if (expr.returnAsArray && expr.parts.length === 0) {
+    if (expr.parts.length > 0) {
+      code.push(this.translatePathParts(expr, dest));
+    } else if (expr.returnAsArray) {
       code.push(JsonTemplateTranslator.covertToArrayValue(dest));
     }
     return code.join('');
@@ -786,11 +791,13 @@ export class JsonTemplateTranslator {
     ctx: string,
   ): string {
     const code: string[] = [];
-    const condition = this.acquireVar();
-    code.push(JsonTemplateTranslator.generateAssignmentCode(condition, 'true'));
-    code.push(this.translateExpr(expr.filter, condition, ctx));
-    code.push(`if(!${condition}) {${dest} = undefined;}`);
-    this.releaseVars(condition);
+    if (expr.filter.type !== SyntaxType.ALL_FILTER_EXPR) {
+      const condition = this.acquireVar();
+      code.push(JsonTemplateTranslator.generateAssignmentCode(condition, 'true'));
+      code.push(this.translateExpr(expr.filter, condition, ctx));
+      code.push(`if(!${condition}) {${dest} = undefined;}`);
+      this.releaseVars(condition);
+    }
     return code.join('');
   }
 

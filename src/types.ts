@@ -107,6 +107,7 @@ export enum PathType {
 export interface EngineOptions {
   compileTimeBindings?: Record<string, any>;
   defaultPathType?: PathType;
+  mappings?: boolean;
 }
 
 export type Token = {

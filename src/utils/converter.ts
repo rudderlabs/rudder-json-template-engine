@@ -426,6 +426,10 @@ function processFlatMappingParts(flatMapping: FlatMappingAST, objectExpr: Object
   }
 }
 
+function orderMappings(flatMappingASTs: FlatMappingAST[]): FlatMappingAST[] {
+  return flatMappingASTs;
+}
+
 /**
  * Convert Flat to Object Mappings
  */
@@ -434,7 +438,8 @@ export function convertToObjectMapping(
 ): ObjectExpression | PathExpression {
   const outputAST: ObjectExpression = createObjectExpression();
   let pathAST: PathExpression | undefined;
-  for (const flatMapping of flatMappingASTs) {
+  const orderedMappings = orderMappings(flatMappingASTs);
+  for (const flatMapping of orderedMappings) {
     validateMapping(flatMapping);
     let objectExpr = outputAST;
     if (flatMapping.outputExpr.parts.length > 0) {

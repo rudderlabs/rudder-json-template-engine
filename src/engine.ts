@@ -87,12 +87,13 @@ export class JsonTemplateEngine {
     mappings: FlatMappingPaths[],
     options?: EngineOptions,
   ): FlatMappingAST[] {
+    const newOptions = { ...options, mappings: true };
     return JsonTemplateEngine.prepareMappings(mappings)
       .filter((mapping) => mapping.input && mapping.output)
       .map((mapping) => ({
         ...mapping,
-        inputExpr: JsonTemplateEngine.parse(mapping.input, options).statements[0],
-        outputExpr: JsonTemplateEngine.parse(mapping.output, options).statements[0],
+        inputExpr: JsonTemplateEngine.parse(mapping.input, newOptions).statements[0],
+        outputExpr: JsonTemplateEngine.parse(mapping.output, newOptions).statements[0],
       }));
   }
 

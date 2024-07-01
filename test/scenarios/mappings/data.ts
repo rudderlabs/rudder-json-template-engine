@@ -135,6 +135,24 @@ export const data: Scenario[] = [
     },
   },
   {
+    mappings: [
+      {
+        from: '$.a[*]',
+        to: '$.b[*].#index',
+      },
+    ],
+    error: 'Invalid mapping',
+  },
+  {
+    mappings: [
+      {
+        from: '1',
+        to: '$.b[*].#index',
+      },
+    ],
+    error: 'Invalid mapping',
+  },
+  {
     mappingsPath: 'filters.json',
 
     input,
@@ -411,6 +429,27 @@ export const data: Scenario[] = [
           id: 2,
           name: 'Jane Doe',
         },
+      },
+    ],
+  },
+  {
+    mappingsPath: 'root_context_vars_mapping.json',
+    input: [
+      {
+        foo: 1,
+      },
+      {
+        foo: 2,
+      },
+    ],
+    output: [
+      {
+        bar: 1,
+        index: 0,
+      },
+      {
+        bar: 2,
+        index: 1,
       },
     ],
   },

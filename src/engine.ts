@@ -8,6 +8,7 @@ import { JsonTemplateTranslator } from './translator';
 import {
   EngineOptions,
   Expression,
+  FlatMappingAST,
   FlatMappingPaths,
   PathType,
   SyntaxType,
@@ -66,7 +67,7 @@ export class JsonTemplateEngine {
     }));
   }
 
-  static validateMappings(mappings: FlatMappingPaths[]) {
+  static validateMappings(mappings: FlatMappingPaths[], options?: EngineOptions) {
     JsonTemplateEngine.prepareMappings(mappings).forEach((mapping) => {
       if (
         !JsonTemplateEngine.isValidJSONPath(mapping.input) ||
@@ -79,18 +80,24 @@ export class JsonTemplateEngine {
         );
       }
     });
-    JsonTemplateEngine.parseMappingPaths(mappings);
+    JsonTemplateEngine.parseMappingPaths(mappings, options);
   }
 
-  static parseMappingPaths(mappings: FlatMappingPaths[], options?: EngineOptions): Expression {
-    const flatMappingAST = JsonTemplateEngine.prepareMappings(mappings)
+  private static createFlatMappingsAST(
+    mappings: FlatMappingPaths[],
+    options?: EngineOptions,
+  ): FlatMappingAST[] {
+    return JsonTemplateEngine.prepareMappings(mappings)
       .filter((mapping) => mapping.input && mapping.output)
       .map((mapping) => ({
         ...mapping,
         inputExpr: JsonTemplateEngine.parse(mapping.input, options).statements[0],
         outputExpr: JsonTemplateEngine.parse(mapping.output, options).statements[0],
       }));
-    return convertToObjectMapping(flatMappingAST);
+  }
+
+  static parseMappingPaths(mappings: FlatMappingPaths[], options?: EngineOptions): Expression {
+    return convertToObjectMapping(JsonTemplateEngine.createFlatMappingsAST(mappings, options));
   }
 
   static create(templateOrExpr: TemplateInput, options?: EngineOptions): JsonTemplateEngine {

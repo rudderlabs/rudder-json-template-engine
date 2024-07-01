@@ -382,6 +382,29 @@ function handleRootOnlyOutputMapping(flatMapping: FlatMappingAST, outputAST: Obj
   } as ObjectPropExpression);
 }
 
+function validateMappingsForIndexVar(flatMapping: FlatMappingAST, indexVar: string) {
+  if (flatMapping.inputExpr.type !== SyntaxType.PATH) {
+    throw new JsonTemplateMappingError(
+      'Invalid mapping: input should be path expression',
+      flatMapping.input as string,
+      flatMapping.output as string,
+    );
+  }
+  const foundIndexVar = flatMapping.inputExpr.parts.some(
+    (item) =>
+      item?.type === SyntaxType.OBJECT_FILTER_EXPR &&
+      item.filter.type === SyntaxType.ALL_FILTER_EXPR &&
+      item.options?.index === indexVar,
+  );
+  if (!foundIndexVar) {
+    throw new JsonTemplateMappingError(
+      `Invalid mapping: index variable:${indexVar} not found in input path`,
+      flatMapping.input as string,
+      flatMapping.output as string,
+    );
+  }
+}
+
 function validateMapping(flatMapping: FlatMappingAST) {
   if (flatMapping.outputExpr.type !== SyntaxType.PATH) {
     throw new JsonTemplateMappingError(
@@ -389,6 +412,10 @@ function validateMapping(flatMapping: FlatMappingAST) {
       flatMapping.input as string,
       flatMapping.output as string,
     );
+  }
+  const lastPart = getLastElement(flatMapping.outputExpr.parts);
+  if (lastPart?.options?.index) {
+    validateMappingsForIndexVar(flatMapping, lastPart.options.index);
   }
 }
 
@@ -415,7 +442,7 @@ export function convertToObjectMapping(
         const objectPropExpr = {
           type: SyntaxType.OBJECT_PROP_EXPR,
           key: '',
-          value: objectExpr as Expression,
+          value: pathAST || objectExpr,
         };
         objectExpr = handleNextParts(flatMapping, 0, objectPropExpr);
         pathAST = objectPropExpr.value as PathExpression;

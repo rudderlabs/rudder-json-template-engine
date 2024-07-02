@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.16.0...v0.17.0) (2024-07-02)
+
+
+### Features
+
+* add support for context var index ([#111](https://github.com/rudderlabs/rudder-json-template-engine/issues/111)) ([5f1d213](https://github.com/rudderlabs/rudder-json-template-engine/commit/5f1d2135d79e2681ccf8f8016ac308d00544a004))
+* merge filters and indexes ([#113](https://github.com/rudderlabs/rudder-json-template-engine/issues/113)) ([ab652ff](https://github.com/rudderlabs/rudder-json-template-engine/commit/ab652ffa4b4b6c1ce6a36e373f1bde537813990b))
+
 ## [0.16.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.15.0...v0.16.0) (2024-06-25)
 
 

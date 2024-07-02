@@ -4,11 +4,11 @@
     "output": "$.items[*].product_id"
   },
   {
-    "input": "$.products[?(@.category)].name",
+    "input": "$.products[*].name",
     "output": "$.items[*].product_name"
   },
   {
-    "input": "$.products[?(@.category)].category",
+    "input": "$.products[*].category",
     "output": "$.items[*].product_category"
   }
 ]

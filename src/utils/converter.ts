@@ -110,6 +110,22 @@ function addToArrayToExpression(expr: Expression) {
   };
 }
 
+function mergeObjectFilterParts(existParts: Expression[], newParts: Expression[]) {
+  for (let index = 0; index < newParts.length; index++) {
+    if (
+      newParts[index].type === SyntaxType.OBJECT_FILTER_EXPR &&
+      existParts[index].type === SyntaxType.OBJECT_FILTER_EXPR
+    ) {
+      if (newParts[index].options?.index) {
+        existParts[index].options = { ...existParts[index].options, ...newParts[index].options };
+      }
+      if (newParts[index].filter.type !== SyntaxType.ALL_FILTER_EXPR) {
+        existParts[index].filter = newParts[index].filter;
+      }
+    }
+  }
+}
+
 function handleAllFilterIndexFound(
   currentInputAST: Expression,
   currentOutputPropAST: ObjectPropExpression,
@@ -130,6 +146,8 @@ function handleAllFilterIndexFound(
       currentInputAST.root,
       matchedInputParts,
     );
+  } else {
+    mergeObjectFilterParts(currentOutputPropAST.value.parts, matchedInputParts);
   }
   currentInputAST.root = undefined;
 }
@@ -391,10 +409,7 @@ function validateMappingsForIndexVar(flatMapping: FlatMappingAST, indexVar: stri
     );
   }
   const foundIndexVar = flatMapping.inputExpr.parts.some(
-    (item) =>
-      item?.type === SyntaxType.OBJECT_FILTER_EXPR &&
-      item.filter.type === SyntaxType.ALL_FILTER_EXPR &&
-      item.options?.index === indexVar,
+    (item) => item?.type === SyntaxType.OBJECT_FILTER_EXPR && item.options?.index === indexVar,
   );
   if (!foundIndexVar) {
     throw new JsonTemplateMappingError(

@@ -4,7 +4,7 @@
     "to": "$.b[*].#index"
   },
   {
-    "from": "$.a[*].foo",
+    "from": "$.a[*].#index.foo",
     "to": "$.b[*].bar"
   }
 ]

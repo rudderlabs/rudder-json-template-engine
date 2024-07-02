@@ -355,7 +355,7 @@ export class JsonTemplateParser {
     if (!expr.parts.length) {
       return JsonTemplateParser.setPathTypeIfNotJSON(expr, PathType.SIMPLE);
     }
-    return JsonTemplateParser.updatePathExpr(expr);
+    return this.updatePathExpr(expr);
   }
 
   private static createArrayIndexFilterExpr(expr: Expression): IndexFilterExpression {
@@ -1443,10 +1443,15 @@ export class JsonTemplateParser {
     return this.lexer.throwUnexpectedToken();
   }
 
-  private static shouldPathBeConvertedAsBlock(parts: Expression[]): boolean {
-    return parts
-      .filter((part, index) => part.type === SyntaxType.PATH_OPTIONS && index < parts.length - 1)
-      .some((part) => part.options?.index ?? part.options?.item);
+  private shouldPathBeConvertedAsBlock(parts: Expression[]): boolean {
+    return (
+      !this.options?.mappings &&
+      parts
+        .filter(
+          (part, index) => part.type === SyntaxType.PATH_OPTIONS && index !== parts.length - 1,
+        )
+        .some((part) => part.options?.index ?? part.options?.item)
+    );
   }
 
   private static convertToBlockExpr(expr: Expression): FunctionExpression {
@@ -1543,14 +1548,14 @@ export class JsonTemplateParser {
     return newPathExpr;
   }
 
-  private static updatePathExpr(pathExpr: PathExpression): Expression {
+  private updatePathExpr(pathExpr: PathExpression): Expression {
     const newPathExpr = pathExpr;
     if (newPathExpr.parts.length > 1 && newPathExpr.parts[0].type === SyntaxType.PATH_OPTIONS) {
       newPathExpr.options = newPathExpr.parts[0].options;
       newPathExpr.parts.shift();
     }
 
-    const shouldConvertAsBlock = JsonTemplateParser.shouldPathBeConvertedAsBlock(newPathExpr.parts);
+    const shouldConvertAsBlock = this.shouldPathBeConvertedAsBlock(newPathExpr.parts);
     let lastPart = getLastElement(newPathExpr.parts);
     let fnExpr: FunctionCallExpression | undefined;
     if (lastPart?.type === SyntaxType.FUNCTION_CALL_EXPR) {
@@ -1575,7 +1580,7 @@ export class JsonTemplateParser {
     if (shouldConvertAsBlock) {
       expr = JsonTemplateParser.convertToBlockExpr(expr);
       JsonTemplateParser.setPathTypeIfNotJSON(newPathExpr, PathType.RICH);
-    } else if (this.isRichPath(newPathExpr)) {
+    } else if (JsonTemplateParser.isRichPath(newPathExpr)) {
       JsonTemplateParser.setPathTypeIfNotJSON(newPathExpr, PathType.RICH);
     }
     return expr;

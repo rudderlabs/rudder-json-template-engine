@@ -132,7 +132,7 @@ export class JsonTemplateEngine {
     const translator = new JsonTemplateReverseTranslator(options);
     let newExpr = expr;
     if (Array.isArray(expr)) {
-      newExpr = JsonTemplateEngine.parseMappingPaths(expr as FlatMappingPaths[], options);
+      newExpr = JsonTemplateEngine.parseMappingPaths(expr, options);
     }
     return translator.translate(newExpr as Expression);
   }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.17.0...v0.17.1) (2024-07-12)
+
+
+### Bug Fixes
+
+* array index mapping error handling ([#115](https://github.com/rudderlabs/rudder-json-template-engine/issues/115)) ([85fefcf](https://github.com/rudderlabs/rudder-json-template-engine/commit/85fefcff15e8a63130cccf369ed3671efdb3f8e8))
+
 ## [0.17.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.16.0...v0.17.0) (2024-07-02)
 
 

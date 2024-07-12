@@ -188,6 +188,10 @@ export const data: Scenario[] = [
     },
   },
   {
+    mappingsPath: 'invalid_array_index_mappings.json',
+    error: 'Invalid mapping',
+  },
+  {
     description: 'Index mappings in last part',
     mappings: [
       {

@@ -282,6 +282,7 @@ export type FlatMappingPaths = {
   to?: string;
   input?: string;
   output?: string;
+  [key: string]: any;
 };
 
 export type FlatMappingAST = FlatMappingPaths & {

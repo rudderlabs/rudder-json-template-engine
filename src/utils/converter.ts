@@ -58,7 +58,15 @@ function processArrayIndexFilter(
       ? flatMapping.inputExpr
       : createObjectExpression();
   }
-  return currrentOutputPropAST.value.elements[filterIndex];
+  const objectExpr = currrentOutputPropAST.value.elements[filterIndex];
+  if (!isLastPart && objectExpr?.type !== SyntaxType.OBJECT_EXPR) {
+    throw new JsonTemplateMappingError(
+      'Invalid mapping: invalid array index mapping',
+      flatMapping.input as string,
+      flatMapping.output as string,
+    );
+  }
+  return objectExpr;
 }
 
 function isPathWithEmptyPartsAndObjectRoot(expr: Expression) {

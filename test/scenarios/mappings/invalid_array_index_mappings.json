@@ -1,0 +1,10 @@
+[
+  {
+    "from": "$.products[*].a",
+    "to": "$.items[*].a"
+  },
+  {
+    "from": "$.products[*].b",
+    "to": "$.items[0].b"
+  }
+]

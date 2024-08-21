@@ -28,6 +28,7 @@ export enum TokenType {
   ID = 'id',
   INT = 'int',
   FLOAT = 'float',
+  TEMPLATE = 'template',
   STR = 'str',
   BOOL = 'bool',
   NULL = 'null',
@@ -95,6 +96,7 @@ export enum SyntaxType {
   STATEMENTS_EXPR = 'statements_expr',
   LOOP_CONTROL_EXPR = 'loop_control_expr',
   LOOP_EXPR = 'loop_expr',
+  TEMPLATE_EXPR = 'TEMPLATE_EXPR',
 }
 
 export enum PathType {
@@ -176,8 +178,8 @@ export interface BinaryExpression extends Expression {
   op: string;
 }
 
-export interface ConcatExpression extends Expression {
-  args: Expression[];
+export interface TemplateExpression extends Expression {
+  parts: Expression[];
 }
 
 export interface AssignmentExpression extends Expression {

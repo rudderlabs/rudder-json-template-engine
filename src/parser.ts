@@ -37,6 +37,7 @@ import {
   SpreadExpression,
   StatementsExpression,
   SyntaxType,
+  TemplateExpression,
   ThrowExpression,
   Token,
   TokenType,
@@ -973,6 +974,40 @@ export class JsonTemplateParser {
     return JsonTemplateParser.createLiteralExpr(this.lexer.lex());
   }
 
+  private parseTemplateExpr(): TemplateExpression {
+    const template = this.lexer.value() as string;
+    let idx = 0;
+    const parts: Expression[] = [];
+    while (idx < template.length) {
+      const start = template.indexOf('${', idx);
+      if (start === -1) {
+        parts.push({
+          type: SyntaxType.LITERAL,
+          value: template.slice(idx),
+          tokenType: TokenType.STR,
+        });
+        break;
+      }
+      const end = template.indexOf('}', start);
+      if (end === -1) {
+        throw new JsonTemplateParserError('Invalid template expression');
+      }
+      if (start > idx) {
+        parts.push({
+          type: SyntaxType.LITERAL,
+          value: template.slice(idx, start),
+          tokenType: TokenType.STR,
+        });
+      }
+      parts.push(JsonTemplateEngine.parse(template.slice(start + 2, end), this.options));
+      idx = end + 1;
+    }
+    return {
+      type: SyntaxType.TEMPLATE_EXPR,
+      parts,
+    };
+  }
+
   private parseIDPath(): string {
     const idParts: string[] = [];
     while (this.lexer.matchID()) {
@@ -1380,6 +1415,7 @@ export class JsonTemplateParser {
     return JsonTemplateEngine.parseMappingPaths(flatMappings);
   }
 
+  // eslint-disable-next-line sonarjs/cognitive-complexity
   private parsePrimaryExpr(): Expression {
     if (this.lexer.match(';')) {
       return EMPTY_EXPR;
@@ -1410,6 +1446,10 @@ export class JsonTemplateParser {
 
     if (this.lexer.matchLiteral()) {
       return this.parseLiteralExpr();
+    }
+
+    if (this.lexer.matchTemplate()) {
+      return this.parseTemplateExpr();
     }
 
     if (this.lexer.matchCompileTimeExpr()) {

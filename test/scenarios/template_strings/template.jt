@@ -1,0 +1,3 @@
+let a = `Input a=${.a}`; 
+let b = `Binding b=${$.b}`;
+`${a}, ${b}`;

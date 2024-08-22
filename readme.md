@@ -96,6 +96,7 @@ Give the JSON template engine a try in our [playground](https://transformers-wor
 
 The template consists of multiple statements, with the output being the result of the final statement.
 
+
 ### Variables
 
 ```js
@@ -105,6 +106,15 @@ a + b;
 ```
 
 Refer this [example](test/scenarios/assignments/template.jt) for more details.
+
+#### Template Strings
+
+```js
+let a = `Input a=${.a}`; 
+let b = `Input b=${.b}`;
+`${a}, ${b}`;
+```
+Refer this [example](test/scenarios/template_strings/template.jt) for more details.
 
 ### Basic Expressions
 

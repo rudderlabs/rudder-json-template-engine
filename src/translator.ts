@@ -40,6 +40,7 @@ import {
   IncrementExpression,
   LoopControlExpression,
   ObjectPropExpression,
+  TemplateExpression,
 } from './types';
 import { convertToStatementsExpr, escapeStr } from './utils/common';
 import { translateLiteral } from './utils/translator';
@@ -140,6 +141,9 @@ export class JsonTemplateTranslator {
 
       case SyntaxType.LITERAL:
         return this.translateLiteralExpr(expr as LiteralExpression, dest, ctx);
+
+      case SyntaxType.TEMPLATE_EXPR:
+        return this.translateTemplateExpr(expr as TemplateExpression, dest, ctx);
 
       case SyntaxType.ARRAY_EXPR:
         return this.translateArrayExpr(expr as ArrayExpression, dest, ctx);
@@ -624,6 +628,18 @@ export class JsonTemplateTranslator {
   private translateLiteralExpr(expr: LiteralExpression, dest: string, _ctx: string): string {
     const literalCode = translateLiteral(expr.tokenType, expr.value);
     return JsonTemplateTranslator.generateAssignmentCode(dest, literalCode);
+  }
+
+  private translateTemplateExpr(expr: TemplateExpression, dest: string, ctx: string): string {
+    const code: string[] = [];
+    const partVars: string[] = [];
+    for (const part of expr.parts) {
+      const partVar = this.acquireVar();
+      code.push(this.translateExpr(part, partVar, ctx));
+      partVars.push(partVar);
+    }
+    code.push(JsonTemplateTranslator.generateAssignmentCode(dest, partVars.join(' + ')));
+    return code.join('');
   }
 
   private getSimplePathSelector(expr: SelectorExpression, isAssignment: boolean): string {

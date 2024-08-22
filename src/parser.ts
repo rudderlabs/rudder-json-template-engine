@@ -21,6 +21,7 @@ import {
   IncrementExpression,
   IndexFilterExpression,
   Keyword,
+  LambdaArgExpression,
   LiteralExpression,
   LoopControlExpression,
   LoopExpression,
@@ -37,6 +38,7 @@ import {
   SpreadExpression,
   StatementsExpression,
   SyntaxType,
+  TemplateExpression,
   ThrowExpression,
   Token,
   TokenType,
@@ -973,6 +975,52 @@ export class JsonTemplateParser {
     return JsonTemplateParser.createLiteralExpr(this.lexer.lex());
   }
 
+  private parseTemplateExpr(): TemplateExpression {
+    const template = this.lexer.value() as string;
+    let idx = 0;
+    const parts: Expression[] = [];
+    while (idx < template.length) {
+      const start = template.indexOf('${', idx);
+      if (start === -1) {
+        parts.push({
+          type: SyntaxType.LITERAL,
+          value: template.slice(idx),
+          tokenType: TokenType.STR,
+        });
+        break;
+      }
+      const end = template.indexOf('}', start);
+      if (end === -1) {
+        throw new JsonTemplateParserError(
+          `Invalid template expression: unclosed expression at ${template}`,
+        );
+      }
+      if (start > idx) {
+        parts.push({
+          type: SyntaxType.LITERAL,
+          value: template.slice(idx, start),
+          tokenType: TokenType.STR,
+        });
+      }
+      try {
+        const exprPart = JsonTemplateEngine.parse(
+          template.slice(start + 2, end),
+          this.options,
+        ) as StatementsExpression;
+        parts.push(exprPart.statements[0]);
+      } catch (error: any) {
+        throw new JsonTemplateParserError(
+          `Invalid template expression: ${error.message} at ${template}`,
+        );
+      }
+      idx = end + 1;
+    }
+    return {
+      type: SyntaxType.TEMPLATE_EXPR,
+      parts,
+    };
+  }
+
   private parseIDPath(): string {
     const idParts: string[] = [];
     while (this.lexer.matchID()) {
@@ -1380,16 +1428,28 @@ export class JsonTemplateParser {
     return JsonTemplateEngine.parseMappingPaths(flatMappings);
   }
 
+  private isFloatingNumber(): boolean {
+    return this.lexer.match('.') && this.lexer.matchINT(1) && !this.lexer.match('.', 2);
+  }
+
+  private isLambdaArg(): boolean {
+    return this.lexer.matchTokenType(TokenType.LAMBDA_ARG);
+  }
+
+  private parseLambdaArgExpr(): LambdaArgExpression {
+    return {
+      type: SyntaxType.LAMBDA_ARG,
+      index: this.lexer.value(),
+    };
+  }
+
   private parsePrimaryExpr(): Expression {
     if (this.lexer.match(';')) {
       return EMPTY_EXPR;
     }
 
-    if (this.lexer.matchTokenType(TokenType.LAMBDA_ARG)) {
-      return {
-        type: SyntaxType.LAMBDA_ARG,
-        index: this.lexer.value(),
-      };
+    if (this.isLambdaArg()) {
+      return this.parseLambdaArgExpr();
     }
 
     if (this.lexer.matchKeyword()) {
@@ -1404,12 +1464,16 @@ export class JsonTemplateParser {
       return this.parseArrayCoalesceExpr();
     }
 
-    if (this.lexer.match('.') && this.lexer.matchINT(1) && !this.lexer.match('.', 2)) {
+    if (this.isFloatingNumber()) {
       return this.parseFloatingNumber();
     }
 
     if (this.lexer.matchLiteral()) {
       return this.parseLiteralExpr();
+    }
+
+    if (this.lexer.matchTemplate()) {
+      return this.parseTemplateExpr();
     }
 
     if (this.lexer.matchCompileTimeExpr()) {

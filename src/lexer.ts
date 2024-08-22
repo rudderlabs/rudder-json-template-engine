@@ -61,6 +61,10 @@ export class JsonTemplateLexer {
     return JsonTemplateLexer.isLiteralToken(this.lookahead());
   }
 
+  matchTemplate(): boolean {
+    return this.matchTokenType(TokenType.TEMPLATE);
+  }
+
   matchINT(steps = 0): boolean {
     return this.matchTokenType(TokenType.INT, steps);
   }
@@ -463,7 +467,7 @@ export class JsonTemplateLexer {
 
     if (eosFound) {
       return {
-        type: TokenType.STR,
+        type: orig === '`' ? TokenType.TEMPLATE : TokenType.STR,
         value: str,
         range: [start, this.idx],
       };

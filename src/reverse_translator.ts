@@ -28,6 +28,7 @@ import {
   SpreadExpression,
   StatementsExpression,
   SyntaxType,
+  TemplateExpression,
   ThrowExpression,
   TokenType,
   UnaryExpression,
@@ -69,6 +70,9 @@ export class JsonTemplateReverseTranslator {
         return this.translateBinaryExpression(expr as BinaryExpression);
       case SyntaxType.ARRAY_EXPR:
         return this.translateArrayExpression(expr as ArrayExpression);
+      case SyntaxType.TEMPLATE_EXPR:
+        return this.translateTemplateExpression(expr as TemplateExpression);
+
       case SyntaxType.OBJECT_EXPR:
         return this.translateObjectExpression(expr as ObjectExpression);
       case SyntaxType.SPREAD_EXPR:
@@ -118,6 +122,18 @@ export class JsonTemplateReverseTranslator {
       default:
         return '';
     }
+  }
+
+  translateTemplateExpression(expr: TemplateExpression): string {
+    const code: string[] = [];
+    for (const part of expr.parts) {
+      if (part.type === SyntaxType.LITERAL) {
+        code.push(part.value);
+      } else {
+        code.push(this.translateWithWrapper(part, '${', '}'));
+      }
+    }
+    return `\`${code.join('')}\``;
   }
 
   translateArrayFilterExpression(expr: ArrayFilterExpression): string {

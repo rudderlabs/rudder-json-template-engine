@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.17.1...v0.18.0) (2024-08-22)
+
+
+### Features
+
+* add support for template strings ([#118](https://github.com/rudderlabs/rudder-json-template-engine/issues/118)) ([0c893a7](https://github.com/rudderlabs/rudder-json-template-engine/commit/0c893a7c46d0c81e9e381b107e0bb3270f2bc9bd))
+
 ## [0.17.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.17.0...v0.17.1) (2024-07-12)
 
 

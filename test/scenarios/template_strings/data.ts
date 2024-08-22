@@ -14,4 +14,8 @@ export const data: Scenario[] = [
     template: '`unclosed template ${`',
     error: 'Invalid template expression',
   },
+  {
+    template: '`invalid template expression ${.a + }`',
+    error: 'Invalid template expression',
+  },
 ];

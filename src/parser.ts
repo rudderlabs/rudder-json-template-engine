@@ -990,7 +990,9 @@ export class JsonTemplateParser {
       }
       const end = template.indexOf('}', start);
       if (end === -1) {
-        throw new JsonTemplateParserError('Invalid template expression');
+        throw new JsonTemplateParserError(
+          `Invalid template expression: unclosed expression at ${template}`,
+        );
       }
       if (start > idx) {
         parts.push({
@@ -999,7 +1001,17 @@ export class JsonTemplateParser {
           tokenType: TokenType.STR,
         });
       }
-      parts.push(JsonTemplateEngine.parse(template.slice(start + 2, end), this.options));
+      try {
+        const exprPart = JsonTemplateEngine.parse(
+          template.slice(start + 2, end),
+          this.options,
+        ) as StatementsExpression;
+        parts.push(exprPart.statements[0]);
+      } catch (error: any) {
+        throw new JsonTemplateParserError(
+          `Invalid template expression: ${error.message} at ${template}`,
+        );
+      }
       idx = end + 1;
     }
     return {

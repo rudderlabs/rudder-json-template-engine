@@ -21,6 +21,7 @@ import {
   IncrementExpression,
   IndexFilterExpression,
   Keyword,
+  LambdaArgExpression,
   LiteralExpression,
   LoopControlExpression,
   LoopExpression,
@@ -1427,17 +1428,28 @@ export class JsonTemplateParser {
     return JsonTemplateEngine.parseMappingPaths(flatMappings);
   }
 
-  // eslint-disable-next-line sonarjs/cognitive-complexity
+  private isFloatingNumber(): boolean {
+    return this.lexer.match('.') && this.lexer.matchINT(1) && !this.lexer.match('.', 2);
+  }
+
+  private isLambdaArg(): boolean {
+    return this.lexer.matchTokenType(TokenType.LAMBDA_ARG);
+  }
+
+  private parseLambdaArgExpr(): LambdaArgExpression {
+    return {
+      type: SyntaxType.LAMBDA_ARG,
+      index: this.lexer.value(),
+    };
+  }
+
   private parsePrimaryExpr(): Expression {
     if (this.lexer.match(';')) {
       return EMPTY_EXPR;
     }
 
-    if (this.lexer.matchTokenType(TokenType.LAMBDA_ARG)) {
-      return {
-        type: SyntaxType.LAMBDA_ARG,
-        index: this.lexer.value(),
-      };
+    if (this.isLambdaArg()) {
+      return this.parseLambdaArgExpr();
     }
 
     if (this.lexer.matchKeyword()) {
@@ -1452,7 +1464,7 @@ export class JsonTemplateParser {
       return this.parseArrayCoalesceExpr();
     }
 
-    if (this.lexer.match('.') && this.lexer.matchINT(1) && !this.lexer.match('.', 2)) {
+    if (this.isFloatingNumber()) {
       return this.parseFloatingNumber();
     }
 

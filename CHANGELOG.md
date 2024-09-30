@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.18.0...v0.18.1) (2024-09-30)
+
+
+### Bug Fixes
+
+* npm vulnerabilities ([61972c4](https://github.com/rudderlabs/rudder-json-template-engine/commit/61972c4e101ec914be6e9fe29c16596f35a0f752))
+
 ## [0.18.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.17.1...v0.18.0) (2024-08-22)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.18.1...v0.18.2) (2024-10-01)
+
+
+### Bug Fixes
+
+* vulnerabilities ([22505f3](https://github.com/rudderlabs/rudder-json-template-engine/commit/22505f3c6beafce0917a9fe093c7bd7859feb820))
+
 ## [0.18.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.18.0...v0.18.1) (2024-09-30)
 
 

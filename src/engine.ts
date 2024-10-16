@@ -70,7 +70,7 @@ export class JsonTemplateEngine {
     if (
       /^'.*'$/.test(input) ||
       /^".*"$/.test(input) ||
-      /^[a-zA-Z0-9_]*$/.test(input) ||
+      /^\w+$/.test(input) ||
       input.includes('.')
     ) {
       return `$.${input}`;

@@ -57,11 +57,11 @@ type PathTypeResult = {
 };
 
 export class JsonTemplateParser {
-  private lexer: JsonTemplateLexer;
+  private readonly lexer: JsonTemplateLexer;
 
-  private options?: EngineOptions;
+  private readonly options?: EngineOptions;
 
-  private pathTypesStack: PathTypeResult[] = [];
+  private readonly pathTypesStack: PathTypeResult[] = [];
 
   // indicates currently how many loops being parsed
   private loopCount = 0;

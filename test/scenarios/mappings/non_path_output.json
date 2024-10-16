@@ -1,0 +1,22 @@
+[
+  {
+    "input": "'application/json'",
+    "output": "Content-Type"
+  },
+  {
+    "input": "1",
+    "output": "bar"
+  },
+  {
+    "input": "2",
+    "output": "x-bar"
+  },
+  {
+    "input": "3",
+    "output": "'a.b.c'"
+  },
+  {
+    "input": "'text/plain'",
+    "output": "c.'Content-Type'"
+  }
+]

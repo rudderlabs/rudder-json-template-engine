@@ -215,10 +215,6 @@ export const data: Scenario[] = [
     error: 'Invalid mapping',
   },
   {
-    mappingsPath: 'invalid_output_mapping.json',
-    error: 'Invalid mapping',
-  },
-  {
     mappingsPath: 'mappings_with_root_fields.json',
     input,
     output: {
@@ -291,6 +287,16 @@ export const data: Scenario[] = [
           ],
         },
       ],
+    },
+  },
+  {
+    mappingsPath: 'non_path_output.json',
+    output: {
+      'Content-Type': 'application/json',
+      'a.b.c': 3,
+      bar: 1,
+      c: { 'Content-Type': 'text/plain' },
+      'x-bar': 2,
     },
   },
   {

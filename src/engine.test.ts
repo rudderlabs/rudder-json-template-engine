@@ -1,4 +1,5 @@
 import { JsonTemplateEngine } from './engine';
+import { PathType } from './types';
 
 describe('engine', () => {
   describe('isValidJSONPath', () => {
@@ -64,6 +65,27 @@ describe('engine', () => {
           },
         ]),
       ).toThrowError('Invalid mapping');
+    });
+  });
+  describe('isValidMapping', () => {
+    it('should convert to JSON paths when options are used', () => {
+      expect(
+        JsonTemplateEngine.isValidMapping(
+          {
+            input: '$.events[1]',
+            output: 'events[1].name',
+          },
+          { defaultPathType: PathType.JSON },
+        ),
+      ).toBeTruthy();
+    });
+    it('should throw error when output is not valid json path without engine options', () => {
+      expect(
+        JsonTemplateEngine.isValidMapping({
+          input: '$.events[2]',
+          output: 'events[2].name',
+        }),
+      ).toBeFalsy();
     });
   });
 });

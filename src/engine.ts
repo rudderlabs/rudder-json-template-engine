@@ -59,7 +59,7 @@ export class JsonTemplateEngine {
     }
   }
 
-  private static toJsonPath(input): string {
+  private static toJsonPath(input: string): string {
     if (input.startsWith('$')) {
       return input;
     }
@@ -80,7 +80,10 @@ export class JsonTemplateEngine {
     return `$.'${input}'`;
   }
 
-  private static convertToJSONPath(path: string, options?: EngineOptions): string {
+  private static convertToJSONPath(path?: string, options?: EngineOptions): string | undefined {
+    if (!path) {
+      return path;
+    }
     if (options?.defaultPathType === PathType.JSON) {
       return JsonTemplateEngine.toJsonPath(path);
     }
@@ -91,10 +94,7 @@ export class JsonTemplateEngine {
     return {
       ...mapping,
       input: mapping.input ?? mapping.from,
-      output: JsonTemplateEngine.convertToJSONPath(
-        (mapping.output ?? mapping.to) as string,
-        options,
-      ),
+      output: JsonTemplateEngine.convertToJSONPath(mapping.output ?? mapping.to, options),
     };
   }
 
@@ -102,7 +102,9 @@ export class JsonTemplateEngine {
     mappings: FlatMappingPaths[],
     options?: EngineOptions,
   ): FlatMappingPaths[] {
-    return mappings.map((mapping) => JsonTemplateEngine.prepareMapping(mapping, options));
+    return mappings
+      .map((mapping) => JsonTemplateEngine.prepareMapping(mapping, options))
+      .filter((mapping) => mapping.input && mapping.output);
   }
 
   static validateMappings(mappings: FlatMappingPaths[], options?: EngineOptions) {

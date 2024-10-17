@@ -38,7 +38,7 @@ import { BINDINGS_PARAM_KEY, DATA_PARAM_KEY, EMPTY_EXPR, INDENTATION_SPACES } fr
 import { escapeStr } from './utils';
 
 export class JsonTemplateReverseTranslator {
-  private options?: EngineOptions;
+  private readonly options?: EngineOptions;
 
   private level = 0;
 

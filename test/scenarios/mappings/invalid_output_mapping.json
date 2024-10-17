@@ -1,7 +1,0 @@
-[
-  {
-    "description": "output is not a path expression",
-    "input": "$.a",
-    "output": "'a'"
-  }
-]

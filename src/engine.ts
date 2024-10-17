@@ -59,20 +59,57 @@ export class JsonTemplateEngine {
     }
   }
 
-  private static prepareMappings(mappings: FlatMappingPaths[]): FlatMappingPaths[] {
-    return mappings.map((mapping) => ({
+  private static toJsonPath(input: string): string {
+    if (input.startsWith('$')) {
+      return input;
+    }
+
+    // Check if it's wrapped in quotes
+    // or is a simple identifier
+    // or contains dots
+    if (
+      /^'.*'$/.test(input) ||
+      /^".*"$/.test(input) ||
+      /^\w+$/.test(input) ||
+      input.includes('.')
+    ) {
+      return `$.${input}`;
+    }
+
+    // If input contains special characters
+    return `$.'${input}'`;
+  }
+
+  private static convertToJSONPath(path?: string, options?: EngineOptions): string | undefined {
+    if (!path) {
+      return path;
+    }
+    if (options?.defaultPathType === PathType.JSON) {
+      return JsonTemplateEngine.toJsonPath(path);
+    }
+    return path;
+  }
+
+  private static prepareMapping(mapping: FlatMappingPaths, options?: EngineOptions) {
+    return {
       ...mapping,
       input: mapping.input ?? mapping.from,
-      output: mapping.output ?? mapping.to,
-    }));
+      output: JsonTemplateEngine.convertToJSONPath(mapping.output ?? mapping.to, options),
+    };
+  }
+
+  private static prepareMappings(
+    mappings: FlatMappingPaths[],
+    options?: EngineOptions,
+  ): FlatMappingPaths[] {
+    return mappings
+      .map((mapping) => JsonTemplateEngine.prepareMapping(mapping, options))
+      .filter((mapping) => mapping.input && mapping.output);
   }
 
   static validateMappings(mappings: FlatMappingPaths[], options?: EngineOptions) {
-    JsonTemplateEngine.prepareMappings(mappings).forEach((mapping) => {
-      if (
-        !JsonTemplateEngine.isValidJSONPath(mapping.input) ||
-        !JsonTemplateEngine.isValidJSONPath(mapping.output)
-      ) {
+    JsonTemplateEngine.prepareMappings(mappings, options).forEach((mapping) => {
+      if (!JsonTemplateEngine.isValidJSONPath(mapping.output)) {
         throw new JsonTemplateMappingError(
           'Invalid mapping: invalid JSON path',
           mapping.input as string,
@@ -83,12 +120,21 @@ export class JsonTemplateEngine {
     JsonTemplateEngine.parseMappingPaths(mappings, options);
   }
 
+  static isValidMapping(mapping: FlatMappingPaths, options?: EngineOptions) {
+    try {
+      JsonTemplateEngine.validateMappings([mapping], options);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   private static createFlatMappingsAST(
     mappings: FlatMappingPaths[],
     options?: EngineOptions,
   ): FlatMappingAST[] {
     const newOptions = { ...options, mappings: true };
-    return JsonTemplateEngine.prepareMappings(mappings)
+    return JsonTemplateEngine.prepareMappings(mappings, options)
       .filter((mapping) => mapping.input && mapping.output)
       .map((mapping) => ({
         ...mapping,

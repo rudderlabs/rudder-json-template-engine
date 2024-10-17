@@ -1,0 +1,26 @@
+[
+  {
+    "input": "'application/json'",
+    "output": "Content-Type"
+  },
+  {
+    "input": "1",
+    "output": "bar"
+  },
+  {
+    "input": "2",
+    "output": "x-bar"
+  },
+  {
+    "input": "2",
+    "description": "This mapping will be ignored because the output is not defined"
+  },
+  {
+    "input": "3",
+    "output": "'a.b.c'"
+  },
+  {
+    "input": "'text/plain'",
+    "output": "c.'Content-Type'"
+  }
+]

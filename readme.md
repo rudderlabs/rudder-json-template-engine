@@ -74,11 +74,11 @@ engine.evaluate({ name: 'World' }); // => 'Hello World'
 ### Use CDN URL directly in the browser
 Latest URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine/build/json-template.min.js
 <!-- x-release-please-start-version -->
-Versioned URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.18.2/build/json-template.min.js 
+Versioned URL: https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.19.0/build/json-template.min.js 
 
 ```html
 <script type="module">
-      import { JsonTemplateEngine } from 'https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.18.2/build/json-template.min.js';
+      import { JsonTemplateEngine } from 'https://cdn.jsdelivr.net/npm/@rudderstack/json-template-engine@0.19.0/build/json-template.min.js';
       const engine = JsonTemplateEngine.createAsSync(`'Hello ' + .name`);
       engine.evaluate({ name: 'World' });
 </script>

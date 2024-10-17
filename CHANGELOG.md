@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.18.2...v0.19.0) (2024-10-17)
+
+
+### Features
+
+* refactor mapping validators ([#122](https://github.com/rudderlabs/rudder-json-template-engine/issues/122)) ([bf08bce](https://github.com/rudderlabs/rudder-json-template-engine/commit/bf08bce901dff344fda4c6f296b1f430f5135877))
+
 ## [0.18.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.18.1...v0.18.2) (2024-10-01)
 
 

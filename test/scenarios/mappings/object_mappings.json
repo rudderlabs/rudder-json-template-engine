@@ -10,5 +10,21 @@
   {
     "input": "$.traits2[*].*.value",
     "output": "$.properties2[*].*"
+  },
+  {
+    "input": "$.traits3",
+    "output": "$.properties3"
+  },
+  {
+    "input": "$.traits3.display_name",
+    "output": "$.properties3.name"
+  },
+  {
+    "input": "$.traits3.custom_properties",
+    "output": "$.properties3.custom"
+  },
+  {
+    "input": "$.traits3.custom_properties.bar",
+    "output": "$.properties3.custom.foo"
   }
 ]

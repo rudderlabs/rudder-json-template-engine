@@ -319,6 +319,13 @@ export const data: Scenario[] = [
           },
         },
       ],
+      traits3: {
+        display_name: 'Rudderstack Inc.',
+        category: 'Analytics',
+        custom_properties: {
+          bar: 1,
+        },
+      },
     },
     output: {
       user_id: {
@@ -344,6 +351,15 @@ export const data: Scenario[] = [
           },
         ],
       },
+      traits3: {
+        value: {
+          display_name: 'Rudderstack Inc.',
+          category: 'Analytics',
+          custom_properties: {
+            bar: 1,
+          },
+        },
+      },
       properties1: {
         name: {
           value: 'John Doe',
@@ -360,6 +376,18 @@ export const data: Scenario[] = [
           age: 30,
         },
       ],
+      properties3: {
+        display_name: 'Rudderstack Inc.',
+        category: 'Analytics',
+        custom_properties: {
+          bar: 1,
+        },
+        name: 'Rudderstack Inc.',
+        custom: {
+          bar: 1,
+          foo: 1,
+        },
+      },
     },
   },
   {

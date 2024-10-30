@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.0...v0.19.1) (2024-10-30)
+
+
+### Bug Fixes
+
+* object mappings with child props ([#124](https://github.com/rudderlabs/rudder-json-template-engine/issues/124)) ([41378a4](https://github.com/rudderlabs/rudder-json-template-engine/commit/41378a4965547ccec556464a3caacc455c9499e7))
+
 ## [0.19.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.18.2...v0.19.0) (2024-10-17)
 
 

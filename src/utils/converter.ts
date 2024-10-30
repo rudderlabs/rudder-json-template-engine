@@ -16,11 +16,25 @@ import {
 } from '../types';
 import { createBlockExpression, getLastElement } from './common';
 
-function createObjectExpression(): ObjectExpression {
+function createObjectExpression(props: ObjectPropExpression[] = []): ObjectExpression {
   return {
     type: SyntaxType.OBJECT_EXPR,
-    props: [] as ObjectPropExpression[],
+    props,
   };
+}
+
+function createObjectPropExpressionWithSpread(value: Expression): ObjectPropExpression {
+  return {
+    type: SyntaxType.OBJECT_PROP_EXPR,
+    value: {
+      type: SyntaxType.SPREAD_EXPR,
+      value,
+    },
+  };
+}
+
+function createObjectExpressionWithSpread(value: Expression): ObjectExpression {
+  return createObjectExpression([createObjectPropExpressionWithSpread(value)]);
 }
 
 function findOrCreateObjectPropExpression(
@@ -222,6 +236,14 @@ function isWildcardSelector(expr: Expression): boolean {
   return expr.type === SyntaxType.SELECTOR && expr.prop?.value === '*';
 }
 
+function isOutputPartRegularSelector(outputPart: Expression) {
+  return (
+    outputPart?.type === SyntaxType.SELECTOR &&
+    outputPart.prop?.value &&
+    outputPart.prop.value !== '*'
+  );
+}
+
 function processWildCardSelector(
   flatMapping: FlatMappingAST,
   currentOutputPropAST: ObjectPropExpression,
@@ -282,6 +304,15 @@ function handleNextPart(
   currentOutputPropAST: ObjectPropExpression,
 ): ObjectExpression | undefined {
   const nextOutputPart = flatMapping.outputExpr.parts[partNum];
+  const prevOutputPart = flatMapping.outputExpr.parts[partNum - 1];
+  if (
+    isOutputPartRegularSelector(prevOutputPart) &&
+    isOutputPartRegularSelector(nextOutputPart) &&
+    currentOutputPropAST.value.type !== SyntaxType.OBJECT_EXPR
+  ) {
+    currentOutputPropAST.value = createObjectExpressionWithSpread(currentOutputPropAST.value);
+    return currentOutputPropAST.value as ObjectExpression;
+  }
   if (nextOutputPart.filter?.type === SyntaxType.ALL_FILTER_EXPR) {
     const objectExpr = processAllFilter(
       flatMapping,
@@ -334,14 +365,6 @@ function handleNextParts(
     objectExpr = nextObjectExpr;
   }
   return objectExpr;
-}
-
-function isOutputPartRegularSelector(outputPart: Expression) {
-  return (
-    outputPart.type === SyntaxType.SELECTOR &&
-    outputPart.prop?.value &&
-    outputPart.prop.value !== '*'
-  );
 }
 
 function refineLeafOutputPropAST(inputExpr: Expression): Expression {
@@ -399,13 +422,7 @@ function processFlatMappingPart(
 }
 
 function handleRootOnlyOutputMapping(flatMapping: FlatMappingAST, outputAST: ObjectExpression) {
-  outputAST.props.push({
-    type: SyntaxType.OBJECT_PROP_EXPR,
-    value: {
-      type: SyntaxType.SPREAD_EXPR,
-      value: flatMapping.inputExpr,
-    },
-  } as ObjectPropExpression);
+  outputAST.props.push(createObjectPropExpressionWithSpread(flatMapping.inputExpr));
 }
 
 function validateMappingsForIndexVar(flatMapping: FlatMappingAST, indexVar: string) {

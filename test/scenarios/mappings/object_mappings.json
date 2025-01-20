@@ -21,7 +21,7 @@
   },
   {
     "input": "$.traits3.custom_properties",
-    "output": "$.properties3.custom"
+    "output": "$.properties3['custom']"
   },
   {
     "input": "$.traits3.custom_properties.bar",

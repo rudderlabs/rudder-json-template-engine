@@ -220,6 +220,7 @@ export interface LiteralExpression extends Expression {
   value: Literal;
   tokenType: TokenType;
 }
+
 export interface PathExpression extends Expression {
   parts: Expression[];
   root?: Expression | string;
@@ -236,7 +237,7 @@ export interface IncrementExpression extends Expression {
 
 export interface SelectorExpression extends Expression {
   selector: string;
-  prop?: Token;
+  prop?: Omit<Token, 'range'>;
 }
 export interface SpreadExpression extends Expression {
   value: Expression;

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.2...v0.19.3) (2025-01-20)
+
+
+### Bug Fixes
+
+* object single index mapping ([#127](https://github.com/rudderlabs/rudder-json-template-engine/issues/127)) ([55f3d53](https://github.com/rudderlabs/rudder-json-template-engine/commit/55f3d53177bb7805c6257cbe840b7a97b73f6922))
+
 ## [0.19.2](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.1...v0.19.2) (2024-11-19)
 
 

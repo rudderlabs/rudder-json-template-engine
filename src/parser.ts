@@ -622,18 +622,38 @@ export class JsonTemplateParser {
     };
   }
 
-  private parseArrayFilterExpr(): ArrayFilterExpression | ObjectFilterExpression {
+  private handleArrayFilterExpr(filter: Expression): ArrayFilterExpression | SelectorExpression {
+    const isSingleArrayIndexFilter =
+      filter.type === SyntaxType.ARRAY_INDEX_FILTER_EXPR && filter.indexes.elements.length === 1;
+
+    if (isSingleArrayIndexFilter) {
+      const [expr] = filter.indexes.elements;
+      const isStringLiteral = expr.type === SyntaxType.LITERAL && expr.tokenType === TokenType.STR;
+
+      if (isStringLiteral) {
+        return {
+          type: SyntaxType.SELECTOR,
+          selector: '.',
+          prop: { type: TokenType.STR, value: expr.value },
+        };
+      }
+    }
+
+    return { type: SyntaxType.ARRAY_FILTER_EXPR, filter };
+  }
+
+  private parseArrayFilterExpr():
+    | ArrayFilterExpression
+    | ObjectFilterExpression
+    | SelectorExpression {
     this.lexer.expect('[');
-    let expr: ArrayFilterExpression | ObjectFilterExpression;
+    let expr: ArrayFilterExpression | ObjectFilterExpression | SelectorExpression;
     if (this.lexer.match('?')) {
       expr = this.parseJSONObjectFilter();
     } else if (this.lexer.match('*')) {
       expr = this.parseAllFilter();
     } else {
-      expr = {
-        type: SyntaxType.ARRAY_FILTER_EXPR,
-        filter: this.parseArrayFilter(),
-      };
+      expr = this.handleArrayFilterExpr(this.parseArrayFilter());
     }
     this.lexer.expect(']');
     return expr;

@@ -53,6 +53,18 @@ function findOrCreateObjectPropExpression(
   return match;
 }
 
+function validateArrayIndexFilter(flatMapping: FlatMappingAST, elements: Expression[]) {
+  for (let i = 0; i < elements.length; i++) {
+    if (elements[i] === undefined) {
+      throw new JsonTemplateMappingError(
+        `Invalid mapping: missing a mapping at index#${i}; make sure to define all the mappings in order of indexes`,
+        flatMapping.input as string,
+        flatMapping.output as string,
+      );
+    }
+  }
+}
+
 function processArrayIndexFilter(
   flatMapping: FlatMappingAST,
   currrentOutputPropAST: ObjectPropExpression,
@@ -73,6 +85,7 @@ function processArrayIndexFilter(
       : createObjectExpression();
   }
   const objectExpr = currrentOutputPropAST.value.elements[filterIndex];
+  validateArrayIndexFilter(flatMapping, currrentOutputPropAST.value.elements);
   if (!isLastPart && objectExpr?.type !== SyntaxType.OBJECT_EXPR) {
     throw new JsonTemplateMappingError(
       'Invalid mapping: invalid array index mapping',

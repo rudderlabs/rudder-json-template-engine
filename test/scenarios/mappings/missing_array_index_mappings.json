@@ -1,0 +1,10 @@
+[
+  {
+    "input": "$.events[1]",
+    "output": "$.events[1].name"
+  },
+  {
+    "input": "'track'",
+    "output": "$.events[1].type"
+  }
+]

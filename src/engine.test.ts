@@ -45,12 +45,12 @@ describe('engine', () => {
       expect(() =>
         JsonTemplateEngine.validateMappings([
           {
-            input: '$.events[0]',
-            output: '$.events[0].name',
+            input: '$.a[0]',
+            output: '$.b[0].name',
           },
           {
             input: '$.discount',
-            output: '$.events[0].name[*].discount',
+            output: '$.b[0].name[*].discount',
           },
         ]),
       ).toThrowError('Invalid mapping');
@@ -72,8 +72,8 @@ describe('engine', () => {
       expect(
         JsonTemplateEngine.isValidMapping(
           {
-            input: '$.events[1]',
-            output: 'events[1].name',
+            input: '$.a[0]',
+            output: 'b[0].name',
           },
           { defaultPathType: PathType.JSON },
         ),
@@ -82,8 +82,8 @@ describe('engine', () => {
     it('should throw error when output is not valid json path without engine options', () => {
       expect(
         JsonTemplateEngine.isValidMapping({
-          input: '$.events[2]',
-          output: 'events[2].name',
+          input: '$.events[0]',
+          output: 'events[0].name',
         }),
       ).toBeFalsy();
     });

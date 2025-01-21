@@ -243,6 +243,10 @@ export const data: Scenario[] = [
     },
   },
   {
+    mappingsPath: 'missing_array_index_mappings.json',
+    error: 'Invalid mapping',
+  },
+  {
     mappingsPath: 'nested_mappings.json',
     input,
     output: {

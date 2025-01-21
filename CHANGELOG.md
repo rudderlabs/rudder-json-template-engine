@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.3...v0.19.4) (2025-01-21)
+
+
+### Bug Fixes
+
+* add validation for index mappings to check order ([#129](https://github.com/rudderlabs/rudder-json-template-engine/issues/129)) ([00199e3](https://github.com/rudderlabs/rudder-json-template-engine/commit/00199e373b710d84f6b65539936836f6caf9b646))
+
 ## [0.19.3](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.2...v0.19.3) (2025-01-20)
 
 

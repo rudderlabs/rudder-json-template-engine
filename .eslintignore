@@ -6,3 +6,4 @@ commitlint.config.js
 jest.config.ts
 vite.config.*ts
 app.ts
+*.properties

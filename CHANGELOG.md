@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.4...v0.19.5) (2025-01-28)
+
+
+### Bug Fixes
+
+* handling of nested array props overriding ([#133](https://github.com/rudderlabs/rudder-json-template-engine/issues/133)) ([80fc165](https://github.com/rudderlabs/rudder-json-template-engine/commit/80fc1653761153608d932ad6e839ddaaa55fb49e))
+
 ## [0.19.4](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.3...v0.19.4) (2025-01-21)
 
 

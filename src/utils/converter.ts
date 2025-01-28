@@ -84,8 +84,8 @@ function processArrayIndexFilter(
       ? flatMapping.inputExpr
       : createObjectExpression();
   }
-  const objectExpr = currrentOutputPropAST.value.elements[filterIndex];
   validateArrayIndexFilter(flatMapping, currrentOutputPropAST.value.elements);
+  const objectExpr = currrentOutputPropAST.value.elements[filterIndex];
   if (!isLastPart && objectExpr?.type !== SyntaxType.OBJECT_EXPR) {
     throw new JsonTemplateMappingError(
       'Invalid mapping: invalid array index mapping',
@@ -373,6 +373,9 @@ function handleNextParts(
     const nextObjectExpr = handleNextPart(flatMapping, newPartNum, currentOutputPropAST);
     if (!nextObjectExpr) {
       break;
+    }
+    if (isOutputPartRegularSelector(flatMapping.outputExpr.parts[newPartNum])) {
+      return nextObjectExpr;
     }
     newPartNum++;
     objectExpr = nextObjectExpr;

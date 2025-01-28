@@ -412,6 +412,28 @@ export const data: Scenario[] = [
     },
   },
   {
+    mappingsPath: 'override_nested_arrays.json',
+    input: {
+      properties: {
+        type: 'bar',
+        products: [
+          {
+            name: 'a',
+          },
+          {
+            name: 'b',
+          },
+        ],
+      },
+    },
+    output: {
+      properties: {
+        products: [{ category: 'bar' }, { category: 'bar' }],
+        type: 'bar',
+      },
+    },
+  },
+  {
     mappingsPath: 'or_mappings.json',
     input: {
       properties: {

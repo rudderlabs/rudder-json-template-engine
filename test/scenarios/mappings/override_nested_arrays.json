@@ -1,0 +1,14 @@
+[
+  {
+    "from": "$.properties",
+    "to": "$.properties"
+  },
+  {
+    "to": "$.properties.products[0].category",
+    "from": "$.properties.type"
+  },
+  {
+    "to": "$.properties.products[1].category",
+    "from": "$.properties.type"
+  }
+]

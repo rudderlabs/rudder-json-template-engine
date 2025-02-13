@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
@@ -31,14 +31,14 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           directory: ./reports/coverage
-      
+
       - name: Update sonar-project.properties
         run: |
           # Retrieve the version from package.json
           version=$(node -e "console.log(require('./package.json').version)")
           # Update the sonar-project.properties file with the version
           sed -i "s/sonar.projectVersion=.*$/sonar.projectVersion=$version/" sonar-project.properties
-      
+
       - name: Fix filesystem paths in generated reports
         if: always()
         run: |
@@ -51,4 +51,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-

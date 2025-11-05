@@ -53,9 +53,6 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-          
-      - name: Update npm # for oidc authentication compatibility
-        run: npm install -g npm@latest
 
       - name: Install Dependencies
         run: npm ci

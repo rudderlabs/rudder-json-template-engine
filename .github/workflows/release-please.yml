@@ -31,6 +31,9 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: release
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
     if: ${{ needs.release.outputs.release_created }}
 
     steps:
@@ -50,6 +53,9 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
+          
+      - name: Update npm # for oidc authentication compatibility
+        run: npm install -g npm@latest
 
       - name: Install Dependencies
         run: npm ci
@@ -57,11 +63,6 @@ jobs:
       - name: Build Package
         run: npm run build
 
-      - name: Configure NPM
-        run: npm set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
-
       - name: Publish Package to NPM
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       

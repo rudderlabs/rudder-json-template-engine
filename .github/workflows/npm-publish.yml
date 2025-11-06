@@ -1,0 +1,32 @@
+on:
+  workflow_call:
+
+name: npm-publish
+
+jobs:
+  npm-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Required for OIDC
+      contents: read
+    steps:
+      # The logic below handles the npm publication:
+      - name: Checkout
+        uses: actions/checkout@v4
+        # these if statements ensure that a publication only occurs when
+        # a new release is created:
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Package
+        run: npm run build
+
+      - name: Publish Package to NPM
+        run: npm publish

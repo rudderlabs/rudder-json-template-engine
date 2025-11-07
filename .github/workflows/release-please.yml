@@ -34,5 +34,7 @@ jobs:
   
   publish:
     needs: release
+    permissions:
+      contents: read
     if: ${{ needs.release.outputs.release_created }}
     uses: ./.github/workflows/npm-publish.yml

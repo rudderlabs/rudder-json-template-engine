@@ -40,6 +40,11 @@ jobs:
       contents: read
     if: ${{ needs.release.outputs.release_created }}
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@v2
+        with:
+          egress-policy: audit
+          
       # The logic below handles the npm publication:
       - name: Checkout
         uses: actions/checkout@v4

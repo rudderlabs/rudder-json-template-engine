@@ -30,8 +30,5 @@ jobs:
   
   publish:
     needs: release
-    permissions:
-      id-token: write # Required for OIDC
-      contents: read
     if: ${{ needs.release.outputs.release_created }}
     uses: ./.github/workflows/npm-publish.yml

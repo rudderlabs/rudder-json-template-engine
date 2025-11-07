@@ -12,7 +12,6 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
     permissions:
-      issues: write
       contents: write
       pull-requests: write
     steps:
@@ -44,7 +43,7 @@ jobs:
         uses: step-security/harden-runner@v2
         with:
           egress-policy: audit
-          
+
       # The logic below handles the npm publication:
       - name: Checkout
         uses: actions/checkout@v4

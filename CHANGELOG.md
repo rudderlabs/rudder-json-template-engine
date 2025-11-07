@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.5...v0.20.0) (2025-11-07)
+
+
+### Features
+
+* add oidc permission for workflow ([#143](https://github.com/rudderlabs/rudder-json-template-engine/issues/143)) ([6818ad1](https://github.com/rudderlabs/rudder-json-template-engine/commit/6818ad1a98717ab75c91c967e4a411c8c0157dba))
+
 ## [0.19.5](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.4...v0.19.5) (2025-01-28)
 
 

@@ -44,11 +44,8 @@ jobs:
         with:
           egress-policy: audit
 
-      # The logic below handles the npm publication:
       - name: Checkout
         uses: actions/checkout@v4
-        # these if statements ensure that a publication only occurs when
-        # a new release is created:
 
       - name: Setup Node
         uses: actions/setup-node@v4

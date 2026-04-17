@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.1](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.20.0...v0.20.1) (2026-04-17)
+
+
+### Bug Fixes
+
+* **vuln:** pin and bump action refs (SEC-171) ([7d7ec98](https://github.com/rudderlabs/rudder-json-template-engine/commit/7d7ec986c9c31d23fd6ab1d46a2a0df28ab96253))
+
 ## [0.20.0](https://github.com/rudderlabs/rudder-json-template-engine/compare/v0.19.5...v0.20.0) (2025-11-07)
 
 
